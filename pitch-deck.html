@@ -16,118 +16,105 @@
   --red:#E63946;
 }
 *{margin:0;padding:0;box-sizing:border-box}
-html,body{height:100%;overflow:hidden}
-body{font-family:'Inter',system-ui,sans-serif;background:var(--blue);color:var(--white);touch-action:none;overscroll-behavior:none}
+html,body{height:100%;overflow:hidden;background:var(--blue)}
+body{font-family:'Inter',system-ui,sans-serif;color:var(--white)}
 
-/* Layout: sidebar + main */
-#app{display:flex;height:100dvh;width:100vw}
+/* Fixed 16:9 landscape canvas, centered and scaled to fit */
+#canvas{
+  position:fixed;top:50%;left:50%;
+  width:1920px;height:1080px;
+  transform:translate(-50%,-50%) scale(var(--scale,1));
+  transform-origin:center center;
+  display:flex;
+}
 
-/* QR Sidebar — always visible */
+/* QR Sidebar — always visible, left side */
 #sidebar{
-  width:180px;flex-shrink:0;background:var(--blue);border-right:1px solid rgba(0,168,107,.2);
-  display:flex;flex-direction:column;align-items:center;padding:20px 12px;gap:12px;
+  width:200px;flex-shrink:0;background:var(--blue);
+  border-right:1px solid rgba(0,168,107,.2);
+  display:flex;flex-direction:column;align-items:center;padding:30px 14px;gap:16px;
   z-index:100;
 }
-#sidebar .qr-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--green);text-align:center}
-#sidebar .qr-box{background:#fff;padding:10px;border-radius:0}
-#sidebar .qr-box img{width:130px;height:130px;display:block}
-#sidebar .qr-url{font-size:10px;color:rgba(240,244,255,.5);font-family:'JetBrains Mono',monospace;text-align:center;word-break:break-all;line-height:1.3}
-#sidebar .qr-hint{font-size:10px;color:rgba(240,244,255,.4);text-align:center;font-weight:500;text-transform:uppercase;letter-spacing:.03em}
-#sidebar .vibe-mini{font-size:28px;margin-bottom:4px}
+#sidebar .vibe-mini{font-size:36px;margin-bottom:4px}
+#sidebar .qr-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--green);text-align:center}
+#sidebar .qr-box{background:#fff;padding:12px;border-radius:0}
+#sidebar .qr-box img{width:150px;height:150px;display:block}
+#sidebar .qr-url{font-size:12px;color:rgba(240,244,255,.5);font-family:'JetBrains Mono',monospace;text-align:center;word-break:break-all;line-height:1.4}
+#sidebar .qr-hint{font-size:12px;color:rgba(240,244,255,.4);text-align:center;font-weight:500;text-transform:uppercase;letter-spacing:.03em}
 
 /* Main deck area */
 #deck-area{flex:1;position:relative;overflow:hidden}
 
 /* Slides */
-.slide{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:40px 50px;opacity:0;transform:translateX(100%);transition:opacity .3s,transform .3s;pointer-events:none}
+.slide{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:60px 80px;opacity:0;transform:translateX(100%);transition:opacity .3s,transform .3s;pointer-events:none}
 .slide.active{opacity:1;transform:translateX(0);pointer-events:auto}
 .slide.prev{transform:translateX(-100%);opacity:0}
 
-/* Nav */
-#nav{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:16px;z-index:1000;background:rgba(10,26,63,.9);border-radius:32px;padding:6px 14px;border:1px solid rgba(0,168,107,.3)}
-#nav button{background:none;border:none;color:var(--white);font-size:20px;cursor:pointer;padding:4px 10px;border-radius:8px;transition:background .2s}
-#nav button:active{background:rgba(0,168,107,.3)}
-#nav button:disabled{opacity:.3;cursor:default}
-#counter{font-size:11px;color:rgba(240,244,255,.5);font-family:'JetBrains Mono',monospace;min-width:36px;text-align:center}
-#dots{display:flex;gap:4px}
-.dot{width:6px;height:6px;border-radius:50%;background:rgba(0,168,107,.25);transition:background .3s}
-.dot.active{background:var(--green)}
-
-/* Keyboard hint */
-#kbd-hint{position:fixed;bottom:16px;right:20px;font-size:10px;color:rgba(240,244,255,.25);font-family:'JetBrains Mono',monospace;z-index:1000}
-
-/* Typography */
-h1{font-size:clamp(36px,7vw,64px);font-weight:900;text-transform:uppercase;letter-spacing:-.02em;line-height:1.05;text-align:center}
-h2{font-size:clamp(24px,5vw,42px);font-weight:800;text-transform:uppercase;letter-spacing:-.02em;line-height:1.1;margin-bottom:20px;text-align:center}
-h3{font-size:clamp(16px,3.5vw,24px);font-weight:700;text-transform:uppercase;letter-spacing:-.01em;margin-bottom:6px}
-.subtitle{font-size:clamp(14px,2.5vw,20px);color:rgba(240,244,255,.6);margin-bottom:24px;text-align:center;font-weight:400}
-.tagline{font-size:clamp(18px,3.5vw,28px);color:var(--green);font-weight:700;text-align:center;margin-top:12px;letter-spacing:-.01em}
-.note{font-size:11px;color:rgba(240,244,255,.35);margin-top:20px;text-align:center;font-family:'JetBrains Mono',monospace}
-.accent-line{width:50px;height:4px;background:var(--green);margin:0 auto 16px;border-radius:0}
+/* Typography — sized for 1920x1080 canvas */
+h1{font-size:88px;font-weight:900;text-transform:uppercase;letter-spacing:-.02em;line-height:1.05;text-align:center}
+h2{font-size:56px;font-weight:800;text-transform:uppercase;letter-spacing:-.02em;line-height:1.1;margin-bottom:24px;text-align:center}
+h3{font-size:26px;font-weight:700;text-transform:uppercase;letter-spacing:-.01em;margin-bottom:8px}
+.subtitle{font-size:26px;color:rgba(240,244,255,.6);margin-bottom:30px;text-align:center;font-weight:400}
+.tagline{font-size:36px;color:var(--green);font-weight:700;text-align:center;margin-top:20px;letter-spacing:-.01em}
+.note{font-size:16px;color:rgba(240,244,255,.35);margin-top:30px;text-align:center;font-family:'JetBrains Mono',monospace}
+.accent-line{width:60px;height:5px;background:var(--green);margin:0 auto 20px;border-radius:0}
 
 /* Feature list */
-.feature-list{list-style:none;max-width:580px;width:100%}
-.feature-list li{font-size:clamp(14px,2.2vw,18px);padding:12px 0;border-bottom:1px solid rgba(0,168,107,.12);display:flex;align-items:center;gap:12px;font-weight:500}
-.feature-list .icon{font-size:22px;flex-shrink:0;width:28px;text-align:center}
+.feature-list{list-style:none;max-width:900px;width:100%}
+.feature-list li{font-size:26px;padding:18px 0;border-bottom:1px solid rgba(0,168,107,.12);display:flex;align-items:center;gap:18px;font-weight:500}
+.feature-list .icon{font-size:32px;flex-shrink:0;width:40px;text-align:center}
 
 /* Phase cards */
-.phase{background:rgba(0,168,107,.06);border-left:4px solid var(--green);padding:14px 18px;margin:6px 0;max-width:560px;width:100%}
-.phase h3{color:var(--green)}
-.phase p{font-size:clamp(12px,2vw,16px);color:rgba(240,244,255,.7);font-weight:400}
+.phase{background:rgba(0,168,107,.06);border-left:5px solid var(--green);padding:20px 28px;margin:10px 0;max-width:900px;width:100%}
+.phase h3{color:var(--green);font-size:22px}
+.phase p{font-size:22px;color:rgba(240,244,255,.7);font-weight:400}
 
 /* Tech grid */
-.tech-grid{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;max-width:580px;margin-top:12px}
-.tech-badge{padding:6px 14px;border:1px solid rgba(0,168,107,.3);background:rgba(0,168,107,.08);font-size:12px;font-weight:500;color:var(--green);text-transform:uppercase;letter-spacing:.02em}
+.tech-grid{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;max-width:900px;margin-top:16px}
+.tech-badge{padding:10px 20px;border:1px solid rgba(0,168,107,.3);background:rgba(0,168,107,.08);font-size:18px;font-weight:500;color:var(--green);text-transform:uppercase;letter-spacing:.02em}
 
 /* Stack grid */
-.stack-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;max-width:580px;width:100%;margin-top:12px}
-.stack-item{background:rgba(42,42,62,.6);border:1px solid rgba(0,168,107,.15);padding:14px;text-align:center}
-.stack-item .stack-icon{font-size:24px;margin-bottom:4px}
-.stack-item .stack-name{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.02em}
-.stack-item .stack-desc{font-size:10px;color:rgba(240,244,255,.5);margin-top:3px;font-weight:400}
+.stack-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;max-width:900px;width:100%;margin-top:16px}
+.stack-item{background:rgba(42,42,62,.6);border:1px solid rgba(0,168,107,.15);padding:24px;text-align:center}
+.stack-item .stack-icon{font-size:40px;margin-bottom:8px}
+.stack-item .stack-name{font-size:20px;font-weight:700;text-transform:uppercase;letter-spacing:.02em}
+.stack-item .stack-desc{font-size:16px;color:rgba(240,244,255,.5);margin-top:4px;font-weight:400}
 
 /* Big stat */
-.big-stat{font-size:clamp(48px,12vw,84px);font-weight:900;color:var(--yellow);text-align:center;line-height:1;font-family:'JetBrains Mono',monospace}
-.stat-label{font-size:clamp(12px,2.5vw,18px);color:rgba(240,244,255,.5);text-align:center;margin-top:4px;text-transform:uppercase;letter-spacing:.05em;font-weight:500}
+.big-stat{font-size:140px;font-weight:900;color:var(--yellow);text-align:center;line-height:1;font-family:'JetBrains Mono',monospace}
+.stat-label{font-size:24px;color:rgba(240,244,255,.5);text-align:center;margin-top:8px;text-transform:uppercase;letter-spacing:.05em;font-weight:500}
 
 /* Vibe mark */
-.vibe-mark{font-size:clamp(42px,8vw,64px);margin-bottom:4px;text-align:center}
+.vibe-mark{font-size:80px;margin-bottom:8px;text-align:center}
 
-/* Responsive: hide sidebar on narrow screens */
-@media(max-width:640px){
-  #sidebar{width:110px;padding:12px 6px}
-  #sidebar .qr-box img{width:80px;height:80px}
-  #sidebar .qr-label{font-size:8px}
-  #sidebar .qr-url{font-size:8px}
-  #sidebar .qr-hint{display:none}
-  #sidebar .vibe-mini{font-size:22px}
-  .slide{padding:30px 20px}
-}
-@media(max-width:420px){
-  #sidebar{width:80px;padding:8px 4px}
-  #sidebar .qr-box{padding:6px}
-  #sidebar .qr-box img{width:60px;height:60px}
-  #sidebar .qr-label{font-size:7px}
-  #sidebar .qr-url{display:none}
-  #sidebar .vibe-mini{font-size:18px}
-}
+/* Nav — positioned relative to viewport, not canvas */
+#nav{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:16px;z-index:1000;background:rgba(10,26,63,.9);border-radius:32px;padding:8px 18px;border:1px solid rgba(0,168,107,.3)}
+#nav button{background:none;border:none;color:var(--white);font-size:22px;cursor:pointer;padding:4px 12px;border-radius:8px;transition:background .2s}
+#nav button:active{background:rgba(0,168,107,.3)}
+#nav button:disabled{opacity:.3;cursor:default}
+#counter{font-size:13px;color:rgba(240,244,255,.5);font-family:'JetBrains Mono',monospace;min-width:40px;text-align:center}
+#dots{display:flex;gap:5px}
+.dot{width:7px;height:7px;border-radius:50%;background:rgba(0,168,107,.25);transition:background .3s}
+.dot.active{background:var(--green)}
+
+#kbd-hint{position:fixed;bottom:20px;right:24px;font-size:12px;color:rgba(240,244,255,.2);font-family:'JetBrains Mono',monospace;z-index:1000}
 </style>
 </head>
 <body>
-<div id="app">
+<div id="canvas">
 
-<!-- QR Sidebar — always visible -->
+<!-- QR Sidebar -->
 <div id="sidebar">
   <div class="vibe-mini">⚡</div>
   <div class="qr-label">Scan to Drive</div>
   <div class="qr-box">
     <img src="qr-code.png" alt="QR Code">
   </div>
-  <div class="qr-url">hermes.tail<br>8277f.ts.net</div>
+  <div class="qr-url">hermes.tail8277f.ts.net</div>
   <div class="qr-hint">No install needed</div>
 </div>
 
-<!-- Main deck -->
+<!-- Deck -->
 <div id="deck-area">
 
 <!-- Slide 1: Title -->
@@ -160,7 +147,7 @@ h3{font-size:clamp(16px,3.5vw,24px);font-weight:700;text-transform:uppercase;let
   <div class="accent-line"></div>
   <div class="big-stat">12m</div>
   <div class="stat-label">Tidal range — one of the world's largest</div>
-  <ul class="feature-list" style="margin-top:24px">
+  <ul class="feature-list" style="margin-top:40px">
     <li><span class="icon">🇯🇪</span> Real local data — Jersey weather, Jersey tides, Jersey restaurants</li>
     <li><span class="icon">📍</span> Built for vibe.je — this is OUR island</li>
     <li><span class="icon">🔗</span> food.je integration — drive past a restaurant, tap to order</li>
@@ -171,7 +158,7 @@ h3{font-size:clamp(16px,3.5vw,24px);font-weight:700;text-transform:uppercase;let
 <div class="slide" id="s4">
   <h2>How We Built It</h2>
   <div class="accent-line"></div>
-  <p class="subtitle" style="margin-bottom:12px">90 minutes. Zero cloud cost. Full AI orchestration.</p>
+  <p class="subtitle" style="margin-bottom:16px">90 minutes. Zero cloud cost. Full AI orchestration.</p>
   <div class="stack-grid">
     <div class="stack-item">
       <div class="stack-icon">🏠</div>
@@ -204,7 +191,7 @@ h3{font-size:clamp(16px,3.5vw,24px);font-weight:700;text-transform:uppercase;let
       <div class="stack-desc">3D terrain, car, lighting — vanilla JS</div>
     </div>
   </div>
-  <div class="tech-grid" style="margin-top:16px">
+  <div class="tech-grid" style="margin-top:24px">
     <span class="tech-badge">No API keys</span>
     <span class="tech-badge">No build step</span>
     <span class="tech-badge">No cloud bill</span>
@@ -232,13 +219,13 @@ h3{font-size:clamp(16px,3.5vw,24px);font-weight:700;text-transform:uppercase;let
   </div>
 </div>
 
-<!-- Slide 6: Try It (QR is already in sidebar, this is the prompt slide) -->
+<!-- Slide 6: Try It -->
 <div class="slide" id="s6">
   <h2>Try It Now</h2>
   <div class="accent-line"></div>
-  <p class="subtitle" style="margin-top:20px">Scan the QR code on the left 👈</p>
+  <p class="subtitle" style="margin-top:40px">Scan the QR code on the left 👈</p>
   <p class="tagline">Drive Jersey in 5 seconds</p>
-  <p class="note" style="margin-top:30px">No download · No install · No sign-up<br>Just open the URL and drive</p>
+  <p class="note" style="margin-top:40px">No download · No install · No sign-up<br>Just open the URL and drive</p>
 </div>
 
 <!-- Slide 7: Close -->
@@ -247,13 +234,13 @@ h3{font-size:clamp(16px,3.5vw,24px);font-weight:700;text-transform:uppercase;let
   <h1>Vibe Drive<br>Jersey</h1>
   <div class="accent-line"></div>
   <p class="tagline">Real island. Real data. Real fun.</p>
-  <p class="note" style="margin-top:30px">Built at vibe.je hackathon · Good Vibes #2<br>Will Wilson · 20 August 2026</p>
+  <p class="note" style="margin-top:40px">Built at vibe.je hackathon · Good Vibes #2<br>Will Wilson · 20 August 2026</p>
 </div>
 
 </div><!-- /deck-area -->
-</div><!-- /app -->
+</div><!-- /canvas -->
 
-<!-- Nav -->
+<!-- Nav (fixed to viewport) -->
 <div id="nav">
   <button id="prev">◀</button>
   <div id="dots"></div>
@@ -263,6 +250,17 @@ h3{font-size:clamp(16px,3.5vw,24px);font-weight:700;text-transform:uppercase;let
 <div id="kbd-hint">← →</div>
 
 <script>
+// Scale 1920x1080 canvas to fit viewport
+function fitCanvas(){
+  const w=window.innerWidth;
+  const h=window.innerHeight;
+  const scale=Math.min(w/1920,h/1080);
+  document.documentElement.style.setProperty('--scale',scale);
+}
+fitCanvas();
+window.addEventListener('resize',fitCanvas);
+
+// Slide navigation
 const slides=document.querySelectorAll('.slide');
 const dotsContainer=document.getElementById('dots');
 const counter=document.getElementById('counter');
@@ -282,6 +280,7 @@ function show(n){
   if(n>=total)n=total-1;
   if(n===current)return;
   slides.forEach(s=>s.classList.remove('active','prev'));
+  if(n>0&&n<current)slides[n+1]&&slides[n+1].classList.add('prev');
   if(n>0)slides[n-1].classList.add('prev');
   slides[n].classList.add('active');
   document.querySelectorAll('.dot').forEach((d,i)=>d.classList.toggle('active',i===n));
@@ -303,7 +302,7 @@ document.addEventListener('touchend',e=>{
   if(Math.abs(dx)>50)show(dx<0?current+1:current-1);
 },{passive:true});
 
-// Keyboard navigation — left/right arrows + space
+// Keyboard
 document.addEventListener('keydown',e=>{
   if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();show(current+1);}
   if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();show(current-1);}
