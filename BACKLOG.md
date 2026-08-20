@@ -28,21 +28,28 @@
 ## OPEN TICKETS — Phase 1: Multiplayer & Leaderboard
 ## ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-### T-MULTIPLAYER: Real-time multiplayer visibility
+### T-MULTIPLAYER: Real-time multiplayer (Supabase Realtime, 3-5 players)
 **Priority:** HIGH | **Effort:** HIGH | **Status:** OPEN
 
-Show other actual human players online on the same map, visible on each other's radar and in the 3D world.
+Real-time multiplayer using Supabase Realtime channels on CT707 (100.105.179.50:8000).
 
-**Requirements:**
-- WebSocket server (Node.js on Hermes box, port 5174)
-- Player position broadcast: {x, z, heading, speed, vehicleMode, username}
-- Other players rendered as cars/boats/planes in the 3D scene
-- Other players visible on radar as colored dots with names
+**Architecture (DECIDED: Supabase, not raw WebSocket):**
+- Use Supabase Realtime (already running, healthy) for player position broadcasts
+- @supabase/supabase-js from CDN in index.html
+- Channel: `vibedrive:jersey` (room-based)
+
+**Player constraints:**
+- Player limit: 3-5 concurrent
+- Auto-disconnect: idle 10 minutes, online 2 hours max
+- Reconnect on disconnect (retry 3x with 2s backoff)
 - Player count indicator in HUD
-- Reconnect on disconnect
-- Room code system (default: "jersey") so kids can play together
 
-**Dependencies:** None (standalone WebSocket server)
+**Client rendering:**
+- Other players rendered as vehicles in 3D scene + radar dots with names
+- Position broadcast at 10Hz, heartbeat at 1Hz
+- Player vehicle color = hash of username
+
+**Dependencies:** T-USERNAMES | **Infrastructure:** Ready (Supabase realtime running)
 
 ### T-USERNAMES: Username system
 **Priority:** HIGH | **Effort:** LOW | **Status:** OPEN
@@ -58,17 +65,23 @@ Let players set a username that persists across sessions.
 
 **Dependencies:** None (localStorage only for single-player; T-MULTIPLAYER for online)
 
-### T-LEADERBOARD: Persistent leaderboard
+### T-LEADERBOARD: Persistent leaderboard (Supabase)
 **Priority:** HIGH | **Effort:** MEDIUM | **Status:** OPEN
 
-Server-backed persistent leaderboard for highest scores.
+Server-backed persistent leaderboard using Supabase on CT707 (100.105.179.50:8000).
 
-**Requirements:**
-- Leaderboard API (Node.js endpoint on Hermes box)
-- Store: username, score, distance, missions completed, timestamp
-- Top 10 displayed in-game (accessible via button)
-- SQLite or JSON file for persistence
-- Leaderboard view: rank | name | score | distance | date
+**Database (ALREADY PROVISIONED):**
+- `players` table: {id UUID, username TEXT UNIQUE, avatar_url TEXT, best_time INT, total_drives INT, created_at, updated_at}
+- `scores` table: {id UUID, username TEXT, score INT, mode TEXT, duration_seconds INT, created_at}
+- RLS policies: public can INSERT/SELECT/UPDATE on both tables
+- Realtime publication enabled on both tables
+- 4 sample scores already in database
+
+**Client integration:**
+- Embed Supabase anon key + API URL in index.html
+- Use @supabase/supabase-js from CDN or direct REST calls
+- Leaderboard button in HUD → modal showing top 10
+- Auto-submit score on session end or landmark achievement
 
 **Dependencies:** T-USERNAMES
 
