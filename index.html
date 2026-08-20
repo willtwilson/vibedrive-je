@@ -90,6 +90,40 @@
       font-size: 11px; color: #8899bb; pointer-events: none; opacity: 0; transition: opacity 0.3s;
     }
     #steer-hint.show { opacity: 1; }
+
+    #score-display {
+      position: fixed; top: 12px; left: 50%; transform: translateX(-50%); z-index: 50;
+      background: rgba(10, 10, 30, 0.75); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      border-radius: 14px; padding: 8px 18px;
+      border: 1px solid rgba(255, 221, 68, 0.3);
+      font-size: 16px; font-weight: 700; color: #ffdd44; font-family: monospace;
+      pointer-events: none; white-space: nowrap;
+      text-shadow: 0 0 8px rgba(255, 221, 68, 0.3);
+    }
+    #score-display .high-score { font-size: 11px; color: #888; font-weight: 400; margin-top: 2px; text-align: center; }
+
+    #toast {
+      position: fixed; top: 60px; left: 50%; transform: translateX(-50%) translateY(-20px); z-index: 55;
+      background: rgba(10, 10, 30, 0.9); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      border-radius: 12px; padding: 10px 24px;
+      border: 1px solid rgba(255, 221, 68, 0.4);
+      font-size: 15px; font-weight: 600; color: #ffdd44;
+      pointer-events: none; opacity: 0; transition: opacity 0.4s, transform 0.4s;
+      white-space: nowrap; text-shadow: 0 0 8px rgba(255, 221, 68, 0.3);
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    #ad-popup {
+      position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%) translateY(20px);
+      z-index: 60; background: rgba(10,10,30,0.9); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      border-radius: 12px; padding: 12px 20px; text-align: center;
+      border: 1px solid rgba(255,215,0,0.4); pointer-events: none;
+      opacity: 0; transition: opacity 0.3s, transform 0.3s; max-width: 320px;
+    }
+    #ad-popup.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    #ad-popup .ad-name { font-size: 16px; font-weight: 700; color: #fff; }
+    #ad-popup .ad-tag { font-size: 12px; color: #ccc; margin-top: 2px; }
+    #ad-popup .ad-pts { font-size: 14px; color: #ffdd44; font-weight: 700; margin-top: 4px; }
   </style>
 </head>
 <body>
@@ -110,7 +144,7 @@
 
   <div id="modes">
     <button class="mode-btn active" data-mode="drive">🚗 Drive</button>
-    <button class="mode-btn disabled" data-mode="boat">🚤 Boat</button>
+    <button class="mode-btn" data-mode="boat">🚤 Boat</button>
     <button class="mode-btn" data-mode="fly">✈️ Fly</button>
   </div>
 
@@ -138,6 +172,15 @@
   <div id="badge">vibe.je hackathon · 3D terrain · real weather</div>
   <div id="steer-hint">👆 Touch and drag anywhere to steer</div>
 
+  <div id="score-display">🏆 Score: 0 | 🛣️ 0.0 km<div class="high-score" id="high-score"></div></div>
+  <div id="toast"></div>
+
+  <div id="ad-popup">
+    <div class="ad-name" id="ad-name"></div>
+    <div class="ad-tag" id="ad-tag"></div>
+    <div class="ad-pts">+5 pts</div>
+  </div>
+
   <script type="importmap">
   { "imports": { "three": "https://unpkg.com/three@0.185.0/build/three.module.js" } }
   </script>
@@ -160,8 +203,8 @@
     document.body.appendChild(renderer.domElement);
 
     // ====== LIGHTING ======
-    const ambientLight = new THREE.AmbientLight(0x9090bb, 0.6);
-    scene.add(ambientLight);
+    const hemiLight = new THREE.HemisphereLight(0x87CEEB, 0x3a5a2a, 0.8);
+    scene.add(hemiLight);
     const sunLight = new THREE.DirectionalLight(0xffffee, 1.0);
     sunLight.position.set(100, 200, 100);
     sunLight.castShadow = true;
@@ -171,6 +214,86 @@
     sunLight.shadow.camera.top = 500; sunLight.shadow.camera.bottom = -500;
     sunLight.shadow.camera.far = 800;
     scene.add(sunLight);
+
+    // --- Time-based sky & sun arc ---
+    function getTimeOfDay() {
+      const h = new Date().getHours();
+      if (h >= 6 && h < 8) return 'dawn';
+      if (h >= 8 && h < 17) return 'day';
+      if (h >= 17 && h < 20) return 'dusk';
+      return 'night';
+    }
+    const skyColors = { dawn: 0xff8844, day: 0x87CEEB, dusk: 0xff6644, night: 0x0a0a1e };
+    function applySkyAndSun() {
+      const tod = getTimeOfDay();
+      const skyHex = skyColors[tod];
+      scene.background = new THREE.Color(skyHex);
+      scene.fog = new THREE.Fog(skyHex, tod === 'night' ? 100 : 200, tod === 'night' ? 500 : 1000);
+      // Sun arc: angle based on hour (6am=0° east, 6pm=180° west, 12pm=90° overhead)
+      const h = new Date().getHours() + new Date().getMinutes() / 60;
+      const sunAngle = ((h - 6) / 12) * Math.PI; // 0 at 6am, PI at 6pm
+      const sunRadius = 300;
+      const sunX = Math.cos(sunAngle) * sunRadius;
+      const sunY = Math.sin(sunAngle) * sunRadius;
+      sunLight.position.set(sunX, Math.max(sunY, 50), 100);
+      if (tod === 'night') {
+        sunLight.intensity = 0.15;
+        sunLight.color.setHex(0x4466aa);
+        hemiLight.intensity = 0.25;
+        hemiLight.color.setHex(0x1a1a3e);
+        hemiLight.groundColor.setHex(0x1a2a1a);
+        // Show moon
+        if (moonMesh) moonMesh.visible = true;
+        // Make buildings emissive at night
+        buildingMat.emissive.setHex(0x332211); buildingMat.emissiveIntensity = 0.3;
+        buildingMat2.emissive.setHex(0x332211); buildingMat2.emissiveIntensity = 0.3;
+        roofMat.emissive.setHex(0x221100); roofMat.emissiveIntensity = 0.2;
+      } else if (tod === 'dawn' || tod === 'dusk') {
+        sunLight.intensity = 0.7;
+        sunLight.color.setHex(0xff8844);
+        hemiLight.intensity = 0.5;
+        hemiLight.color.setHex(0xff8844);
+        hemiLight.groundColor.setHex(0x3a5a2a);
+        if (moonMesh) moonMesh.visible = false;
+        buildingMat.emissive.setHex(0x000000); buildingMat2.emissive.setHex(0x000000);
+        roofMat.emissive.setHex(0x000000);
+      } else {
+        sunLight.intensity = 1.0;
+        sunLight.color.setHex(0xffffee);
+        hemiLight.intensity = 0.8;
+        hemiLight.color.setHex(0x87CEEB);
+        hemiLight.groundColor.setHex(0x3a5a2a);
+        if (moonMesh) moonMesh.visible = false;
+        buildingMat.emissive.setHex(0x000000); buildingMat2.emissive.setHex(0x000000);
+        roofMat.emissive.setHex(0x000000);
+      }
+    }
+
+    // --- Moon (visible at night) ---
+    const moonGeo = new THREE.SphereGeometry(15, 16, 16);
+    const moonMat = new THREE.MeshStandardMaterial({ color: 0xeeeecc, emissive: 0xddddee, emissiveIntensity: 0.8 });
+    const moonMesh = new THREE.Mesh(moonGeo, moonMat);
+    moonMesh.position.set(200, 150, 0);
+    moonMesh.visible = false;
+    scene.add(moonMesh);
+
+    // --- Clouds (6 flat white planes drifting in +x, wrap around) ---
+    const clouds = [];
+    const cloudGeo = new THREE.PlaneGeometry(40, 20);
+    const cloudMat = new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.7, roughness: 1.0, side: THREE.DoubleSide });
+    for (let i = 0; i < 6; i++) {
+      const cloud = new THREE.Mesh(cloudGeo, cloudMat);
+      cloud.position.set(
+        -300 + Math.random() * 600,
+        80 + Math.random() * 40,
+        -200 + Math.random() * 400
+      );
+      cloud.rotation.x = -Math.PI / 2; // flat horizontal
+      cloud.rotation.z = Math.random() * Math.PI;
+      cloud.userData = { speed: 0.5 + Math.random() * 1.0 };
+      clouds.push(cloud);
+      scene.add(cloud);
+    }
 
     // ====== TERRAIN ======
     const ISLAND_SIZE = 400, TERRAIN_SEGMENTS = 128, MAX_HEIGHT = 35;
@@ -274,6 +397,50 @@
     });
     scene.add(buildingGroup);
 
+    // Apply time-based sky and sun (must be after building materials are defined)
+    applySkyAndSun();
+    setInterval(applySkyAndSun, 60000); // re-check every minute
+
+    // ====== REWARDS SYSTEM ======
+    let score = 0;
+    let totalDistance = 0; // in game units (meters)
+    let highScore = parseInt(localStorage.getItem('vibeDriveHighScore') || '0', 10);
+    const landmarks = [
+      { name: '🏰 Mont Orgueil Castle', x: 95, z: -25, awarded: false },
+      { name: '🗼 La Corbière Lighthouse', x: -120, z: 85, awarded: false },
+      { name: '🏰 Elizabeth Castle', x: 15, z: 90, awarded: false },
+    ];
+    let speedTimer = 0; // seconds above 60 km/h
+    let speedBonusAwarded = false;
+    const scoreDisplay = document.getElementById('score-display');
+    const highScoreEl = document.getElementById('high-score');
+    const toastEl = document.getElementById('toast');
+    let toastTimeout = null;
+
+    function showToast(msg) {
+      toastEl.textContent = msg;
+      toastEl.classList.add('show');
+      if (toastTimeout) clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => { toastEl.classList.remove('show'); }, 3000);
+    }
+
+    function addPoints(pts, msg) {
+      score += pts;
+      showToast(msg);
+      if (score > highScore) {
+        highScore = score;
+        localStorage.setItem('vibeDriveHighScore', String(highScore));
+      }
+    }
+
+    function updateScoreDisplay() {
+      const km = (totalDistance / 1000).toFixed(1);
+      scoreDisplay.childNodes[0].textContent = `🏆 Score: ${score} | 🛣️ ${km} km`;
+      highScoreEl.textContent = `Best: ${highScore}`;
+    }
+
+    updateScoreDisplay();
+
     // ====== LANDMARKS ======
     // Mont Orgueil Castle (Gorey - east coast)
     function addCastle(x, z) {
@@ -317,6 +484,94 @@
       scene.add(castle);
     }
     addElizabethCastle(15, 90); // Elizabeth Castle in the bay
+
+    // ====== ADVERTISING BILLBOARDS ======
+    const businesses = [
+      {"name":"Pinpoint","tagline":"Vibe.je Hackathon HQ · One Waverley Place","color":"#cc2222","x":5,"z":45,"primary":true},
+      {"name":"food.je","tagline":"Order Takeaway Online in Jersey","color":"#ff6600","x":-5,"z":55},
+      {"name":"Bohemia","tagline":"Fine Dining · St Helier","color":"#1a1a2e","x":10,"z":58},
+      {"name":"Jersey Dairy","tagline":"Fresh from the Herd","color":"#0066cc","x":-30,"z":60},
+      {"name":"Jersey Royal","tagline":"Jersey's Finest Spuds","color":"#22aa44","x":40,"z":50},
+      {"name":"LibertyBus","tagline":"Get Around Jersey","color":"#ffcc00","x":-10,"z":65},
+      {"name":"Ports of Jersey","tagline":"Gateway to the Channel Islands","color":"#1a3a6a","x":20,"z":70},
+      {"name":"Jersey Telecom","tagline":"Connect with JT","color":"#6633cc","x":-40,"z":55},
+      {"name":"Tekex.je","tagline":"Tech Innovation Jersey","color":"#008888","x":0,"z":40},
+      {"name":"vibe.je","tagline":"Good Vibes Only","color":"#00ccff","x":0,"z":48}
+    ];
+    const billboards = [];
+    const adPopup = document.getElementById('ad-popup');
+    const adNameEl = document.getElementById('ad-name');
+    const adTagEl = document.getElementById('ad-tag');
+    let adScored = new Set(); // track which billboards already awarded points
+
+    businesses.forEach(biz => {
+      const isPrimary = biz.primary === true;
+      const bbW = isPrimary ? 8 : 6;
+      const bbH = isPrimary ? 4 : 3;
+      const poleH = 4;
+
+      // Create canvas texture
+      const canvas = document.createElement('canvas');
+      canvas.width = 256; canvas.height = 128;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = biz.color;
+      ctx.fillRect(0, 0, 256, 128);
+      // Gold border for Pinpoint
+      if (isPrimary) {
+        ctx.strokeStyle = '#ffd700';
+        ctx.lineWidth = 8;
+        ctx.strokeRect(4, 4, 248, 120);
+      }
+      // Business name
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 22px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(biz.name, 128, 45);
+      // Tagline
+      ctx.font = '13px sans-serif';
+      ctx.fillText(biz.tagline, 128, 85);
+
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.minFilter = THREE.LinearFilter;
+
+      // Billboard group
+      const group = new THREE.Group();
+      const groundY = getTerrainHeight(biz.x, biz.z);
+
+      // Pole
+      const poleGeo = new THREE.CylinderGeometry(0.2, 0.2, poleH);
+      const poleMat = new THREE.MeshStandardMaterial({ color: 0x444444, roughness: 0.8 });
+      const pole = new THREE.Mesh(poleGeo, poleMat);
+      pole.position.set(0, poleH / 2, 0);
+      pole.castShadow = true;
+      group.add(pole);
+
+      // Board
+      const boardGeo = new THREE.PlaneGeometry(bbW, bbH);
+      const boardMat = new THREE.MeshStandardMaterial({ map: texture, side: THREE.DoubleSide, roughness: 0.6 });
+      const board = new THREE.Mesh(boardGeo, boardMat);
+      board.position.set(0, poleH + bbH / 2, 0);
+      board.castShadow = true;
+      group.add(board);
+
+      group.position.set(biz.x, groundY, biz.z);
+
+      // Face toward center of map (0, -50)
+      const angleToCenter = Math.atan2(0 - biz.x, -50 - biz.z);
+      group.rotation.y = angleToCenter;
+
+      scene.add(group);
+      billboards.push({ mesh: group, x: biz.x, z: biz.z, name: biz.name, tagline: biz.tagline, isPrimary });
+    });
+
+    let adPopupTimer = 0;
+    function showAdPopup(name, tagline) {
+      adNameEl.textContent = name;
+      adTagEl.textContent = tagline;
+      adPopup.classList.add('show');
+      adPopupTimer = 3.0; // show for 3 seconds
+    }
 
     // ====== BIRDS ======
     const birds = [];
@@ -376,8 +631,63 @@
       return plane;
     }
 
+    // ====== BOAT FACTORY ======
+    function createBoat(color) {
+      const boat = new THREE.Group();
+      // Hull: BoxGeometry(3,1,8) white/blue
+      const hullMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4, metalness: 0.3 });
+      const hull = new THREE.Mesh(new THREE.BoxGeometry(3, 1, 8), hullMat);
+      hull.position.y = 0; hull.castShadow = true; boat.add(hull);
+      // Blue stripe on hull
+      const stripeMat = new THREE.MeshStandardMaterial({ color: 0x2266cc, roughness: 0.4, metalness: 0.3 });
+      const stripe = new THREE.Mesh(new THREE.BoxGeometry(3.02, 0.3, 8), stripeMat);
+      stripe.position.y = -0.2; boat.add(stripe);
+      // Cabin: BoxGeometry(2,0.8,3) on top
+      const cabin = new THREE.Mesh(new THREE.BoxGeometry(2, 0.8, 3), new THREE.MeshStandardMaterial({ color, roughness: 0.4, metalness: 0.4 }));
+      cabin.position.set(0, 0.9, -0.5); cabin.castShadow = true; boat.add(cabin);
+      // Mast: CylinderGeometry(0.1,0.1,4) vertical
+      const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 4, 8), new THREE.MeshStandardMaterial({ color: 0x444444, roughness: 0.6 }));
+      mast.position.set(0, 2.5, 0); mast.castShadow = true; boat.add(mast);
+      // Sail: PlaneGeometry(2,3) white triangle
+      const sailGeo = new THREE.PlaneGeometry(2, 3);
+      const sailMat = new THREE.MeshStandardMaterial({ color: 0xffffff, side: THREE.DoubleSide, roughness: 0.7 });
+      const sail = new THREE.Mesh(sailGeo, sailMat);
+      sail.position.set(1, 2.5, 0); sail.castShadow = true; boat.add(sail);
+      // Triangle shape via vertex manipulation — make it a triangular sail
+      const sailPos = sail.geometry.attributes.position;
+      sailPos.setZ(2, 0); sailPos.setZ(3, 0); // narrow bottom to point
+      sailPos.setX(2, 0); sailPos.setX(3, 0);
+      sail.geometry.computeVertexNormals();
+      return boat;
+    }
+
+    // ====== HARBOR MARKERS (red buoys on poles) ======
+    function addBuoy(x, z) {
+      const buoyGroup = new THREE.Group();
+      // Pole
+      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 6, 8), new THREE.MeshStandardMaterial({ color: 0x666666, roughness: 0.6 }));
+      pole.position.y = 3; pole.castShadow = true; buoyGroup.add(pole);
+      // Red buoy sphere
+      const buoy = new THREE.Mesh(new THREE.SphereGeometry(0.8, 12, 12), new THREE.MeshStandardMaterial({ color: 0xff2222, roughness: 0.4, emissive: 0x660000, emissiveIntensity: 0.3 }));
+      buoy.position.y = 1; buoy.castShadow = true; buoyGroup.add(buoy);
+      // Top light
+      const light = new THREE.Mesh(new THREE.SphereGeometry(0.25, 8, 8), new THREE.MeshStandardMaterial({ color: 0xffffaa, emissive: 0xffff88, emissiveIntensity: 1 }));
+      light.position.y = 6.2; buoyGroup.add(light);
+      buoyGroup.position.set(x, -3, z);
+      buoyGroup.userData = { baseX: x, baseZ: z, isBuoy: true };
+      scene.add(buoyGroup);
+      return buoyGroup;
+    }
+    const buoys = [
+      addBuoy(0, 60),     // St Helier
+      addBuoy(-100, 20),  // St Brelade
+      addBuoy(90, -20),   // Gorey
+    ];
+
     const carGroup = createCar(0xcc2222);
     scene.add(carGroup);
+    // Keep a reference to the original car for mode restoration
+    const originalCar = carGroup;
 
     // ====== AI PLAYERS ======
     const aiCars = [];
@@ -397,26 +707,29 @@
     // ====== GAME STATE ======
     let vehicleMode = 'drive'; // 'drive' or 'fly'
     let carX = 0, carZ = 50, carHeading = 0, carSpeed = 0;
+    let lateralVelocity = 0; // lateral slide momentum for sharp turns
     let planeAlt = 0; // altitude for plane mode
     const MAX_SPEED = 80, ACCEL = 30, BRAKE = 60, FRICTION = 10, TURN_RATE = 1.5;
     carGroup.position.set(carX, getTerrainHeight(carX, carZ) + 0.5, carZ);
 
     // ====== CONTROLS ======
-    const keys = { up: false, down: false, left: false, right: false };
+    const keys = { up: false, down: false, left: false, right: false, handbrake: false };
     let steerValue = 0;
 
-    // Keyboard
+    // Keyboard — arrow keys AND WASD both work; space = handbrake
     document.addEventListener('keydown', (e) => {
       if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') keys.up = true;
       if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') keys.down = true;
       if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') keys.left = true;
       if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') keys.right = true;
+      if (e.key === ' ') { keys.handbrake = true; e.preventDefault(); }
     });
     document.addEventListener('keyup', (e) => {
       if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') keys.up = false;
       if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') keys.down = false;
       if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') keys.left = false;
       if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') keys.right = false;
+      if (e.key === ' ') keys.handbrake = false;
     });
 
     // Touch buttons — bind to ALL events for max compatibility
@@ -450,7 +763,8 @@
       if (!target) return false;
       return target.closest('#hud') || target.closest('#modes') || target.closest('#controls') ||
              target.closest('#cam-btns') || target.closest('#radar') || target.closest('#radar-label') ||
-             target.closest('#badge') || target.closest('#steer-hint') || target.closest('#loading');
+             target.closest('#badge') || target.closest('#steer-hint') || target.closest('#loading') ||
+             target.closest('#ad-popup') || target.closest('#score-display') || target.closest('#toast');
     }
 
     document.addEventListener('pointerdown', (e) => {
@@ -498,9 +812,26 @@
           document.getElementById('mode-name').textContent = '✈️ Fly Mode';
           document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
           btn.classList.add('active');
+        } else if (mode === 'boat') {
+          vehicleMode = 'boat';
+          // Replace car with boat
+          scene.remove(carGroup);
+          const boat = createBoat(0xcc2222);
+          scene.add(boat);
+          carGroup.copy(boat);
+          carGroup.position.copy(boat.position);
+          document.getElementById('mode-name').textContent = '🚤 Boat Mode';
+          document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
         } else if (mode === 'drive') {
           vehicleMode = 'drive';
           planeAlt = 0;
+          // Restore original car
+          scene.remove(carGroup);
+          const newCar = createCar(0xcc2222);
+          scene.add(newCar);
+          carGroup.copy(newCar);
+          carGroup.position.copy(newCar.position);
           document.getElementById('mode-name').textContent = '🚗 Drive Mode';
           document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
           btn.classList.add('active');
@@ -583,6 +914,21 @@
       radarCtx.closePath();
       radarCtx.fill();
 
+      // Billboards on radar
+      if (typeof billboards !== 'undefined') {
+        billboards.forEach(bb => {
+          const dx = (bb.x - carX) * scale;
+          const dz = (bb.z - carZ) * scale;
+          const dist = Math.sqrt(dx*dx + dz*dz);
+          if (dist < RADAR_SIZE/2) {
+            radarCtx.fillStyle = bb.isPrimary ? '#ffd700' : '#ff66ff';
+            radarCtx.beginPath();
+            radarCtx.arc(cx + dx, cy + dz, bb.isPrimary ? 4 : 2.5, 0, Math.PI * 2);
+            radarCtx.fill();
+          }
+        });
+      }
+
       // Sweep line
       const sweepAngle = (performance.now() / 1000) % (Math.PI * 2);
       radarCtx.strokeStyle = 'rgba(0, 255, 80, 0.25)';
@@ -605,27 +951,78 @@
       const dt = Math.min((now - lastTime) / 1000, 0.1);
       lastTime = now;
 
-      // Vehicle physics
-      if (keys.up) carSpeed += ACCEL * dt;
-      else if (keys.down) carSpeed -= BRAKE * dt;
-      else carSpeed -= FRICTION * dt;
+      // ====== TIDE ANIMATION ======
+      const tideLevel = -3 + Math.sin(now * 0.0005) * 2; // oscillates between -5 and -1
+      water.position.y = tideLevel;
+
+      // ====== VEHICLE PHYSICS ======
+      // Boat physics: ACCEL/2, wider turning (TURN_RATE*0.6), more momentum (FRICTION/2)
+      const accel = vehicleMode === 'boat' ? ACCEL / 2 : ACCEL;
+      const friction = vehicleMode === 'boat' ? FRICTION / 2 : FRICTION;
+      const turnRate = vehicleMode === 'boat' ? TURN_RATE * 0.6 : TURN_RATE;
+      // Vehicle physics — improved with exponential accel, proportional brake, speed-sensitive turning
+      if (keys.up) {
+        // (1) Exponential acceleration ramp — slows as approaching MAX_SPEED
+        carSpeed += accel * dt * (1 - carSpeed / MAX_SPEED);
+      } else if (keys.down) {
+        if (carSpeed > 0) {
+          // (2) Braking proportional to speed
+          const brakeForce = BRAKE * dt * (Math.abs(carSpeed) / MAX_SPEED + 0.3);
+          carSpeed -= brakeForce;
+        } else {
+          // (7) Reverse — accelerate backwards at half rate
+          carSpeed -= accel * dt * 0.5 * (1 - Math.abs(carSpeed) / 20);
+        }
+      } else {
+        // Natural friction / engine braking — handbrake reduces friction for more slide
+        const frictionRate = keys.handbrake ? 2 : friction;
+        if (carSpeed > 0) carSpeed -= frictionRate * dt;
+        else if (carSpeed < 0) carSpeed += frictionRate * dt;
+      }
       carSpeed = Math.max(-20, Math.min(MAX_SPEED, carSpeed));
       if (Math.abs(carSpeed) < 0.3) carSpeed = 0;
 
-      // Steering
+      // (3) Turning — turn rate inversely proportional to speed
       if (Math.abs(carSpeed) > 1) {
-        const turnFactor = TURN_RATE * dt * (carSpeed / MAX_SPEED);
-        if (keys.left) carHeading += turnFactor * 2;
-        if (keys.right) carHeading -= turnFactor * 2;
-        if (Math.abs(steerValue) > 0.05) carHeading -= steerValue * turnFactor * 3;
+        const turnFactor = turnRate * dt * (1 - Math.abs(carSpeed) / MAX_SPEED * 0.5);
+        const dir = carSpeed > 0 ? 1 : -1; // reverse steering when going backwards
+        if (keys.left) carHeading += turnFactor * 2 * dir;
+        if (keys.right) carHeading -= turnFactor * 2 * dir;
+        if (Math.abs(steerValue) > 0.05) carHeading -= steerValue * turnFactor * 3 * dir;
+
+        // (4) Lateral momentum — on sharp turns, car slides slightly
+        const turnInput = (keys.left ? 1 : 0) - (keys.right ? 1 : 0) - steerValue;
+        const slideFactor = keys.handbrake ? 3.0 : 1.0; // handbrake increases slide
+        lateralVelocity += turnInput * Math.abs(carSpeed) / MAX_SPEED * dt * 8 * slideFactor;
+      }
+      // Decay lateral velocity over time
+      const lateralDecay = keys.handbrake ? 0.90 : 0.92; // handbrake = slower decay = more slide
+      lateralVelocity *= lateralDecay;
+      if (Math.abs(lateralVelocity) < 0.01) lateralVelocity = 0;
+
+      // (5) Terrain slope — sample height at car position and 1 unit ahead
+      const rad = carHeading * Math.PI / 180;
+      const aheadX = carX + Math.sin(rad) * 1;
+      const aheadZ = carZ + Math.cos(rad) * 1;
+      const hHere = getTerrainHeight(carX, carZ);
+      const hAhead = getTerrainHeight(aheadX, aheadZ);
+      if (hAhead > hHere) {
+        // Uphill — reduce speed by 5%
+        carSpeed *= 1 - 0.05 * dt * 10;
+      } else if (hAhead < hHere) {
+        // Downhill — increase speed by 3%
+        carSpeed *= 1 + 0.03 * dt * 10;
       }
 
-      // Movement
-      if (Math.abs(carSpeed) > 0.1) {
+      // Movement — forward + lateral slide
+      if (Math.abs(carSpeed) > 0.1 || Math.abs(lateralVelocity) > 0.01) {
         const dist = carSpeed * 0.3 * dt;
-        const rad = carHeading * Math.PI / 180;
         carX += Math.sin(rad) * dist;
         carZ += Math.cos(rad) * dist;
+        // Apply lateral velocity (perpendicular to heading)
+        const latRad = rad + Math.PI / 2;
+        carX += Math.sin(latRad) * lateralVelocity * dt;
+        carZ += Math.cos(latRad) * lateralVelocity * dt;
       }
 
       if (vehicleMode === 'fly') {
@@ -638,6 +1035,22 @@
         // Spin propeller
         const prop = carGroup.children.find(c => c.userData && c.userData.isProp);
         if (prop) prop.rotation.x += dt * 20;
+      } else if (vehicleMode === 'boat') {
+        // Boat mode: stay on water surface, can't go on land
+        const terrainHeight = getTerrainHeight(carX, carZ);
+        if (terrainHeight > tideLevel) {
+          // Push boat back — can't go on land
+          carSpeed *= 0.3;
+          carX -= Math.sin(carHeading * Math.PI / 180) * 3;
+          carZ -= Math.cos(carHeading * Math.PI / 180) * 3;
+        }
+        // Wave bobbing
+        const bobY = Math.sin(now * 0.003) * 0.3;
+        carGroup.position.set(carX, tideLevel + bobY, carZ);
+        carGroup.rotation.y = carHeading * Math.PI / 180;
+        // Wave-induced pitch and roll
+        carGroup.rotation.x = Math.sin(now * 0.002) * 0.05;
+        carGroup.rotation.z = Math.sin(now * 0.0025 + 1) * 0.05;
       } else {
         // Drive mode
         if (islandMask(carX, carZ) <= 0.05) {
@@ -646,7 +1059,9 @@
           carZ -= Math.cos(carHeading * Math.PI / 180) * 2;
         }
         const terrainHeight = getTerrainHeight(carX, carZ);
-        carGroup.position.set(carX, Math.max(terrainHeight + 0.5, 0), carZ);
+        // (6) Suspension bounce — small sin offset on car Y
+        const suspensionBounce = Math.sin(now * 0.01) * 0.1;
+        carGroup.position.set(carX, Math.max(terrainHeight + 0.5 + suspensionBounce, 0), carZ);
         carGroup.rotation.y = carHeading * Math.PI / 180;
         carGroup.rotation.x = 0;
         const tilt = (keys.left ? 0.05 : keys.right ? -0.05 : 0) - steerValue * 0.05;
@@ -682,6 +1097,60 @@
         bird.scale.y = 1 + Math.sin(now * 0.02 + ud.wingPhase) * 0.3;
       });
 
+      // Buoys — bob with tide
+      buoys.forEach(buoy => {
+        buoy.position.y = tideLevel + Math.sin(now * 0.003 + buoy.userData.baseX * 0.1) * 0.2;
+      });
+
+      // Clouds — drift in +x, wrap around
+      clouds.forEach(cloud => {
+        cloud.position.x += cloud.userData.speed * dt;
+        if (cloud.position.x > 350) cloud.position.x = -350;
+      });
+
+      // ====== REWARDS CHECKING ======
+      // Track distance traveled
+      if (Math.abs(carSpeed) > 0.1) {
+        totalDistance += Math.abs(carSpeed) * 0.3 * dt;
+      }
+
+      // Landmark proximity (+50 each, once per session)
+      landmarks.forEach(lm => {
+        if (lm.awarded) return;
+        const dx = lm.x - carX, dz = lm.z - carZ;
+        const d = Math.sqrt(dx*dx + dz*dz);
+        if (d < 20) {
+          lm.awarded = true;
+          addPoints(50, `🏛️ ${lm.name} discovered! +50 pts`);
+        }
+      });
+
+      // AI car proximity (+10 within 15 units)
+      aiCars.forEach(ai => {
+        const dx = ai.x - carX, dz = ai.z - carZ;
+        const d = Math.sqrt(dx*dx + dz*dz);
+        if (d < 15) {
+          if (!ai.proximityAwarded || now - ai.proximityAwarded > 5000) {
+            ai.proximityAwarded = now;
+            addPoints(10, `🚗 Near ${ai.name}! +10 pts`);
+          }
+        }
+      });
+
+      // Speed bonus (+20 for maintaining speed>60 for 5 seconds)
+      if (Math.abs(carSpeed) > 60) {
+        speedTimer += dt;
+        if (speedTimer >= 5 && !speedBonusAwarded) {
+          speedBonusAwarded = true;
+          addPoints(20, `⚡ Speed demon! 5s above 60 km/h +20 pts`);
+        }
+      } else {
+        speedTimer = 0;
+        speedBonusAwarded = false;
+      }
+
+      updateScoreDisplay();
+
       // Camera
       const camRad = carHeading * Math.PI / 180;
       let camDist, camHeight, camTargetY;
@@ -716,8 +1185,32 @@
       document.getElementById('speed').textContent = `Speed: ${Math.round(Math.abs(carSpeed))} km/h`;
       if (vehicleMode === 'fly') {
         document.getElementById('loc').textContent = `Alt: ${Math.round(planeAlt)}m · Jersey CI`;
+      } else if (vehicleMode === 'boat') {
+        document.getElementById('loc').textContent = `Tide: ${tideLevel.toFixed(1)}m · Jersey CI`;
       } else {
         document.getElementById('loc').textContent = `Jersey, Channel Islands`;
+      }
+
+      // Billboard proximity check
+      let nearestBillboard = null;
+      let nearestDist = Infinity;
+      for (const bb of billboards) {
+        const dx = bb.x - carX, dz = bb.z - carZ;
+        const d = Math.sqrt(dx*dx + dz*dz);
+        if (d < 30 && d < nearestDist) {
+          nearestDist = d;
+          nearestBillboard = bb;
+        }
+      }
+      if (nearestBillboard) {
+        if (!adScored.has(nearestBillboard.name)) {
+          adScored.add(nearestBillboard.name);
+          if (typeof score !== 'undefined') { score += 5; updateScoreDisplay(); }
+        }
+        showAdPopup(nearestBillboard.name, nearestBillboard.tagline);
+      } else if (adPopupTimer > 0) {
+        adPopupTimer -= dt;
+        if (adPopupTimer <= 0) adPopup.classList.remove('show');
       }
 
       drawRadar();
@@ -738,9 +1231,8 @@
         document.getElementById('weather-icon').textContent = icons[code] || '🌤️';
         document.getElementById('weather-desc').textContent = `${descs[code] || 'Clear'} · ${wind}km/h`;
         if (!isDay) {
-          scene.background = new THREE.Color(0x0a0a1e);
-          scene.fog = new THREE.Fog(0x0a0a1e, 100, 500);
-          ambientLight.intensity = 0.2; sunLight.intensity = 0.15; sunLight.color.setHex(0x4466aa);
+          // Night mode handled by applySkyAndSun — but sync if weather says night
+          applySkyAndSun();
         }
       } catch (e) { console.error('Weather fetch failed:', e); }
     }
