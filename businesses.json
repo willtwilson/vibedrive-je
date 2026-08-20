@@ -1,0 +1,12 @@
+[
+  {"name":"Pinpoint","type":"sponsor","tagline":"Vibe.je Hackathon HQ · One Waverley Place","color":"#cc2222","x":5,"z":45,"primary":true},
+  {"name":"food.je","type":"service","tagline":"Order Takeaway Online in Jersey","color":"#ff6600","x":-5,"z":55},
+  {"name":"Bohemia","type":"restaurant","tagline":"Fine Dining · St Helier","color":"#1a1a2e","x":10,"z":58},
+  {"name":"Jersey Dairy","type":"brand","tagline":"Fresh from the Herd","color":"#0066cc","x":-30,"z":60},
+  {"name":"Jersey Royal","type":"brand","tagline":"Jersey's Finest Spuds","color":"#22aa44","x":40,"z":50},
+  {"name":"LibertyBus","type":"service","tagline":"Get Around Jersey","color":"#ffcc00","x":-10,"z":65},
+  {"name":"Ports of Jersey","type":"service","tagline":"Gateway to the Channel Islands","color":"#1a3a6a","x":20,"z":70},
+  {"name":"Jersey Telecom","type":"service","tagline":"Connect with JT","color":"#6633cc","x":-40,"z":55},
+  {"name":"Tekex.je","type":"brand","tagline":"Tech Innovation Jersey","color":"#008888","x":0,"z":40},
+  {"name":"vibe.je","type":"brand","tagline":"Good Vibes Only","color":"#00ccff","x":0,"z":48}
+]

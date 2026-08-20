@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>⚡ Vibe Drive Jersey</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body { font-family: -apple-system, system-ui, sans-serif; overflow: hidden; background: #0a0a1e; color: #fff; touch-action: none; overscroll-behavior: none; -webkit-overflow-scrolling: touch; }
+    #map { position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh; z-index: 1; touch-action: none; }
+    
+    /* Night overlay */
+    #night-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100dvh;
+      pointer-events: none; z-index: 400;
+      background: rgba(5, 8, 30, 0); transition: background 3s ease;
+      mix-blend-mode: multiply;
+    }
+    
+    /* Leaflet night mode - lighter filters for mobile Safari performance */
+    .night-tiles { filter: brightness(0.45) hue-rotate(200deg); }
+    .dusk-tiles { filter: brightness(0.7) sepia(0.15); }
+    
+    /* HUD */
+    #hud {
+      position: absolute; top: 12px; left: 12px; z-index: 1000;
+      background: rgba(10, 10, 30, 0.82); backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-radius: 14px; padding: 14px 18px; min-width: 220px;
+      border: 1px solid rgba(100, 130, 255, 0.2);
+      font-size: 13px;
+    }
+    #hud h1 { font-size: 16px; margin-bottom: 6px; }
+    #hud .weather-row { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
+    #hud .temp { font-size: 24px; font-weight: 700; }
+    #hud .weather-icon { font-size: 24px; }
+    #hud .speedo { font-size: 13px; margin-top: 6px; color: #ffdd44; font-family: monospace; }
+    #hud .loc { font-size: 11px; color: #888; margin-top: 4px; }
+    #hud .time-badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; margin-top: 4px; }
+    
+    /* Mode selector */
+    #modes {
+      position: absolute; top: 12px; right: 12px; z-index: 1000;
+      display: flex; gap: 6px;
+    }
+    .mode-btn {
+      padding: 8px 14px; border-radius: 10px; border: 1px solid rgba(100,130,255,0.3);
+      background: rgba(10,10,30,0.82); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      color: #fff; font-size: 13px; cursor: pointer; transition: all 0.2s; user-select: none;
+    }
+    .mode-btn.active { background: linear-gradient(135deg, #4466ff, #6688ff); border-color: #6688ff; }
+    .mode-btn.disabled { opacity: 0.35; cursor: not-allowed; }
+    
+    /* Touch controls */
+    #controls {
+      position: absolute; bottom: 0; left: 0; width: 100%; height: 160px; z-index: 1000;
+      pointer-events: none; display: flex; justify-content: space-between; padding: 0 20px 20px;
+    }
+    .control-zone { pointer-events: auto; display: flex; align-items: flex-end; gap: 12px; }
+    .control-btn {
+      width: 72px; height: 72px; border-radius: 50%; border: 2px solid rgba(100,130,255,0.3);
+      background: rgba(10,10,30,0.7); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+      color: #fff; font-size: 28px; display: flex; align-items: center; justify-content: center;
+      cursor: pointer; user-select: none; -webkit-user-select: none; touch-action: none;
+      transition: transform 0.1s, background 0.1s;
+    }
+    .control-btn:active, .control-btn.pressed { transform: scale(0.9); background: rgba(68,102,255,0.5); }
+    .control-btn.accel { background: rgba(34,180,80,0.4); border-color: rgba(34,180,80,0.5); }
+    .control-btn.brake { background: rgba(220,50,50,0.4); border-color: rgba(220,50,50,0.5); }
+    .control-btn.steer { width: 64px; height: 64px; font-size: 24px; }
+    
+    /* Hint */
+    #hint {
+      position: absolute; bottom: 170px; left: 50%; transform: translateX(-50%); z-index: 1000;
+      background: rgba(10,10,30,0.82); backdrop-filter: blur(8px);
+      border-radius: 8px; padding: 6px 14px; font-size: 11px; color: #8899bb;
+      white-space: nowrap; pointer-events: none;
+    }
+    
+    /* Badge */
+    #badge {
+      position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: 1000;
+      background: rgba(10,10,30,0.82); backdrop-filter: blur(8px);
+      border-radius: 8px; padding: 4px 12px; font-size: 10px; color: #5577ff;
+    }
+    
+    /* Leaflet popup dark theme */
+    .leaflet-popup-content-wrapper { background: rgba(10,10,30,0.95); color: #fff; border-radius: 10px; border: 1px solid rgba(100,130,255,0.2); }
+    .leaflet-popup-tip { background: rgba(10,10,30,0.95); }
+    .leaflet-popup-content { margin: 10px 14px; font-size: 13px; }
+    .leaflet-popup-content .r-name { font-weight: 700; font-size: 14px; margin-bottom: 2px; }
+    .leaflet-popup-content .r-cuisine { color: #8899bb; font-size: 11px; margin-bottom: 6px; }
+    .leaflet-popup-content .r-link { color: #6688ff; text-decoration: none; font-size: 12px; }
+    
+    /* Loading */
+    #loading {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); z-index: 2000;
+      background: rgba(10,10,30,0.9); padding: 30px 40px; border-radius: 16px;
+      border: 1px solid rgba(100,130,255,0.3); text-align: center; font-size: 16px;
+    }
+    #loading .spinner { font-size: 32px; margin-bottom: 10px; }
+    
+    /* Show controls on all screen sizes - touch and desktop both work */
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <div id="night-overlay"></div>
+  
+  <div id="loading"><div class="spinner">⚡</div>Loading Jersey…</div>
+  
+  <div id="badge">vibe.je hackathon · real weather · real maps</div>
+  
+  <div id="hud">
+    <h1>⚡ Vibe Drive Jersey</h1>
+    <div class="weather-row">
+      <span class="weather-icon" id="weather-icon">🌤️</span>
+      <span class="temp" id="temp">—°</span>
+      <span id="weather-desc">Loading…</span>
+    </div>
+    <div class="speedo" id="speed">Speed: 0 km/h</div>
+    <div class="loc" id="loc">St Helier, Jersey</div>
+    <div class="time-badge" id="time-badge">☀️ Day</div>
+  </div>
+  
+  <div id="modes">
+    <button class="mode-btn active" data-mode="drive">🚗 Drive</button>
+    <button class="mode-btn disabled" data-mode="boat">🚤 Boat</button>
+    <button class="mode-btn disabled" data-mode="fly">✈️ Fly</button>
+  </div>
+  
+  <div id="hint">Touch buttons to drive · or use arrow keys</div>
+  
+  <div id="controls">
+    <div class="control-zone">
+      <div class="control-btn steer" id="btn-left">◀</div>
+      <div class="control-btn steer" id="btn-right">▶</div>
+    </div>
+    <div class="control-zone">
+      <div class="control-btn brake" id="btn-brake">⬇</div>
+      <div class="control-btn accel" id="btn-gas">⬆</div>
+    </div>
+  </div>
+  
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    // ==== RESTAURANT DATA ===
+    const RESTAURANTS = [
+      { name: "Bohemia", cuisine: "Fine Dining", lat: 49.1865, lng: -2.1065, url: "https://www.food.je" },
+      { name: "The Oyster Box", cuisine: "Seafood", lat: 49.1880, lng: -2.1940, url: "https://www.food.je" },
+      { name: "Ocean Restaurant", cuisine: "Modern European", lat: 49.1850, lng: -2.1080, url: "https://www.food.je" },
+      { name: "Ormer", cuisine: "Michelin Star", lat: 49.1870, lng: -2.1050, url: "https://www.food.je" },
+      { name: "Tassili", cuisine: "Italian", lat: 49.1840, lng: -2.1090, url: "https://www.food.je" },
+      { name: "Sumas", cuisine: "Seafood", lat: 49.1830, lng: -2.1100, url: "https://www.food.je" },
+      { name: "The Salty Dog", cuisine: "Gastropub", lat: 49.1820, lng: -2.1070, url: "https://www.food.je" },
+      { name: "Banjo's", cuisine: "Cafe", lat: 49.1850, lng: -2.1120, url: "https://www.food.je" },
+      { name: "Mark Jordan at the Beach", cuisine: "Seafood", lat: 49.1780, lng: -2.1950, url: "https://www.food.je" },
+      { name: "Quayside", cuisine: "British", lat: 49.1870, lng: -2.1000, url: "https://www.food.je" },
+      { name: "Rozan", cuisine: "Asian Fusion", lat: 49.1860, lng: -2.1130, url: "https://www.food.je" },
+      { name: "Tanta", cuisine: "Tapas", lat: 49.1845, lng: -2.1075, url: "https://www.food.je" },
+    ];
+    
+    // ==== MAP INIT ===
+    const JERSEY_CENTER = [49.186, -2.105]; // St Helier
+    const map = L.map('map', {
+      center: JERSEY_CENTER,
+      zoom: 16,
+      zoomControl: false,
+      attributionControl: false,
+      dragging: false, // disable map dragging - car controls movement
+      scrollWheelZoom: false,
+      doubleClickZoom: false,
+      touchZoom: false,
+    });
+    
+    // Add zoom control to top-right area
+    L.control.zoom({ position: 'topright' }).addTo(map);
+    
+    const tileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      subdomains: ['a', 'b', 'c'],
+    }).addTo(map);
+    
+    // ==== RESTAURANT MARKERS ===
+    RESTAURANTS.forEach(r => {
+      const marker = L.marker([r.lat, r.lng]).addTo(map);
+      marker.bindPopup(`
+        <div class="r-name">${r.name}</div>
+        <div class="r-cuisine">${r.cuisine}</div>
+        <a class="r-link" href="${r.url}" target="_blank">Order on food.je →</a>
+      `);
+    });
+    
+    // ==== CAR (3D-style SVG) ===
+    const carSVG = `
+      <svg width="40" height="60" viewBox="0 0 40 60" style="filter: drop-shadow(2px 4px 3px rgba(0,0,0,0.5));">
+        <!-- Car body shadow -->
+        <ellipse cx="20" cy="55" rx="14" ry="3" fill="rgba(0,0,0,0.3)"/>
+        <!-- Car body main -->
+        <rect x="8" y="8" width="24" height="44" rx="6" fill="#cc2222" stroke="#660000" stroke-width="1"/>
+        <!-- Hood gradient -->
+        <defs>
+          <linearGradient id="bodyGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" style="stop-color:#ff4444"/>
+            <stop offset="50%" style="stop-color:#cc2222"/>
+            <stop offset="100%" style="stop-color:#881111"/>
+          </linearGradient>
+          <linearGradient id="windshieldGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" style="stop-color:#4488cc"/>
+            <stop offset="50%" style="stop-color:#225588"/>
+            <stop offset="100%" style="stop-color:#113344"/>
+          </linearGradient>
+        </defs>
+        <rect x="8" y="8" width="24" height="44" rx="6" fill="url(#bodyGrad)" stroke="#440000" stroke-width="0.5"/>
+        <!-- Windshield (front) -->
+        <path d="M10,14 L30,14 L28,20 L12,20 Z" fill="url(#windshieldGrad)" opacity="0.9"/>
+        <!-- Rear window -->
+        <path d="M12,40 L28,40 L30,46 L10,46 Z" fill="url(#windshieldGrad)" opacity="0.7"/>
+        <!-- Roof -->
+        <rect x="12" y="22" width="16" height="16" rx="2" fill="#aa1818" stroke="#440000" stroke-width="0.5"/>
+        <!-- Headlights -->
+        <circle cx="12" cy="10" r="2" fill="#fff4cc" opacity="0.9"/>
+        <circle cx="28" cy="10" r="2" fill="#fff4cc" opacity="0.9"/>
+        <!-- Taillights -->
+        <rect x="10" y="50" width="4" height="2" rx="1" fill="#ff3333"/>
+        <rect x="26" y="50" width="4" height="2" rx="1" fill="#ff3333"/>
+        <!-- Side mirrors -->
+        <rect x="5" y="20" width="3" height="4" rx="1" fill="#881111"/>
+        <rect x="32" y="20" width="3" height="4" rx="1" fill="#881111"/>
+      </svg>`;
+    
+    const carIcon = L.divIcon({
+      className: 'car-icon',
+      html: `<div style="transform-origin:center;transition:transform 0.05s;">${carSVG}</div>`,
+      iconSize: [40, 60],
+      iconAnchor: [20, 30],
+    });
+    
+    let carLat = 49.186;
+    let carLng = -2.105;
+    let carHeading = 0; // degrees, 0=north
+    let carSpeed = 0; // km/h
+    const MAX_SPEED = 120;
+    const ACCEL = 50; // km/h per second
+    const BRAKE = 100;
+    const FRICTION = 15;
+    const TURN_RATE = 60; // degrees per second at full speed
+    
+    const carMarker = L.marker([carLat, carLng], { icon: carIcon, zIndexOffset: 1000 }).addTo(map);
+    
+    function updateCarIcon() {
+      const el = carMarker.getElement();
+      if (el) {
+        const inner = el.querySelector('div');
+        if (inner) inner.style.transform = `rotate(${carHeading}deg)`;
+      }
+    }
+    updateCarIcon();
+    
+    // Speed-based effects
+    function updateCarEffects() {
+      const el = carMarker.getElement();
+      if (!el) return;
+      const svg = el.querySelector('svg');
+      if (!svg) return;
+      // Add slight tilt when turning at speed
+      const tilt = keys.left ? -3 : keys.right ? 3 : 0;
+      svg.style.transform = `rotateY(${tilt}deg)`;
+      svg.style.transformStyle = 'preserve-3d';
+    }
+    
+    // ==== CONTROLS ===
+    const keys = { up: false, down: false, left: false, right: false };
+    
+    // Prevent iOS bounce/zoom on touch
+    document.addEventListener('touchmove', (e) => { e.preventDefault(); }, { passive: false });
+    document.addEventListener('gesturestart', (e) => { e.preventDefault(); });
+    
+    // Keyboard - support both arrows and WASD
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') keys.up = true;
+      if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') keys.down = true;
+      if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') keys.left = true;
+      if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') keys.right = true;
+    });
+    document.addEventListener('keyup', (e) => {
+      if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') keys.up = false;
+      if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') keys.down = false;
+      if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') keys.left = false;
+      if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') keys.right = false;
+    });
+    
+    // Touch + Mouse + Pointer buttons (use pointer events for cross-device reliability)
+    function bindTouch(btnId, keyName) {
+      const btn = document.getElementById(btnId);
+      if (!btn) return;
+      const press = (e) => { e.preventDefault(); keys[keyName] = true; btn.classList.add('pressed'); };
+      const release = (e) => { e.preventDefault(); keys[keyName] = false; btn.classList.remove('pressed'); };
+      // Pointer events (unified mouse + touch)
+      btn.addEventListener('pointerdown', press, { passive: false });
+      btn.addEventListener('pointerup', release, { passive: false });
+      btn.addEventListener('pointercancel', release, { passive: false });
+      btn.addEventListener('pointerleave', release, { passive: false });
+      // Fallback touch events
+      btn.addEventListener('touchstart', press, { passive: false });
+      btn.addEventListener('touchend', release, { passive: false });
+      btn.addEventListener('touchcancel', release, { passive: false });
+      // Fallback mouse events
+      btn.addEventListener('mousedown', press);
+      btn.addEventListener('mouseup', release);
+      btn.addEventListener('mouseleave', release);
+    }
+    bindTouch('btn-gas', 'up');
+    bindTouch('btn-brake', 'down');
+    bindTouch('btn-left', 'left');
+    bindTouch('btn-right', 'right');
+    
+    // ==== GAME LOOP ===
+    let lastTime = performance.now();
+    
+    function gameLoop(now) {
+      const dt = Math.min((now - lastTime) / 1000, 0.1); // seconds, capped
+      lastTime = now;
+      
+      // Acceleration / braking
+      if (keys.up) carSpeed += ACCEL * dt;
+      else if (keys.down) carSpeed -= BRAKE * dt;
+      else carSpeed -= FRICTION * dt; // natural friction
+      
+      carSpeed = Math.max(0, Math.min(MAX_SPEED, carSpeed));
+      if (carSpeed < 0.5) carSpeed = 0;
+      
+      // Steering (proportional to speed)
+      if (carSpeed > 1) {
+        const turnAmount = TURN_RATE * dt * (carSpeed / MAX_SPEED);
+        if (keys.left) carHeading -= turnAmount * 2;
+        if (keys.right) carHeading += turnAmount * 2;
+      }
+      
+      // Convert speed + heading to lat/lng movement
+      // Heading: 0=north, 90=east, 180=south, 270=west (clockwise)
+      // 1 degree lat ≈ 111km, 1 degree lng ≈ 111*cos(lat) km
+      if (carSpeed > 0.5) {
+        const speedKmPerSec = carSpeed / 3600;
+        const distKm = speedKmPerSec * dt;
+        const headingRad = carHeading * Math.PI / 180;
+        const dLat = (distKm * Math.cos(headingRad)) / 111;
+        const dLng = (distKm * Math.sin(headingRad)) / (111 * Math.cos(carLat * Math.PI / 180));
+        carLat += dLat;
+        carLng += dLng;
+      }
+      
+      // Keep car on Jersey (rough bounding box)
+      const J_MIN_LAT = 49.15, J_MAX_LAT = 49.30;
+      const J_MIN_LNG = -2.25, J_MAX_LNG = -2.00;
+      carLat = Math.max(J_MIN_LAT, Math.min(J_MAX_LAT, carLat));
+      carLng = Math.max(J_MIN_LNG, Math.min(J_MAX_LNG, carLng));
+      
+      // Update marker
+      carMarker.setLatLng([carLat, carLng]);
+      updateCarIcon();
+      
+      // Center map on car - use panBy for smooth mobile performance
+      // Calculate pixel delta from center
+      const center = map.getCenter();
+      const targetPx = map.latLngToContainerPoint([carLat, carLng]);
+      const mapSize = map.getSize();
+      const dx = targetPx.x - mapSize.x / 2;
+      const dy = targetPx.y - mapSize.y / 2;
+      if (Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5) {
+        map.panBy([dx, dy], { animate: false });
+      }
+      
+      // Update HUD
+      document.getElementById('speed').textContent = `Speed: ${Math.round(carSpeed)} km/h`;
+      
+      requestAnimationFrame(gameLoop);
+    }
+    
+    // ==== WEATHER ===
+    async function fetchWeather() {
+      try {
+        const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=49.21&longitude=-2.13&current=temperature_2m,wind_speed_10m,wind_direction_10m,weather_code,is_day&timezone=Europe/Jersey');
+        const data = await res.json();
+        const cur = data.current;
+        const temp = Math.round(cur.temperature_2m);
+        const wind = Math.round(cur.wind_speed_10m);
+        const code = cur.weather_code;
+        const isDay = cur.is_day;
+        
+        const weatherIcons = {
+          0: isDay ? '☀️' : '🌙', 1: isDay ? '🌤️' : '🌙', 2: '⛅', 3: '☁️',
+          45: '🌫️', 48: '🌫️', 51: '🌦️', 53: '🌦️', 55: '🌧️',
+          56: '🌧️', 57: '🌧️', 61: '🌧️', 63: '🌧️', 65: '🌧️',
+          66: '🌧️', 67: '🌧️', 71: '🌨️', 73: '🌨️', 75: '❄️',
+          77: '❄️', 80: '🌧️', 81: '🌧️', 82: '🌧️', 85: '🌨️',
+          86: '❄️', 95: '⛈️', 96: '⛈️', 99: '⛈️'
+        };
+        const weatherDescs = {
+          0: 'Clear sky', 1: 'Mainly clear', 2: 'Partly cloudy', 3: 'Overcast',
+          45: 'Foggy', 48: 'Foggy', 51: 'Light drizzle', 53: 'Drizzle', 55: 'Dense drizzle',
+          56: 'Freezing drizzle', 57: 'Freezing drizzle', 61: 'Slight rain', 63: 'Rain', 65: 'Heavy rain',
+          66: 'Freezing rain', 67: 'Freezing rain', 71: 'Slight snow', 73: 'Snow', 75: 'Heavy snow',
+          77: 'Snow grains', 80: 'Rain showers', 81: 'Rain showers', 82: 'Violent showers',
+          85: 'Snow showers', 86: 'Snow showers', 95: 'Thunderstorm', 96: 'Thunderstorm', 99: 'Thunderstorm'
+        };
+        
+        document.getElementById('temp').textContent = `${temp}°C`;
+        document.getElementById('weather-icon').textContent = weatherIcons[code] || '🌤️';
+        document.getElementById('weather-desc').textContent = `${weatherDescs[code] || 'Clear'} · ${wind}km/h wind`;
+        
+        return { isDay, code };
+      } catch (e) {
+        console.error('Weather fetch failed:', e);
+        return { isDay: 1, code: 0 };
+      }
+    }
+    
+    // ==== DAY/NIGHT ===
+    async function fetchSunTimes() {
+      try {
+        const res = await fetch('https://api.sunrise-sunset.org/json?lat=49.21&lng=-2.13&formatted=0');
+        const data = await res.json();
+        return {
+          sunrise: new Date(data.results.sunrise),
+          sunset: new Date(data.results.sunset),
+          civilDawn: new Date(data.results.civil_twilight_begin),
+          civilDusk: new Date(data.results.civil_twilight_end),
+        };
+      } catch (e) {
+        console.error('Sun times fetch failed:', e);
+        return null;
+      }
+    }
+    
+    async function applyDayNight() {
+      const sunTimes = await fetchSunTimes();
+      if (!sunTimes) return;
+      
+      const now = new Date(); // UTC-compatible comparison
+      const { sunrise, sunset, civilDawn, civilDusk } = sunTimes;
+      // All sun times come back as ISO strings with +00:00 offset — they're already proper Date objects
+      // No need for manual timezone conversion since Date objects compare in UTC internally
+      
+      let period = 'day';
+      let label = '☀️ Day';
+      
+      if (now < civilDawn) { period = 'night'; label = '🌙 Night'; }
+      else if (now < sunrise) { period = 'dawn'; label = '🌅 Dawn'; }
+      else if (now < sunset) { period = 'day'; label = '☀️ Day'; }
+      else if (now < civilDusk) { period = 'dusk'; label = '🌇 Dusk'; }
+      else { period = 'night'; label = '🌙 Night'; }
+      
+      // Apply to tile layer
+      const tilePane = map.getPane('tilePane');
+      if (tilePane) {
+        tilePane.classList.remove('night-tiles', 'dusk-tiles');
+        if (period === 'night') tilePane.classList.add('night-tiles');
+        else if (period === 'dusk' || period === 'dawn') tilePane.classList.add('dusk-tiles');
+      }
+      
+      // Night overlay
+      const overlay = document.getElementById('night-overlay');
+      if (period === 'night') overlay.style.background = 'rgba(5, 8, 30, 0.45)';
+      else if (period === 'dusk') overlay.style.background = 'rgba(40, 20, 10, 0.2)';
+      else if (period === 'dawn') overlay.style.background = 'rgba(30, 15, 5, 0.15)';
+      else overlay.style.background = 'rgba(0, 0, 0, 0)';
+      
+      document.getElementById('time-badge').textContent = label;
+    }
+    
+    // ==== INIT ===
+    async function init() {
+      await fetchWeather();
+      await applyDayNight();
+      
+      // Hide loading
+      const loading = document.getElementById('loading');
+      if (loading) loading.style.display = 'none';
+      
+      // Start game loop
+      requestAnimationFrame(gameLoop);
+      
+      // Refresh weather every 10 min
+      setInterval(fetchWeather, 600000);
+      // Refresh day/night every 5 min
+      setInterval(applyDayNight, 300000);
+    }
+    
+    init();
+  </script>
+</body>
+</html>
