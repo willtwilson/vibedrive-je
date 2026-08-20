@@ -571,10 +571,13 @@
       font-size: 18px; color: var(--text-secondary); font-weight: 700;
     }
     #settings-panel .panel-close:hover { color: var(--rally-red); }
+    #lightning-flash { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; opacity: 0; pointer-events: none; z-index: 9999; transition: opacity 0.05s ease; }
+    #slippery-warning { display: none; color: #ff9900; font-size: 12px; font-weight: 700; margin-top: 4px; text-shadow: 0 1px 3px rgba(0,0,0,0.7); }
   </style>
 </head>
 <body>
   <div id="loading">⚡ Loading Jersey 3D…</div>
+  <div id="lightning-flash"></div>
 
   <div id="hud">
     <h1>⚡ Vibe Drive Jersey 3D</h1>
@@ -586,6 +589,7 @@
     <div class="speedo" id="speed">Speed: 0 km/h</div>
     <div class="speed-bar-container"><div class="speed-bar" id="speed-bar"></div></div>
     <div class="loc" id="loc">Jersey, Channel Islands</div>
+    <div id="slippery-warning">⚠ Slippery Roads</div>
     <div class="players" id="players">👥 1 online</div>
     <div class="mode-name" id="mode-name">🚗 Drive Mode</div>
     <div id="hud-username" style="font-family:'Inter',sans-serif;font-size:12px;font-weight:700;color:var(--jersey-green);margin-top:6px;padding-top:6px;border-top:1px solid rgba(0,168,107,0.15);">👤 —</div>
@@ -1059,6 +1063,152 @@
     renderer.domElement.id = 'game-canvas';
     document.body.appendChild(renderer.domElement);
 
+    // ====== WEATHER EFFECTS SYSTEM (T-WEATHER #12) ======
+    let weatherCode = 0;          // current Open-Meteo weather code
+    let weatherCategory = 'clear'; // clear, cloudy, fog, rain, snow, showers, storm
+    let rainSystem = null;         // THREE.LineSegments for rain
+    let rainPositions = null;      // Float32Array of raindrop positions
+    let rainVelocities = null;     // Float32Array of fall speeds
+    let rainCount = 0;             // active raindrop count
+    let lightningEl = null;        // lightning flash overlay element
+    let nextLightningTime = 0;     // timestamp for next lightning flash
+    let lightningActive = false;   // is a flash currently active
+    let lightningEndTime = 0;      // when current flash ends
+    let slipperyWarnEl = null;     // slippery roads warning element
+    let baseFogNear = 200, baseFogFar = 1000; // default fog distances
+
+    function classifyWeather(code) {
+      if (code === 0) return 'clear';
+      if (code >= 1 && code <= 3) return 'cloudy';
+      if (code >= 45 && code <= 48) return 'fog';
+      if (code >= 51 && code <= 67) return 'rain';
+      if (code >= 71 && code <= 77) return 'snow';
+      if (code >= 80 && code <= 82) return 'showers';
+      if (code >= 95 && code <= 99) return 'storm';
+      return 'clear';
+    }
+
+    function isWetRoads(cat) { return cat === 'rain' || cat === 'showers' || cat === 'storm' || cat === 'snow'; }
+
+    function initRainSystem(count) {
+      if (rainSystem) { scene.remove(rainSystem); rainSystem.geometry.dispose(); rainSystem.material.dispose(); rainSystem = null; }
+      rainCount = count;
+      rainPositions = new Float32Array(count * 6); // 2 vertices per drop, 3 floats each
+      rainVelocities = new Float32Array(count);
+      const rainRadius = 100;
+      for (let i = 0; i < count; i++) {
+        const x = (Math.random() - 0.5) * rainRadius * 2;
+        const z = (Math.random() - 0.5) * rainRadius * 2;
+        const y = Math.random() * 80;
+        const len = 2.0 + Math.random() * 1.5; // streak length
+        // Line from (x, y, z) to (x, y - len, z)
+        rainPositions[i * 6]     = x;
+        rainPositions[i * 6 + 1] = y;
+        rainPositions[i * 6 + 2] = z;
+        rainPositions[i * 6 + 3] = x;
+        rainPositions[i * 6 + 4] = y - len;
+        rainPositions[i * 6 + 5] = z;
+        rainVelocities[i] = 40 + Math.random() * 30; // fall speed units/sec
+      }
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(rainPositions, 3));
+      const mat = new THREE.LineBasicMaterial({ color: 0xaabbcc, transparent: true, opacity: 0.4 });
+      rainSystem = new THREE.LineSegments(geo, mat);
+      rainSystem.frustumCulled = false;
+      scene.add(rainSystem);
+    }
+
+    function updateRain(dt, now) {
+      if (!rainSystem || rainCount === 0) return;
+      const rainRadius = 100;
+      const cx = carX, cz = carZ; // center on player
+      for (let i = 0; i < rainCount; i++) {
+        const idx = i * 6;
+        const y = rainPositions[idx + 1];
+        const vy = rainVelocities[i];
+        const newY = y - vy * dt;
+        if (newY <= 0) {
+          // Recycle: respawn at top, recenter around player
+          const x = cx + (Math.random() - 0.5) * rainRadius * 2;
+          const z = cz + (Math.random() - 0.5) * rainRadius * 2;
+          const len = 2.0 + Math.random() * 1.5;
+          rainPositions[idx]     = x;
+          rainPositions[idx + 1] = 80;
+          rainPositions[idx + 2] = z;
+          rainPositions[idx + 3] = x;
+          rainPositions[idx + 4] = 80 - len;
+          rainPositions[idx + 5] = z;
+        } else {
+          // Update both endpoints (preserve streak length)
+          const streakLen = y - rainPositions[idx + 4];
+          rainPositions[idx + 1] = newY;
+          rainPositions[idx + 4] = newY - streakLen;
+          // Rebase X/Z if too far from player
+          const dx = rainPositions[idx] - cx;
+          const dz = rainPositions[idx + 2] - cz;
+          if (Math.abs(dx) > rainRadius || Math.abs(dz) > rainRadius) {
+            const nx = cx + (Math.random() - 0.5) * rainRadius * 2;
+            const nz = cz + (Math.random() - 0.5) * rainRadius * 2;
+            rainPositions[idx]     = nx;
+            rainPositions[idx + 2] = nz;
+            rainPositions[idx + 3] = nx;
+            rainPositions[idx + 5] = nz;
+          }
+        }
+      }
+      rainSystem.geometry.attributes.position.needsUpdate = true;
+    }
+
+    function updateLightning(now) {
+      if (weatherCategory !== 'storm') {
+        if (lightningActive) { lightningEl.style.opacity = 0; lightningActive = false; }
+        return;
+      }
+      if (lightningActive) {
+        if (now >= lightningEndTime) {
+          lightningEl.style.opacity = 0;
+          lightningActive = false;
+          nextLightningTime = now + (10 + Math.random() * 20) * 1000; // 10-30s
+        }
+      } else {
+        if (now >= nextLightningTime) {
+          lightningEl.style.opacity = 0.7;
+          lightningActive = true;
+          lightningEndTime = now + 100; // 100ms flash
+        }
+      }
+    }
+
+    function applyWeatherEffects() {
+      const cat = weatherCategory;
+      // Fog density
+      const tod = forceNight ? 'night' : getTimeOfDay();
+      const skyHex = skyColors[tod];
+      if (cat === 'fog') {
+        scene.fog = new THREE.Fog(skyHex, 30, 50); // reduced visibility ~50u
+      } else {
+        scene.fog = new THREE.Fog(skyHex, tod === 'night' ? 100 : 200, tod === 'night' ? 500 : 1000);
+      }
+      // Rain particles
+      if (cat === 'rain' || cat === 'snow' || cat === 'showers') {
+        if (!rainSystem || rainCount !== 800) initRainSystem(800);
+        if (rainSystem) {
+          rainSystem.visible = true;
+          rainSystem.material.color.setHex(cat === 'snow' ? 0xffffff : 0xaabbcc);
+        }
+      } else if (cat === 'storm') {
+        if (!rainSystem || rainCount !== 2000) initRainSystem(2000);
+        if (rainSystem) { rainSystem.visible = true; rainSystem.material.color.setHex(0xaabbcc); }
+      } else {
+        if (rainSystem) rainSystem.visible = false;
+      }
+      // Wet roads
+      const slippery = isWetRoads(cat) && vehicleMode === 'drive';
+      slipperyWarnEl.style.display = slippery ? 'block' : 'none';
+      // Lightning element reference
+      if (!lightningEl) lightningEl = document.getElementById('lightning-flash');
+    }
+
     // ====== LIGHTING ======
     const hemiLight = new THREE.HemisphereLight(0x87CEEB, 0x3a5a2a, 0.8);
     scene.add(hemiLight);
@@ -1098,6 +1248,8 @@
       skyTransitionStart = performance.now();
       skyTransitionActive = true;
       scene.fog = new THREE.Fog(skyHex, tod === 'night' ? 100 : 200, tod === 'night' ? 500 : 1000);
+      // T-WEATHER: re-apply weather fog override if foggy weather active
+      if (weatherCategory === 'fog') applyWeatherEffects();
       // Sun arc: angle based on hour (6am=0° east, 6pm=180° west, 12pm=90° overhead)
       const h = new Date().getHours() + new Date().getMinutes() / 60;
       const sunAngle = ((h - 6) / 12) * Math.PI; // 0 at 6am, PI at 6pm
@@ -3569,7 +3721,7 @@
       // ====== VEHICLE PHYSICS ======
       // Boat physics: ACCEL/2, wider turning (TURN_RATE*0.6), more momentum (FRICTION/2)
       const accel = vehicleMode === 'boat' ? ACCEL / 2 : ACCEL;
-      const friction = vehicleMode === 'boat' ? FRICTION / 2 : FRICTION;
+      const friction = vehicleMode === 'boat' ? FRICTION / 2 : (isWetRoads(weatherCategory) ? FRICTION * 0.8 : FRICTION);
       const turnRate = vehicleMode === 'boat' ? TURN_RATE * 0.6 : TURN_RATE;
       // Vehicle physics — improved with exponential accel, proportional brake, speed-sensitive turning
       if (keys.up) {
@@ -4172,6 +4324,10 @@
       if (typeof mpSendPosition === 'function') mpSendPosition();
       if (typeof mpInterpolateRemotePlayers === 'function') mpInterpolateRemotePlayers(dt);
 
+      // T-WEATHER: rain particles + lightning updates
+      updateRain(dt, now);
+      updateLightning(now);
+
       drawRadar();
       renderer.render(scene, camera);
       requestAnimationFrame(animate);
@@ -4184,11 +4340,17 @@
         const data = await res.json();
         const cur = data.current;
         const temp = Math.round(cur.temperature_2m), wind = Math.round(cur.wind_speed_10m), code = cur.weather_code, isDay = cur.is_day;
-        const icons = { 0:'☀️',1:'🌤️',2:'⛅',3:'☁️',45:'🌫️',48:'🌫️',51:'🌦️',53:'🌦️',55:'🌧️',61:'🌧️',63:'🌧️',65:'🌧️',80:'🌧️',81:'🌧️',95:'⛈️' };
-        const descs = { 0:'Clear',1:'Mainly clear',2:'Partly cloudy',3:'Overcast',45:'Foggy',48:'Foggy',51:'Light drizzle',53:'Drizzle',55:'Dense drizzle',61:'Slight rain',63:'Rain',65:'Heavy rain',80:'Rain showers',81:'Rain showers',95:'Thunderstorm' };
+        const icons = { 0:'☀️',1:'🌤️',2:'⛅',3:'☁️',45:'🌫️',48:'🌫️',51:'🌦️',53:'🌦️',55:'🌧️',56:'🌧️',57:'🌧️',61:'🌧️',63:'🌧️',65:'🌧️',66:'🌧️',67:'🌧️',71:'🌨️',73:'🌨️',75:'❄️',77:'❄️',80:'🌧️',81:'🌧️',82:'🌧️',95:'⛈️',96:'⛈️',99:'⛈️' };
+        const descs = { 0:'Clear',1:'Mainly clear',2:'Partly cloudy',3:'Overcast',45:'Foggy',48:'Foggy',51:'Light drizzle',53:'Drizzle',55:'Dense drizzle',56:'Freezing drizzle',57:'Freezing drizzle',61:'Slight rain',63:'Rain',65:'Heavy rain',66:'Freezing rain',67:'Freezing rain',71:'Slight snow',73:'Snow',75:'Heavy snow',77:'Snow grains',80:'Rain showers',81:'Rain showers',82:'Violent showers',95:'Thunderstorm',96:'Thunderstorm',99:'Thunderstorm' };
         document.getElementById('temp').textContent = `${temp}°C`;
         document.getElementById('weather-icon').textContent = icons[code] || '🌤️';
         document.getElementById('weather-desc').textContent = `${descs[code] || 'Clear'} · ${wind}km/h`;
+        // T-WEATHER: store weather code and apply effects
+        weatherCode = code;
+        weatherCategory = classifyWeather(code);
+        if (!slipperyWarnEl) slipperyWarnEl = document.getElementById('slippery-warning');
+        if (!lightningEl) lightningEl = document.getElementById('lightning-flash');
+        applyWeatherEffects();
         if (!isDay) {
           // Night mode handled by applySkyAndSun — but sync if weather says night
           applySkyAndSun();
