@@ -11,6 +11,7 @@ This file is a snapshot. For live status, milestones, and labels, see GitHub.
 | 2 | Phase 2: Real Roads & Traffic | #5, #6, #11 | Open |
 | 3 | Phase 3: Jersey Data Integration | #4, #7, #8 | Open |
 | 4 | Phase 4: Gameplay Polish | #9, #10, #12 | Open |
+| 5 | Graphics Uplift | #14, #15 | Open |
 
 ## Issue Summary
 
@@ -28,13 +29,32 @@ This file is a snapshot. For live status, milestones, and labels, see GitHub.
 | 10 | T-RADIO: Web Audio radio | M4 | LOW | XS | Low | None |
 | 11 | T-TRAFFIC-LIGHTS: Traffic lights | M2 | LOW | S | Low | #5 |
 | 12 | T-WEATHER: Improved weather | M4 | LOW | M | Medium | None |
+| **14** | **T-GFX-3D-POLISH: GTA 6-style visual upgrades** | **M5** | **HIGH** | **L** | **Medium** | **None** |
+| **15** | **T-GFX-RETRO: GTA 1-style retro top-down mode** | **M5** | **MEDIUM** | **L** | **Medium** | **#14** |
 
-## Completed (pre-issues)
+## Graphics Uplift Plan (Milestone 5)
 
-All hackathon-era features were built before GitHub Issues existed:
-lighting, rewards, billboards, steering, boat mode, fly mode, headlights,
-radar coastline, businesses, landmarks, parishes, missions, police,
-pedestrians, brand design, git repo.
+**Decision:** Build both paths. Polish 3D first, then add retro as toggle mode.
+
+### Phase A: 3D Polish (#14) — 8-12 hours
+1. PMREMGenerator environment maps (fake RTGI)
+2. Post-processing: bloom + ACES tone mapping + FXAA
+3. InstancedMesh for buildings/trees (200+ → ~10 draw calls)
+4. Procedural Canvas2D textures (road, grass, buildings)
+5. MeshPhysicalMaterial clearcoat (car paint + water)
+
+Research: `research/GRAPHICS-MODERN-GTA6.md` (47KB)
+
+### Phase B: Retro GTA 1 Mode (#15) — 12-18 hours
+- `index-retro.html` with Canvas 2D renderer
+- Landing page toggle: "3D Mode" or "Retro Mode"
+- 85-90% code reuse (physics, missions, AI, scoring, leaderboard)
+- 60 FPS guaranteed on any device
+- British/Jersey aesthetic: road markings, granite walls, Jèrriais signs
+- 4-stage damage model, particle effects, procedural audio
+
+Research: `research/GRAPHICS-RETRO-GTA1.md` (71KB)
+Comparison: http://100.115.59.29:8080/vibedrive-graphics-analysis.html
 
 ## Dispatch
 
