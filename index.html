@@ -2354,6 +2354,161 @@
       return { update, snapCar, group, segments, roadMesh, dashMesh, nameSprites };
     })();
 
+    // ====== TRAFFIC LIGHTS (T-TRAFFIC-LIGHTS #11) ======
+    // 8 traffic lights at the busiest intersections in St Helier center.
+    // State machine: green(8s) → yellow(3s) → red(10s) → green.
+    // AI traffic cars stop at red lights within 15u.
+    const trafficLights = (function() {
+      // 8 major intersections in St Helier (within 30u of 46,-65)
+      // Found by analyzing jerseyRoads for nodes where 2+ named roads meet,
+      // scored by major-road count + segment count + proximity to center.
+      const positions = [
+        {x: 42.5, z: -63.7},  // Albert Pier / Castle St / Commercial Buildings
+        {x: 39.4, z: -67.2},  // A1 / Esplanade / Kensington Place
+        {x: 34.7, z: -71.1},  // Bellozanne Rd / Link Road
+        {x: 30.4, z: -74.7},  // Chemin des Moulins / Champ de l'Ouest
+        {x: 49.2, z: -60.4},  // Beach Rd / Cleveland Rd
+        {x: 42.4, z: -67.3},  // Cannon St / Cheapside / Clare St
+        {x: 46.5, z: -66.6},  // Ann Place / Bath Street / Apsley Rd
+        {x: 60.0, z: -64.6},  // Avenue Le Bas / Longueville Rd
+      ];
+
+      const lights = [];   // {group, pole, red, yellow, green, x, z, state, timer, phaseOffset}
+      const GREEN_DUR = 8, YELLOW_DUR = 3, RED_DUR = 10;
+      const CYCLE = GREEN_DUR + YELLOW_DUR + RED_DUR; // 21s total cycle
+
+      // Shared geometries and materials
+      const poleGeo = new THREE.CylinderGeometry(0.1, 0.1, 4, 8);
+      const poleMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.8, metalness: 0.3 });
+      const baseGeo = new THREE.CylinderGeometry(0.4, 0.5, 0.3, 8);
+      const baseMat = new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.9 });
+      const lightGeo = new THREE.SphereGeometry(0.3, 16, 16);
+      // Materials are cloned per light so we can adjust emissive independently
+      const redMatOn = new THREE.MeshStandardMaterial({ color: 0x550000, emissive: 0xff0000, emissiveIntensity: 2.0 });
+      const redMatOff = new THREE.MeshStandardMaterial({ color: 0x330000, emissive: 0x330000, emissiveIntensity: 0.1 });
+      const yellowMatOn = new THREE.MeshStandardMaterial({ color: 0x554400, emissive: 0xffff00, emissiveIntensity: 2.0 });
+      const yellowMatOff = new THREE.MeshStandardMaterial({ color: 0x332200, emissive: 0x332200, emissiveIntensity: 0.1 });
+      const greenMatOn = new THREE.MeshStandardMaterial({ color: 0x005500, emissive: 0x00ff00, emissiveIntensity: 2.0 });
+      const greenMatOff = new THREE.MeshStandardMaterial({ color: 0x003300, emissive: 0x003300, emissiveIntensity: 0.1 });
+
+      // Housing box for the light cluster (dark gray)
+      const housingGeo = new THREE.BoxGeometry(0.6, 2.2, 0.6);
+      const housingMat = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.7 });
+
+      for (let i = 0; i < positions.length; i++) {
+        const pos = positions[i];
+        const group = new THREE.Group();
+
+        // Base plate
+        const base = new THREE.Mesh(baseGeo, baseMat);
+        base.position.y = 0.15;
+        base.castShadow = true;
+        group.add(base);
+
+        // Pole (4m tall, 0.2 diameter)
+        const pole = new THREE.Mesh(poleGeo, poleMat);
+        pole.position.y = 2.3; // centered on pole (0.3 base + 4/2)
+        pole.castShadow = true;
+        group.add(pole);
+
+        // Light housing on top of pole
+        const housing = new THREE.Mesh(housingGeo, housingMat);
+        housing.position.y = 5.2; // top of pole (0.3+4=4.3) + housing half height (1.1) + 0.2 gap
+        housing.castShadow = true;
+        group.add(housing);
+
+        // Three lights stacked vertically: red on top, yellow middle, green bottom
+        const redLight = new THREE.Mesh(lightGeo, redMatOff.clone());
+        redLight.position.set(0, 5.9, 0.35); // front-facing
+        group.add(redLight);
+
+        const yellowLight = new THREE.Mesh(lightGeo, yellowMatOff.clone());
+        yellowLight.position.set(0, 5.2, 0.35);
+        group.add(yellowLight);
+
+        const greenLight = new THREE.Mesh(lightGeo, greenMatOff.clone());
+        greenLight.position.set(0, 4.5, 0.35);
+        group.add(greenLight);
+
+        // Position the whole group at the intersection, raised to terrain
+        const ty = getTerrainHeight(pos.x, pos.z);
+        group.position.set(pos.x, Math.max(ty, 0), pos.z);
+        scene.add(group);
+
+        // Stagger phase offsets so lights aren't all synchronized
+        const phaseOffset = (i * CYCLE / positions.length) % CYCLE;
+
+        lights.push({
+          group, pole, housing,
+          red: redLight, yellow: yellowLight, green: greenLight,
+          x: pos.x, z: pos.z,
+          state: 'red',   // will be set by first update
+          timer: phaseOffset,
+          phaseOffset: phaseOffset
+        });
+      }
+
+      console.log(`Traffic lights: ${lights.length} placed at St Helier intersections`);
+
+      // Update state machine: green → yellow → red → green
+      function update(dt, now) {
+        for (const tl of lights) {
+          tl.timer += dt;
+          if (tl.timer >= CYCLE) tl.timer -= CYCLE;
+
+          // Determine state from timer position in cycle
+          if (tl.timer < GREEN_DUR) {
+            tl.state = 'green';
+          } else if (tl.timer < GREEN_DUR + YELLOW_DUR) {
+            tl.state = 'yellow';
+          } else {
+            tl.state = 'red';
+          }
+
+          // Update material emissive based on state
+          tl.red.material.copy(tl.state === 'red' ? redMatOn : redMatOff);
+          tl.yellow.material.copy(tl.state === 'yellow' ? yellowMatOn : yellowMatOff);
+          tl.green.material.copy(tl.state === 'green' ? greenMatOn : greenMatOff);
+        }
+      }
+
+      // Check if a car at (x, z) heading toward a red light should stop
+      // Returns the distance to the nearest red light ahead, or Infinity
+      function checkRedLight(x, z, forwardX, forwardZ) {
+        let nearestRedDist = Infinity;
+        for (const tl of lights) {
+          if (tl.state !== 'red') continue;
+          const dx = tl.x - x, dz = tl.z - z;
+          const dist = Math.sqrt(dx * dx + dz * dz);
+          if (dist > 15) continue; // only check within 15u
+          // Check if light is ahead of the car
+          const dot = (dx * forwardX + dz * forwardZ) / Math.max(0.1, dist);
+          if (dot > 0.3) { // light is generally ahead
+            nearestRedDist = Math.min(nearestRedDist, dist);
+          }
+        }
+        return nearestRedDist;
+      }
+
+      // Also check yellow lights — cars should slow down
+      function checkYellowLight(x, z, forwardX, forwardZ) {
+        let nearestYellowDist = Infinity;
+        for (const tl of lights) {
+          if (tl.state !== 'yellow') continue;
+          const dx = tl.x - x, dz = tl.z - z;
+          const dist = Math.sqrt(dx * dx + dz * dz);
+          if (dist > 15) continue;
+          const dot = (dx * forwardX + dz * forwardZ) / Math.max(0.1, dist);
+          if (dot > 0.3) {
+            nearestYellowDist = Math.min(nearestYellowDist, dist);
+          }
+        }
+        return nearestYellowDist;
+      }
+
+      return { update, checkRedLight, checkYellowLight, lights };
+    })();
+
     // ====== ADVERTISING BILLBOARDS ======
     const businesses = [
       {"name":"Pinpoint","tagline":"Vibe.je Hackathon HQ · One Waverley Place","color":"#cc2222","x":46.4,"z":-65.4,"primary":true},
@@ -3897,6 +4052,9 @@
         carGroup.rotation.z = tilt * (Math.abs(carSpeed) / MAX_SPEED);
       }
 
+      // Traffic lights — update state machine (T-TRAFFIC-LIGHTS #11)
+      trafficLights.update(dt, now);
+
       // AI cars — A* pathfinding on road graph with left-lane steering
       aiCars.forEach(ai => {
         // Repath if route is exhausted or every 5 seconds
@@ -3987,6 +4145,23 @@
             targetSpeed = 0; // stop
           } else if (obstacleDist < 10) {
             targetSpeed *= (obstacleDist - 3) / 7; // slow down linearly
+          }
+
+          // Traffic light stop logic (T-TRAFFIC-LIGHTS #11)
+          // Check for red/yellow lights ahead within 15u
+          const redLightDist = trafficLights.checkRedLight(ai.x, ai.z, forwardX, forwardZ);
+          if (redLightDist < 15) {
+            // Decelerate to stop before red light
+            if (redLightDist < 3) {
+              targetSpeed = 0;
+            } else {
+              targetSpeed = Math.min(targetSpeed, (redLightDist - 2) * 3);
+            }
+          }
+          const yellowLightDist = trafficLights.checkYellowLight(ai.x, ai.z, forwardX, forwardZ);
+          if (yellowLightDist < 10) {
+            // Slow down for yellow light if close
+            targetSpeed = Math.min(targetSpeed, (yellowLightDist - 2) * 4);
           }
 
           // Lerp speed toward target
