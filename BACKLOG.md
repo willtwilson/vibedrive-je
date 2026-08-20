@@ -28,7 +28,7 @@
 ## OPEN TICKETS — Phase 1: Multiplayer & Leaderboard
 ## ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-### T-MULTIPLAYER: Real-time multiplayer (Supabase Realtime, 3-5 players)
+### T-MULTIPLAYER: Real-time multiplayer (Supabase Realtime, 3-5 players) 🏆 TOURNAMENT REQUIRED
 **Priority:** HIGH | **Effort:** HIGH | **Status:** OPEN
 
 Real-time multiplayer using Supabase Realtime channels on CT707 (100.105.179.50:8000).
@@ -104,7 +104,7 @@ Replace the procedural terrain with a real road network from OpenStreetMap.
 **Tournament Mode:** 3 contenders (k2.7-code, glm-5.2, deepseek-pro-v4), judge on different model
 **Dependencies:** None (data in hand)
 
-### T-GTA-TRAFFIC: Real traffic system on roads
+### T-GTA-TRAFFIC: Real traffic system on roads 🏆 TOURNAMENT REQUIRED
 **Priority:** MEDIUM | **Effort:** HIGH | **Status:** OPEN
 
 AI traffic cars that follow the real road network, stop at junctions, drive on the left.
