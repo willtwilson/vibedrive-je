@@ -1,0 +1,157 @@
+{
+  "name": "Spring",
+  "date_from": "31-05-2026",
+  "date_to": "31-10-2026",
+  "routes": [
+    {
+      "route_id": "SL1",
+      "route_short_name": "1",
+      "route_long_name": "Gorey Pier"
+    },
+    {
+      "route_id": "SL15",
+      "route_short_name": "10",
+      "route_long_name": "Enid Quenault Health Centre"
+    },
+    {
+      "route_id": "SL16",
+      "route_short_name": "12",
+      "route_long_name": "Airport"
+    },
+    {
+      "route_id": "SL17",
+      "route_short_name": "12A",
+      "route_long_name": "Corbiere"
+    },
+    {
+      "route_id": "SL18",
+      "route_short_name": "13",
+      "route_long_name": "Jersey Zoo"
+    },
+    {
+      "route_id": "SL19",
+      "route_short_name": "14",
+      "route_long_name": "St Brelades Bay"
+    },
+    {
+      "route_id": "SL20",
+      "route_short_name": "15",
+      "route_long_name": "Airport"
+    },
+    {
+      "route_id": "SL21",
+      "route_short_name": "16",
+      "route_long_name": "Le Marais"
+    },
+    {
+      "route_id": "SL22",
+      "route_short_name": "19",
+      "route_long_name": "La Pouquelaye"
+    },
+    {
+      "route_id": "SL2",
+      "route_short_name": "1A",
+      "route_long_name": "Gorey Pier"
+    },
+    {
+      "route_id": "SL3",
+      "route_short_name": "1G",
+      "route_long_name": "Gorey Pier"
+    },
+    {
+      "route_id": "SL4",
+      "route_short_name": "2",
+      "route_long_name": "St Catherine"
+    },
+    {
+      "route_id": "SL23",
+      "route_short_name": "20",
+      "route_long_name": "Town Link"
+    },
+    {
+      "route_id": "SL24",
+      "route_short_name": "21",
+      "route_long_name": "Victoria Village & Maufant"
+    },
+    {
+      "route_id": "SL25",
+      "route_short_name": "22",
+      "route_long_name": "L'Etacq"
+    },
+    {
+      "route_id": "SL26",
+      "route_short_name": "23",
+      "route_long_name": "Jersey Zoo"
+    },
+    {
+      "route_id": "SL27",
+      "route_short_name": "24",
+      "route_long_name": "Grand Vaux"
+    },
+    {
+      "route_id": "SL28",
+      "route_short_name": "28",
+      "route_long_name": "Jersey War Tunnels"
+    },
+    {
+      "route_id": "SL5",
+      "route_short_name": "2A",
+      "route_long_name": "St Catherine"
+    },
+    {
+      "route_id": "SL6",
+      "route_short_name": "3",
+      "route_long_name": "Jersey Zoo"
+    },
+    {
+      "route_id": "SL29",
+      "route_short_name": "33",
+      "route_long_name": "Jersey Zoo"
+    },
+    {
+      "route_id": "SL7",
+      "route_short_name": "4",
+      "route_long_name": "Trinity & Bouley Bay"
+    },
+    {
+      "route_id": "SL8",
+      "route_short_name": "4A",
+      "route_long_name": "Trinity via Acorn"
+    },
+    {
+      "route_id": "SL9",
+      "route_short_name": "5",
+      "route_long_name": "St John's Church"
+    },
+    {
+      "route_id": "SL10",
+      "route_short_name": "5A",
+      "route_long_name": "St John's Church"
+    },
+    {
+      "route_id": "SL12",
+      "route_short_name": "7",
+      "route_long_name": "St Johns Church"
+    },
+    {
+      "route_id": "SL13",
+      "route_short_name": "8",
+      "route_long_name": "Portinfer"
+    },
+    {
+      "route_id": "SL14",
+      "route_short_name": "9",
+      "route_long_name": "Greve de Lecq"
+    },
+    {
+      "route_id": "SL30",
+      "route_short_name": "X12",
+      "route_long_name": "Liberation Station"
+    },
+    {
+      "route_id": "SL31",
+      "route_short_name": "X22",
+      "route_long_name": "L'Etacq"
+    }
+  ]
+}
