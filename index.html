@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>⚡ Vibe Drive Jersey 3D</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase-js.min.js"></script>
   <style>
     :root {
       --jersey-green: #00A86B;
@@ -259,6 +260,19 @@
     }
     #airport-toggle.active { background: rgba(0, 168, 107, 0.35); border-color: var(--jersey-green); color: var(--jersey-green); }
     #airport-toggle:hover { border-color: var(--jersey-green); }
+
+    /* ====== BUS TOGGLE BUTTON ====== */
+    #bus-toggle {
+      position: fixed; top: 12px; right: 424px; z-index: 50;
+      width: 36px; height: 36px; border-radius: 0;
+      border: 1px solid var(--hud-border);
+      background: var(--hud-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      color: var(--text-primary); font-size: 18px; display: flex; align-items: center; justify-content: center;
+      cursor: pointer; user-select: none; touch-action: none; transition: all 0.15s;
+      pointer-events: auto;
+    }
+    #bus-toggle.active { background: rgba(255, 152, 0, 0.35); border-color: #ff9800; color: #ffcc80; }
+    #bus-toggle:hover { border-color: #ff9800; }
 
     #airport-panel {
       position: fixed; top: 56px; right: 12px; z-index: 49;
@@ -525,7 +539,7 @@
     <div class="speedo" id="speed">Speed: 0 km/h</div>
     <div class="speed-bar-container"><div class="speed-bar" id="speed-bar"></div></div>
     <div class="loc" id="loc">Jersey, Channel Islands</div>
-    <div class="players" id="players">4 players online</div>
+    <div class="players" id="players">👥 1 online</div>
     <div class="mode-name" id="mode-name">🚗 Drive Mode</div>
     <div id="hud-username" style="font-family:'Inter',sans-serif;font-size:12px;font-weight:700;color:var(--jersey-green);margin-top:6px;padding-top:6px;border-top:1px solid rgba(0,168,107,0.15);">👤 —</div>
   </div>
@@ -536,6 +550,7 @@
     <button class="mode-btn" data-mode="fly">✈️ Fly</button>
   </div>
 
+  <button id="bus-toggle" title="Bus Routes">🚌</button>
   <button id="airport-toggle" title="Airport Board">✈️</button>
   <div id="airport-panel">
     <div class="ap-header">🛫 Jersey Airport — Live Board</div>
@@ -634,9 +649,12 @@
   </div>
 
   <script src="jersey-roads.js"></script>
+  <script src="jersey-bus-data.js"></script>
   <script type="importmap">
   { "imports": { "three": "https://unpkg.com/three@0.185.0/build/three.module.js" } }
+  </script>
 
+  <script>
     // ====== LEADERBOARD (Supabase) ======
     const SUPABASE_URL = 'http://100.105.179.50:8000';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzg3MjYwMDUyLCJleHAiOjIxMDI2MjAwNTJ9.GYBX8k6R1959WV6If7_j71h2RU47y7cx7An2ObuTxD0';
@@ -893,6 +911,10 @@
       localStorage.setItem('vibedrive_username', name);
       updateUsernameSprite();
       updateHUDUsername();
+      // Trigger multiplayer init if not already connected
+      if (typeof mpInit === 'function' && !mpConnected) {
+        setTimeout(mpInit, 500);
+      }
     }
 
     // Username modal elements
@@ -2702,19 +2724,221 @@
     // Attach username sprite if username is set
     updateUsernameSprite();
 
-    // ====== AI PLAYERS ======
+    // ====== AI TRAFFIC SYSTEM (T-GTA-TRAFFIC #6) ======
+    // Architecture: K2.7-Code tournament winner — A* on road graph + left-lane steering
     const aiCars = [];
-    const aiColors = [0x2266cc, 0x22cc44, 0xcccc22];
-    const aiNames = ['Jessey', 'JerseyGirl', 'ChannelRider'];
-    for (let i = 0; i < 3; i++) {
-      const aiCar = createCar(aiColors[i]);
-      const angle = (i / 3) * Math.PI * 2;
-      const r = 60 + Math.random() * 40;
-      const ax = Math.cos(angle) * r, az = -50 + Math.sin(angle) * r;
+    const aiColors = [0xcc2222, 0x2266cc, 0xeeeeee, 0x222222, 0xaaaaaa, 0x22cc44];
+    const aiNames = ['Jessey','JerseyGirl','ChannelRider','StHelier','GoreyRacer','StBrelade','StClement','StOuen','StMary','StJohn','Trinity','StMartin','Grouville','StSaviour','StLawrence'];
+
+    // ---- Build road graph from jerseyRoads ----
+    // Nodes are road endpoints merged by spatial hash (2m tolerance).
+    // Edges are directed lane segments between consecutive points.
+    const roadGraph = (function() {
+      const MERGE_TOL = 2; // meters — merge endpoints within this distance
+      const nodeMap = new Map(); // key "x,z" -> node id
+      const nodes = []; // {id, x, z, edges: []}
+      const edges = []; // {from, to, length, speed, width, dx, dz, angle, type, name}
+
+      // Spatial hash for node merging
+      const nodeHash = new Map();
+      function nhashKey(x, z) { return Math.round(x / MERGE_TOL) + ',' + Math.round(z / MERGE_TOL); }
+      function getOrCreateNode(x, z) {
+        // Search nearby hash cells for existing node within tolerance
+        const hx = Math.round(x / MERGE_TOL), hz = Math.round(z / MERGE_TOL);
+        for (let dx = -1; dx <= 1; dx++) {
+          for (let dz = -1; dz <= 1; dz++) {
+            const key = (hx + dx) + ',' + (hz + dz);
+            const candidates = nodeHash.get(key);
+            if (candidates) {
+              for (const nid of candidates) {
+                const n = nodes[nid];
+                const d2 = (n.x - x) * (n.x - x) + (n.z - z) * (n.z - z);
+                if (d2 < MERGE_TOL * MERGE_TOL) return nid;
+              }
+            }
+          }
+        }
+        // Create new node
+        const id = nodes.length;
+        const node = { id, x, z, edges: [] };
+        nodes.push(node);
+        const key = nhashKey(x, z);
+        if (!nodeHash.has(key)) nodeHash.set(key, []);
+        nodeHash.get(key).push(id);
+        return id;
+      }
+
+      function speedForType(t) {
+        if (t === 'trunk' || t === 'primary') return 50;
+        if (t === 'secondary') return 45;
+        if (t === 'tertiary') return 40;
+        if (t === 'residential' || t === 'unclassified') return 25;
+        return 30; // service, track, etc.
+      }
+
+      for (let ri = 0; ri < jerseyRoads.length; ri++) {
+        const rd = jerseyRoads[ri];
+        const pts = rd.p;
+        const maxSpeed = speedForType(rd.t);
+        for (let i = 0; i < pts.length - 1; i++) {
+          const x1 = pts[i][0], z1 = pts[i][1];
+          const x2 = pts[i+1][0], z2 = pts[i+1][1];
+          const dx = x2 - x1, dz = z2 - z1;
+          const len = Math.sqrt(dx * dx + dz * dz);
+          if (len < 1) continue; // skip tiny segments
+          const n1 = getOrCreateNode(x1, z1);
+          const n2 = getOrCreateNode(x2, z2);
+          if (n1 === n2) continue;
+          const angle = Math.atan2(dx, dz);
+          // Forward edge: n1 -> n2
+          const fwdEdge = { from: n1, to: n2, length: len, speed: maxSpeed, width: rd.w, dx: dx / len, dz: dz / len, angle, type: rd.t, name: rd.n, laneOffset: rd.w * 0.25 };
+          edges.push(fwdEdge);
+          nodes[n1].edges.push(fwdEdge);
+          // Reverse edge: n2 -> n1 (bidirectional for all roads unless single-lane one-way)
+          if (rd.l > 1) {
+            const revAngle = Math.atan2(-dx, -dz);
+            const revEdge = { from: n2, to: n1, length: len, speed: maxSpeed, width: rd.w, dx: -dx / len, dz: -dz / len, angle: revAngle, type: rd.t, name: rd.n, laneOffset: rd.w * 0.25 };
+            edges.push(revEdge);
+            nodes[n2].edges.push(revEdge);
+          }
+        }
+      }
+
+      // Spatial hash for finding nearest node
+      const NODE_TILE = 20;
+      const nodeGrid = new Map();
+      for (const n of nodes) {
+        const tx = Math.floor(n.x / NODE_TILE), tz = Math.floor(n.z / NODE_TILE);
+        const k = tx + ',' + tz;
+        if (!nodeGrid.has(k)) nodeGrid.set(k, []);
+        nodeGrid.get(k).push(n);
+      }
+
+      function findNearestNode(x, z) {
+        const tx = Math.floor(x / NODE_TILE), tz = Math.floor(z / NODE_TILE);
+        let best = null, bestDist = Infinity;
+        for (let dx = -1; dx <= 1; dx++) {
+          for (let dz = -1; dz <= 1; dz++) {
+            const arr = nodeGrid.get((tx + dx) + ',' + (tz + dz));
+            if (!arr) continue;
+            for (const n of arr) {
+              const d2 = (n.x - x) * (n.x - x) + (n.z - z) * (n.z - z);
+              if (d2 < bestDist) { bestDist = d2; best = n; }
+            }
+          }
+        }
+        // Expand search if nothing found nearby
+        if (!best) {
+          for (const n of nodes) {
+            const d2 = (n.x - x) * (n.x - x) + (n.z - z) * (n.z - z);
+            if (d2 < bestDist) { bestDist = d2; best = n; }
+          }
+        }
+        return best;
+      }
+
+      // A* pathfinding — heuristic: Euclidean distance; cost: edge.length / edge.speed
+      function aStar(startId, goalId) {
+        if (startId === goalId) return [];
+        const openSet = new Set([startId]);
+        const cameFrom = new Map();
+        const gScore = new Map();
+        gScore.set(startId, 0);
+        const fScore = new Map();
+        const startNode = nodes[startId], goalNode = nodes[goalId];
+        const h0 = Math.sqrt((startNode.x - goalNode.x) ** 2 + (startNode.z - goalNode.z) ** 2);
+        fScore.set(startId, h0);
+
+        let iterations = 0;
+        const MAX_ITER = 2000;
+        while (openSet.size > 0 && iterations < MAX_ITER) {
+          iterations++;
+          // Find node with lowest fScore in openSet
+          let current = null, lowestF = Infinity;
+          for (const id of openSet) {
+            const f = fScore.get(id) ?? Infinity;
+            if (f < lowestF) { lowestF = f; current = id; }
+          }
+          if (current === goalId) {
+            // Reconstruct path as list of edges
+            const path = [];
+            let node = goalId;
+            while (cameFrom.has(node)) {
+              const prev = cameFrom.get(node);
+              // Find the edge from prev to node
+              for (const e of nodes[prev].edges) {
+                if (e.to === node) { path.unshift(e); break; }
+              }
+              node = prev;
+            }
+            return path;
+          }
+          openSet.delete(current);
+          for (const edge of nodes[current].edges) {
+            const neighbor = edge.to;
+            const tentativeG = gScore.get(current) + edge.length / Math.max(1, edge.speed);
+            if (tentativeG < (gScore.get(neighbor) ?? Infinity)) {
+              cameFrom.set(neighbor, current);
+              gScore.set(neighbor, tentativeG);
+              const nn = nodes[neighbor];
+              const h = Math.sqrt((nn.x - goalNode.x) ** 2 + (nn.z - goalNode.z) ** 2);
+              fScore.set(neighbor, tentativeG + h);
+              openSet.add(neighbor);
+            }
+          }
+        }
+        return null; // no path found
+      }
+
+      // Pick a random destination node, weighted toward main roads
+      function randomDestination() {
+        // Try to pick a node with many edges (intersections on main roads)
+        for (let attempts = 0; attempts < 20; attempts++) {
+          const n = nodes[Math.floor(Math.random() * nodes.length)];
+          if (n.edges.length >= 2) return n.id;
+        }
+        return nodes[Math.floor(Math.random() * nodes.length)].id;
+      }
+
+      console.log(`Road graph: ${nodes.length} nodes, ${edges.length} edges`);
+      return { nodes, edges, findNearestNode, aStar, randomDestination };
+    })();
+
+    // ---- Create 15 AI traffic cars ----
+    const NUM_AI_CARS = 15;
+    for (let i = 0; i < NUM_AI_CARS; i++) {
+      const color = aiColors[i % aiColors.length];
+      const aiCar = createCar(color);
+      // Pick a random road segment to start on
+      const segs = roadNetwork.segments;
+      const seg = segs[Math.floor(Math.random() * segs.length)];
+      const t = Math.random();
+      const ax = seg.x1 + t * (seg.x2 - seg.x1);
+      const az = seg.z1 + t * (seg.z2 - seg.z1);
       const ah = getTerrainHeight(ax, az);
       aiCar.position.set(ax, Math.max(ah + 0.5, 0), az);
       scene.add(aiCar);
-      aiCars.push({ mesh: aiCar, x: ax, z: az, heading: Math.random() * 360, speed: 20 + Math.random() * 30, targetHeading: Math.random() * 360, name: aiNames[i] });
+
+      // Assign initial route
+      const startNode = roadGraph.findNearestNode(ax, az);
+      const destNode = roadGraph.randomDestination();
+      const route = (startNode && destNode !== null) ? roadGraph.aStar(startNode.id, destNode) : null;
+
+      aiCars.push({
+        mesh: aiCar,
+        x: ax, z: az,
+        heading: seg.angle * 180 / Math.PI,
+        speed: 25 + Math.random() * 15,
+        maxSpeed: 25 + Math.random() * 15,
+        name: aiNames[i] || ('Car' + i),
+        route: route || [],
+        routeIdx: 0,
+        currentNode: startNode ? startNode.id : 0,
+        destNode: destNode,
+        lastRepath: 0,
+        pathWP: null, // current waypoint {x, z}
+        color: color
+      });
     }
 
     // ====== WANTED LEVEL & POLICE SYSTEM ======
@@ -2883,7 +3107,7 @@
              target.closest('#cam-btns') || target.closest('#radar') || target.closest('#radar-label') ||
              target.closest('#badge') || target.closest('#steer-hint') || target.closest('#loading') ||
              target.closest('#ad-popup') || target.closest('#score-display') || target.closest('#toast') ||
-             target.closest('#night-toggle') || target.closest('#airport-toggle') || target.closest('#airport-panel');
+             target.closest('#night-toggle') || target.closest('#airport-toggle') || target.closest('#airport-panel') || target.closest('#bus-toggle');
     }
 
     document.addEventListener('pointerdown', (e) => {
@@ -3088,22 +3312,25 @@
       radarCtx.stroke();
       radarCtx.restore();
 
-      // AI cars
+      // AI cars — blue dots with names
       aiCars.forEach(ai => {
         const dx = (ai.x - carX) * scale;
         const dz = (ai.z - carZ) * scale;
         const dist = Math.sqrt(dx*dx + dz*dz);
         if (dist < RADAR_SIZE/2) {
-          radarCtx.fillStyle = '#ffaa00';
+          radarCtx.fillStyle = '#3388ff';
           radarCtx.beginPath();
           radarCtx.arc(cx + dx, cy + dz, 3, 0, Math.PI * 2);
           radarCtx.fill();
           // Name label
-          radarCtx.fillStyle = 'rgba(255,170,0,0.6)';
+          radarCtx.fillStyle = 'rgba(100,170,255,0.7)';
           radarCtx.font = '7px monospace';
           radarCtx.fillText(ai.name.substring(0, 5), cx + dx + 4, cy + dz + 2);
         }
       });
+
+      // Multiplayer remote players — colored dots with username
+      if (typeof mpDrawRadarPlayers === 'function') mpDrawRadarPlayers(cx, cy, scale);
 
       // Police cars — blue dots
       policeCars.forEach(p => {
@@ -3226,6 +3453,27 @@
           radarCtx.arc(cx + Math.cos(angle) * (RADAR_SIZE/2 - 6), cy + Math.sin(angle) * (RADAR_SIZE/2 - 6), 3, 0, Math.PI * 2);
           radarCtx.fill();
         }
+      }
+
+      // Buses on radar — orange dots with route number
+      if (typeof buses !== 'undefined' && busVisible) {
+        buses.forEach(bus => {
+          const dx = (bus.x - carX) * scale;
+          const dz = (bus.z - carZ) * scale;
+          const dist = Math.sqrt(dx*dx + dz*dz);
+          if (dist < RADAR_SIZE/2 - 2) {
+            radarCtx.fillStyle = '#ff8800';
+            radarCtx.beginPath();
+            radarCtx.arc(cx + dx, cy + dz, 3, 0, Math.PI * 2);
+            radarCtx.fill();
+            radarCtx.strokeStyle = '#ffcc00';
+            radarCtx.lineWidth = 0.5;
+            radarCtx.stroke();
+            radarCtx.fillStyle = 'rgba(255,136,0,0.7)';
+            radarCtx.font = 'bold 7px monospace';
+            radarCtx.fillText(bus.routeNum, cx + dx + 4, cy + dz + 2);
+          }
+        });
       }
 
       // Sweep line
@@ -3441,22 +3689,124 @@
         carGroup.rotation.z = tilt * (Math.abs(carSpeed) / MAX_SPEED);
       }
 
-      // AI cars
+      // AI cars — A* pathfinding on road graph with left-lane steering
       aiCars.forEach(ai => {
-        if (Math.random() < 0.01) ai.targetHeading = Math.random() * 360;
-        let diff = ai.targetHeading - ai.heading;
-        if (diff > 180) diff -= 360; if (diff < -180) diff += 360;
-        ai.heading += diff * 0.02;
-        const dist = ai.speed * 0.3 * dt;
-        const rad = ai.heading * Math.PI / 180;
-        ai.x += Math.sin(rad) * dist; ai.z += Math.cos(rad) * dist;
-        if (islandMask(ai.x, ai.z) <= 0.05) {
-          ai.targetHeading = ai.heading + 180 + (Math.random() - 0.5) * 60;
-          ai.x -= Math.sin(rad) * 3; ai.z -= Math.cos(rad) * 3;
+        // Repath if route is exhausted or every 5 seconds
+        if ((!ai.route || ai.routeIdx >= ai.route.length) || (now - ai.lastRepath > 5000 && ai.routeIdx >= ai.route.length)) {
+          const startNode = roadGraph.findNearestNode(ai.x, ai.z);
+          if (startNode) {
+            ai.currentNode = startNode.id;
+            ai.destNode = roadGraph.randomDestination();
+            const newRoute = roadGraph.aStar(startNode.id, ai.destNode);
+            ai.route = newRoute || [];
+            ai.routeIdx = 0;
+            ai.lastRepath = now;
+          }
         }
+
+        // Determine current target waypoint from route
+        let targetX = null, targetZ = null;
+        let currentEdge = null;
+        if (ai.route && ai.routeIdx < ai.route.length) {
+          currentEdge = ai.route[ai.routeIdx];
+          // Target is the end node of the current edge, offset to left lane
+          const edge = currentEdge;
+          // Left normal: perpendicular to edge direction, pointing left
+          // For direction (dx, dz), left normal is (-dz, dx) normalized
+          const leftNx = -edge.dz, leftNz = edge.dx;
+          // Target = end node position + left normal * laneOffset
+          const endNode = roadGraph.nodes[edge.to];
+          targetX = endNode.x + leftNx * edge.laneOffset;
+          targetZ = endNode.z + leftNz * edge.laneOffset;
+
+          // Check if we've reached the end of this edge
+          const distToEnd = Math.sqrt((ai.x - endNode.x) ** 2 + (ai.z - endNode.z) ** 2);
+          if (distToEnd < 4) {
+            ai.routeIdx++;
+            // If route exhausted, pick new destination next frame
+          }
+        }
+
+        if (targetX === null) {
+          // No route — slow down and try to find nearest node next frame
+          ai.speed *= 0.9;
+        } else {
+          // Steering: lerp heading toward target waypoint
+          const dx = targetX - ai.x, dz = targetZ - ai.z;
+          const targetHeading = Math.atan2(dx, dz) * 180 / Math.PI;
+          let diff = targetHeading - ai.heading;
+          while (diff > 180) diff -= 360;
+          while (diff < -180) diff += 360;
+          // Lerp heading at a rate proportional to dt
+          const turnRate = 3.0; // degrees per frame at 60fps
+          ai.heading += Math.max(-turnRate * dt * 60, Math.min(turnRate * dt * 60, diff));
+
+          // Speed control: base speed from road type, slow for obstacles
+          let targetSpeed = ai.maxSpeed;
+          if (currentEdge) {
+            targetSpeed = Math.min(ai.maxSpeed, currentEdge.speed);
+          }
+
+          // Collision avoidance: check other AI cars and player ahead
+          const rad = ai.heading * Math.PI / 180;
+          const forwardX = Math.sin(rad), forwardZ = Math.cos(rad);
+          let obstacleDist = Infinity;
+
+          // Check player car
+          {
+            const pdx = carX - ai.x, pdz = carZ - ai.z;
+            const dist = Math.sqrt(pdx * pdx + pdz * pdz);
+            if (dist < 15) {
+              // Check if player is ahead (dot product with forward direction)
+              const dot = (pdx * forwardX + pdz * forwardZ) / Math.max(0.1, dist);
+              if (dot > 0.5 && dist < obstacleDist) obstacleDist = dist;
+            }
+          }
+
+          // Check other AI cars
+          for (const other of aiCars) {
+            if (other === ai) continue;
+            const odx = other.x - ai.x, odz = other.z - ai.z;
+            const dist = Math.sqrt(odx * odx + odz * odz);
+            if (dist < 15) {
+              const dot = (odx * forwardX + odz * forwardZ) / Math.max(0.1, dist);
+              if (dot > 0.5 && dist < obstacleDist) obstacleDist = dist;
+            }
+          }
+
+          // Apply speed based on obstacle distance
+          if (obstacleDist < 3) {
+            targetSpeed = 0; // stop
+          } else if (obstacleDist < 10) {
+            targetSpeed *= (obstacleDist - 3) / 7; // slow down linearly
+          }
+
+          // Lerp speed toward target
+          ai.speed += (targetSpeed - ai.speed) * Math.min(1, dt * 3);
+
+          // Move forward
+          const moveDist = ai.speed * dt;
+          ai.x += forwardX * moveDist;
+          ai.z += forwardZ * moveDist;
+
+          // Use snapCar for ground alignment and heading correction
+          const snap = roadNetwork.snapCar(ai.x, ai.z, ai.heading, dt);
+          if (snap) {
+            ai.heading += snap.headingAdjust;
+          }
+        }
+
+        // Update mesh position
         const ah = getTerrainHeight(ai.x, ai.z);
         ai.mesh.position.set(ai.x, Math.max(ah + 0.5, 0), ai.z);
         ai.mesh.rotation.y = ai.heading * Math.PI / 180;
+
+        // Headlights at night
+        const todAI = forceNight ? 'night' : getTimeOfDay();
+        const aiNight = todAI === 'night';
+        if (ai.mesh.userData.headlights) {
+          ai.mesh.userData.headlights.forEach(h => h.intensity = aiNight ? 2.0 : 0);
+        }
       });
 
       // ====== WANTED LEVEL: RECKLESS DRIVING DETECTION ======
@@ -3759,6 +4109,13 @@
       // Collectibles update (rotation, proximity check, particles)
       updateCollectibles(dt, now);
 
+      // Bus system update
+      if (typeof updateBuses === 'function') updateBuses(dt);
+
+      // Multiplayer: send position (10Hz throttled) + interpolate remote players
+      if (typeof mpSendPosition === 'function') mpSendPosition();
+      if (typeof mpInterpolateRemotePlayers === 'function') mpInterpolateRemotePlayers(dt);
+
       drawRadar();
       renderer.render(scene, camera);
       requestAnimationFrame(animate);
@@ -4044,6 +4401,562 @@
       else stopLiveAircraftTracking();
     });
     modeObserver.observe(modeNameEl, { childList: true, subtree: false, characterData: true });
+
+    // ====== MULTIPLAYER (T-MULTIPLAYER #2 — Supabase Realtime) ======
+    // Architecture from tournament/MULTIPLAYER-K2-7-Code.md
+    // Uses Supabase Realtime broadcast for 10Hz position sync + 1Hz heartbeat
+
+    const remotePlayers = new Map(); // playerId -> { mesh, label, buffer, lastSeq, lastUpdate, username, color, prevPos, targetPos, prevHeading, targetHeading }
+    let mpChannel = null;
+    let mpConnected = false;
+    let mpPlayerId = null;
+    let mpSessionId = null;
+    let mpOutSeq = 0;
+    let mpLastSendTime = 0;
+    let mpHeartbeatTimer = null;
+    let mpReconnectAttempts = 0;
+    let mpReconnectTimer = null;
+    let mpLastInputTime = Date.now();
+    let mpSessionStart = Date.now();
+    let mpIdleCheckTimer = null;
+    let mpMaxSessionTimer = null;
+    const MP_MAX_RECONNECT = 3;
+    const MP_IDLE_TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes
+    const MP_MAX_SESSION_MS = 2 * 60 * 60 * 1000; // 2 hours
+    const MP_STALE_MS = 60 * 1000; // 60s no update = remove
+    const MP_SEND_INTERVAL_MS = 100; // 10Hz
+    const MP_HEARTBEAT_INTERVAL_MS = 1000; // 1Hz
+
+    // Generate unique player ID from username + random component
+    function mpGetOrCreatePlayerId() {
+      if (mpPlayerId) return mpPlayerId;
+      const stored = localStorage.getItem('vibedrive_mp_id');
+      if (stored) { mpPlayerId = stored; return mpPlayerId; }
+      mpPlayerId = (playerUsername || 'guest') + '_' + Math.random().toString(36).substring(2, 8);
+      localStorage.setItem('vibedrive_mp_id', mpPlayerId);
+      return mpPlayerId;
+    }
+
+    function mpGenerateSessionId() {
+      return Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 8);
+    }
+
+    // Hash username to a color (deterministic)
+    function mpHashStringColor(str) {
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) {
+        hash = ((hash << 5) - hash) + str.charCodeAt(i);
+        hash |= 0;
+      }
+      const hue = Math.abs(hash) % 360;
+      return 'hsl(' + hue + ', 70%, 55%)';
+    }
+
+    // Convert hsl string to hex for THREE.Color
+    function mpHslToHex(hslStr) {
+      const m = hslStr.match(/hsl\((\d+),\s*(\d+)%,\s*(\d+)%\)/);
+      if (!m) return 0x00ff88;
+      const h = parseInt(m[1]) / 360, s = parseInt(m[2]) / 100, l = parseInt(m[3]) / 100;
+      const hue2rgb = (p, q, t) => {
+        if (t < 0) t += 1; if (t > 1) t -= 1;
+        if (t < 1/6) return p + (q - p) * 6 * t;
+        if (t < 1/2) return q;
+        if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+        return p;
+      };
+      let r, g, b;
+      if (s === 0) { r = g = b = l; }
+      else {
+        const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+        const p = 2 * l - q;
+        r = hue2rgb(p, q, h + 1/3);
+        g = hue2rgb(p, q, h);
+        b = hue2rgb(p, q, h - 1/3);
+      }
+      return (Math.round(r * 255) << 16) | (Math.round(g * 255) << 8) | Math.round(b * 255);
+    }
+
+    function mpMakeRemoteLabel(text) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 256; canvas.height = 64;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = 'rgba(10, 26, 63, 0.6)';
+      ctx.fillRect(0, 12, 256, 40);
+      ctx.font = 'bold 22px Inter, sans-serif';
+      ctx.fillStyle = '#F0F4FF';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, 128, 33);
+      const texture = new THREE.CanvasTexture(canvas);
+      const spriteMat = new THREE.SpriteMaterial({ map: texture, transparent: true, opacity: 0.85, depthTest: false });
+      const sprite = new THREE.Sprite(spriteMat);
+      sprite.scale.set(7, 1.8, 1);
+      sprite.renderOrder = 999;
+      return sprite;
+    }
+
+    function mpCreateOrUpdateRemotePlayer(playerId, username) {
+      if (remotePlayers.has(playerId)) return remotePlayers.get(playerId);
+      const colorHex = mpHslToHex(mpHashStringColor(username));
+      const car = createCar(colorHex);
+      scene.add(car);
+      const label = mpMakeRemoteLabel((username || 'player').substring(0, 12));
+      label.position.set(0, 4.5, 0);
+      car.add(label);
+      const entry = {
+        mesh: car,
+        label: label,
+        username: username,
+        color: colorHex,
+        buffer: [], // array of {x, z, heading, speed, ts, seq}
+        lastSeq: 0,
+        lastUpdate: Date.now(),
+        prevPos: { x: 0, z: 0 },
+        targetPos: { x: 0, z: 0 },
+        prevHeading: 0,
+        targetHeading: 0,
+        speed: 0,
+        interpT: 0,
+        initialized: false
+      };
+      remotePlayers.set(playerId, entry);
+      mpUpdatePlayerCount();
+      return entry;
+    }
+
+    function mpRemoveRemotePlayer(playerId) {
+      const entry = remotePlayers.get(playerId);
+      if (!entry) return;
+      scene.remove(entry.mesh);
+      if (entry.label && entry.label.material) {
+        if (entry.label.material.map) entry.label.material.map.dispose();
+        entry.label.material.dispose();
+      }
+      // Dispose car meshes
+      entry.mesh.traverse(obj => {
+        if (obj.geometry) obj.geometry.dispose();
+        if (obj.material) {
+          if (Array.isArray(obj.material)) obj.material.forEach(m => m.dispose());
+          else obj.material.dispose();
+        }
+      });
+      remotePlayers.delete(playerId);
+      mpUpdatePlayerCount();
+    }
+
+    function mpUpdatePlayerCount() {
+      const el = document.getElementById('players');
+      if (el) {
+        const count = remotePlayers.size + 1; // +1 for self
+        el.textContent = '👥 ' + count + ' online';
+      }
+    }
+
+    // Send position update at 10Hz
+    function mpSendPosition() {
+      if (!mpChannel || !mpConnected) return;
+      const now = performance.now();
+      if (now - mpLastSendTime < MP_SEND_INTERVAL_MS) return;
+      mpLastSendTime = now;
+      try {
+        mpChannel.send({
+          type: 'broadcast',
+          event: 'pos',
+          payload: {
+            id: mpPlayerId,
+            username: playerUsername || 'guest',
+            x: carX,
+            z: carZ,
+            heading: carHeading,
+            speed: carSpeed,
+            mode: vehicleMode,
+            ts: Date.now(),
+            seq: ++mpOutSeq
+          }
+        });
+      } catch (e) {
+        console.warn('MP send pos failed:', e);
+      }
+    }
+
+    // Send heartbeat at 1Hz
+    function mpSendHeartbeat() {
+      if (!mpChannel || !mpConnected) return;
+      try {
+        mpChannel.send({
+          type: 'broadcast',
+          event: 'hb',
+          payload: {
+            id: mpPlayerId,
+            username: playerUsername || 'guest',
+            ts: Date.now(),
+            active: true
+          }
+        });
+      } catch (e) {
+        console.warn('MP send heartbeat failed:', e);
+      }
+    }
+
+    // Handle incoming position update
+    function mpHandlePosition(payload) {
+      if (!payload || payload.id === mpPlayerId) return; // ignore own
+      const entry = mpCreateOrUpdateRemotePlayer(payload.id, payload.username || 'player');
+      // Sequence check — discard stale/out-of-order
+      if (payload.seq <= entry.lastSeq) return;
+      entry.lastSeq = payload.seq;
+      entry.lastUpdate = Date.now();
+      entry.username = payload.username || entry.username;
+
+      // Push to buffer (max 2 samples)
+      const sample = { x: payload.x, z: payload.z, heading: payload.heading, speed: payload.speed, ts: payload.ts, seq: payload.seq };
+      if (entry.buffer.length >= 2) entry.buffer.shift();
+      entry.buffer.push(sample);
+
+      // Set interpolation targets
+      if (entry.buffer.length === 1) {
+        // First update — snap to position
+        entry.prevPos = { x: sample.x, z: sample.z };
+        entry.targetPos = { x: sample.x, z: sample.z };
+        entry.prevHeading = sample.heading;
+        entry.targetHeading = sample.heading;
+        entry.mesh.position.set(sample.x, getTerrainHeight(sample.x, sample.z) + 0.5, sample.z);
+        entry.mesh.rotation.y = sample.heading * Math.PI / 180;
+        entry.initialized = true;
+      } else {
+        // Previous target becomes prev, new sample becomes target
+        const prevTarget = entry.buffer[entry.buffer.length - 2];
+        entry.prevPos = { x: prevTarget.x, z: prevTarget.z };
+        entry.targetPos = { x: sample.x, z: sample.z };
+        entry.prevHeading = prevTarget.heading;
+        entry.targetHeading = sample.heading;
+        entry.interpT = 0;
+      }
+      entry.speed = payload.speed || 0;
+    }
+
+    // Handle incoming heartbeat
+    function mpHandleHeartbeat(payload) {
+      if (!payload || payload.id === mpPlayerId) return;
+      const entry = remotePlayers.get(payload.id);
+      if (entry) {
+        entry.lastUpdate = Date.now();
+      }
+    }
+
+    // Handle leave broadcast
+    function mpHandleLeave(payload) {
+      if (!payload || payload.id === mpPlayerId) return;
+      mpRemoveRemotePlayer(payload.id);
+    }
+
+    // Lerp helper
+    function mpLerp(a, b, t) { return a + (b - a) * t; }
+
+    // Angle lerp with wrapping (heading in degrees)
+    function mpLerpAngle(a, b, t) {
+      let diff = b - a;
+      while (diff > 180) diff -= 360;
+      while (diff < -180) diff += 360;
+      return a + diff * t;
+    }
+
+    // Interpolate remote players — called from animate()
+    function mpInterpolateRemotePlayers(dt) {
+      const now = Date.now();
+      for (const [pid, entry] of remotePlayers) {
+        if (!entry.initialized) continue;
+
+        // Check for stale players (60s no update)
+        if (now - entry.lastUpdate > MP_STALE_MS) {
+          mpRemoveRemotePlayer(pid);
+          continue;
+        }
+
+        // Interpolation progress
+        entry.interpT = Math.min(1, entry.interpT + dt * 10); // 10Hz updates → ~0.1s per interp
+
+        let renderX, renderZ, renderHeading;
+
+        // Check if we need dead reckoning (no update for >100ms)
+        const timeSinceUpdate = now - entry.lastUpdate;
+        if (timeSinceUpdate > 100 && entry.speed > 0.1) {
+          // Dead reckoning: extrapolate position using last speed/heading
+          const dtSec = timeSinceUpdate / 1000;
+          const rad = entry.targetHeading * Math.PI / 180;
+          const dist = entry.speed * 0.3 * dtSec;
+          renderX = entry.targetPos.x + Math.sin(rad) * dist;
+          renderZ = entry.targetPos.z + Math.cos(rad) * dist;
+          renderHeading = entry.targetHeading;
+        } else {
+          // Normal interpolation
+          const t = entry.interpT;
+          renderX = mpLerp(entry.prevPos.x, entry.targetPos.x, t);
+          renderZ = mpLerp(entry.prevPos.z, entry.targetPos.z, t);
+          renderHeading = mpLerpAngle(entry.prevHeading, entry.targetHeading, t);
+        }
+
+        // Update mesh position
+        const terrainH = getTerrainHeight(renderX, renderZ);
+        entry.mesh.position.set(renderX, Math.max(terrainH + 0.5, 0), renderZ);
+        entry.mesh.rotation.y = renderHeading * Math.PI / 180;
+        entry.mesh.rotation.x = 0;
+        entry.mesh.rotation.z = 0;
+
+        // Fade if stale (approaching 60s timeout) — start fading at 45s
+        const staleAge = now - entry.lastUpdate;
+        if (staleAge > 45000) {
+          const fadeT = Math.max(0, 1 - (staleAge - 45000) / 15000);
+          entry.mesh.traverse(obj => {
+            if (obj.material && obj.material.opacity !== undefined && !obj.userData.isLabel) {
+              obj.material.transparent = true;
+              obj.material.opacity = fadeT;
+            }
+          });
+        } else if (staleAge > 30000) {
+          // Semi-transparent for "lagged" state
+          entry.mesh.traverse(obj => {
+            if (obj.material && obj.material.opacity !== undefined && !obj.userData.isLabel) {
+              obj.material.transparent = true;
+              obj.material.opacity = 0.6;
+            }
+          });
+        } else {
+          // Normal opacity
+          entry.mesh.traverse(obj => {
+            if (obj.material && obj.material.opacity !== undefined && !obj.userData.isLabel) {
+              obj.material.transparent = obj.material.transparent || false;
+              if (obj.material.transparent) obj.material.opacity = 1;
+            }
+          });
+        }
+      }
+    }
+
+    // Draw remote players on radar — called from drawRadar()
+    function mpDrawRadarPlayers(cx, cy, scale) {
+      for (const [pid, entry] of remotePlayers) {
+        if (!entry.initialized) continue;
+        const dx = (entry.mesh.position.x - carX) * scale;
+        const dz = (entry.mesh.position.z - carZ) * scale;
+        const dist = Math.sqrt(dx * dx + dz * dz);
+        if (dist < RADAR_SIZE / 2) {
+          // Colored dot
+          const colorStr = entry.color;
+          radarCtx.fillStyle = '#' + colorStr.toString(16).padStart(6, '0');
+          radarCtx.beginPath();
+          radarCtx.arc(cx + dx, cy + dz, 3.5, 0, Math.PI * 2);
+          radarCtx.fill();
+          radarCtx.strokeStyle = 'rgba(255,255,255,0.4)';
+          radarCtx.lineWidth = 1;
+          radarCtx.stroke();
+          // Username label (max 8 chars)
+          const shortName = (entry.username || 'player').substring(0, 8);
+          radarCtx.fillStyle = 'rgba(255,255,255,0.7)';
+          radarCtx.font = '7px monospace';
+          radarCtx.fillText(shortName, cx + dx + 4, cy + dz + 2);
+        }
+      }
+    }
+
+    // Track input for idle detection
+    function mpTrackInput() {
+      mpLastInputTime = Date.now();
+    }
+
+    // Check idle timeout
+    function mpCheckIdle() {
+      if (Date.now() - mpLastInputTime > MP_IDLE_TIMEOUT_MS) {
+        console.log('MP: Idle timeout — leaving channel');
+        mpLeaveChannel();
+      }
+    }
+
+    // Check max session
+    function mpCheckMaxSession() {
+      if (Date.now() - mpSessionStart > MP_MAX_SESSION_MS) {
+        console.log('MP: Max session reached — disconnecting');
+        mpDisconnect();
+      }
+    }
+
+    // Remove stale players (called periodically)
+    function mpCleanupStale() {
+      const now = Date.now();
+      for (const [pid, entry] of remotePlayers) {
+        if (now - entry.lastUpdate > MP_STALE_MS) {
+          mpRemoveRemotePlayer(pid);
+        }
+      }
+    }
+
+    // Leave channel (send leave broadcast then remove)
+    function mpLeaveChannel() {
+      if (mpChannel && mpConnected) {
+        try {
+          mpChannel.send({
+            type: 'broadcast',
+            event: 'leave',
+            payload: { id: mpPlayerId, username: playerUsername }
+          });
+        } catch (e) { /* ignore */ }
+      }
+      mpDisconnect();
+    }
+
+    // Full disconnect
+    function mpDisconnect() {
+      if (mpHeartbeatTimer) { clearInterval(mpHeartbeatTimer); mpHeartbeatTimer = null; }
+      if (mpIdleCheckTimer) { clearInterval(mpIdleCheckTimer); mpIdleCheckTimer = null; }
+      if (mpMaxSessionTimer) { clearInterval(mpMaxSessionTimer); mpMaxSessionTimer = null; }
+      if (mpChannel) {
+        try { supabaseRealtime.removeChannel(mpChannel); } catch (e) { /* ignore */ }
+        mpChannel = null;
+      }
+      mpConnected = false;
+      // Remove all remote players
+      for (const pid of Array.from(remotePlayers.keys())) {
+        mpRemoveRemotePlayer(pid);
+      }
+    }
+
+    // Initialize multiplayer
+    function mpInit() {
+      if (!playerUsername) {
+        // No username yet — retry in 2s
+        setTimeout(mpInit, 2000);
+        return;
+      }
+      if (typeof window.supabase === 'undefined' || !window.supabase.createClient) {
+        console.warn('MP: Supabase JS not loaded — retrying in 3s');
+        setTimeout(mpInit, 3000);
+        return;
+      }
+      if (mpConnected) return; // already connected
+
+      mpGetOrCreatePlayerId();
+      mpSessionId = mpGenerateSessionId();
+      mpSessionStart = Date.now();
+
+      try {
+        // Create Supabase client using existing constants
+        if (!window.supabaseRealtime) {
+          window.supabaseRealtime = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+            realtime: { params: { eventsPerSecond: 20 } }
+          });
+        }
+        const sb = window.supabaseRealtime;
+
+        // Create channel
+        mpChannel = sb.channel('vibedrive:jersey', {
+          config: {
+            broadcast: { self: false },
+            presence: { key: mpPlayerId }
+          }
+        });
+
+        // Listen to broadcasts
+        mpChannel.on('broadcast', { event: 'pos' }, (msg) => {
+          mpHandlePosition(msg.payload);
+        });
+        mpChannel.on('broadcast', { event: 'hb' }, (msg) => {
+          mpHandleHeartbeat(msg.payload);
+        });
+        mpChannel.on('broadcast', { event: 'leave' }, (msg) => {
+          mpHandleLeave(msg.payload);
+        });
+
+        // Subscribe
+        mpChannel.subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            console.log('MP: Channel subscribed');
+            mpConnected = true;
+            mpReconnectAttempts = 0;
+
+            // Track presence
+            try {
+              mpChannel.track({
+                playerId: mpPlayerId,
+                name: playerUsername,
+                sessionId: mpSessionId,
+                joinedAt: Date.now(),
+                mode: vehicleMode
+              });
+            } catch (e) { console.warn('MP: track failed:', e); }
+
+            // Start heartbeat
+            if (mpHeartbeatTimer) clearInterval(mpHeartbeatTimer);
+            mpHeartbeatTimer = setInterval(mpSendHeartbeat, MP_HEARTBEAT_INTERVAL_MS);
+
+            // Start idle check (every 30s)
+            if (mpIdleCheckTimer) clearInterval(mpIdleCheckTimer);
+            mpIdleCheckTimer = setInterval(mpCheckIdle, 30000);
+
+            // Start max session check (every 60s)
+            if (mpMaxSessionTimer) clearInterval(mpMaxSessionTimer);
+            mpMaxSessionTimer = setInterval(mpCheckMaxSession, 60000);
+
+            // Start stale cleanup (every 10s)
+            setInterval(mpCleanupStale, 10000);
+
+            mpUpdatePlayerCount();
+          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+            console.warn('MP: Channel status:', status);
+            mpConnected = false;
+            mpTryReconnect();
+          }
+        });
+
+      } catch (e) {
+        console.error('MP: Init failed:', e);
+        mpTryReconnect();
+      }
+    }
+
+    // Reconnection with exponential backoff
+    function mpTryReconnect() {
+      if (mpReconnectAttempts >= MP_MAX_RECONNECT) {
+        console.warn('MP: Max reconnection attempts reached — giving up');
+        return;
+      }
+      mpReconnectAttempts++;
+      const delay = 2000 * Math.pow(2, mpReconnectAttempts - 1); // 2s, 4s, 8s
+      console.log('MP: Reconnecting in ' + delay + 'ms (attempt ' + mpReconnectAttempts + '/' + MP_MAX_RECONNECT + ')');
+      if (mpReconnectTimer) clearTimeout(mpReconnectTimer);
+      mpReconnectTimer = setTimeout(() => {
+        mpSessionId = mpGenerateSessionId(); // fresh session ID on reconnect
+        mpInit();
+      }, delay);
+    }
+
+    // Cleanup on page unload
+    function mpCleanup() {
+      if (mpChannel && mpConnected) {
+        try {
+          mpChannel.send({
+            type: 'broadcast',
+            event: 'leave',
+            payload: { id: mpPlayerId, username: playerUsername }
+          });
+        } catch (e) { /* ignore */ }
+      }
+      mpDisconnect();
+    }
+
+    // Hook input tracking — keyboard + touch
+    window.addEventListener('keydown', mpTrackInput);
+    window.addEventListener('keyup', mpTrackInput);
+    window.addEventListener('touchstart', mpTrackInput);
+    window.addEventListener('touchmove', mpTrackInput);
+    window.addEventListener('mousedown', mpTrackInput);
+    window.addEventListener('mousemove', mpTrackInput);
+
+    // Page unload cleanup
+    window.addEventListener('beforeunload', mpCleanup);
+    window.addEventListener('pagehide', mpCleanup);
+
+    // Start multiplayer after a short delay (let username load)
+    setTimeout(mpInit, 1500);
   </script>
 </body>
 </html>
