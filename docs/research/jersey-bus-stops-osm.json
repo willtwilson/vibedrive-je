@@ -1,0 +1,6698 @@
+[
+  {
+    "id": 12625008,
+    "lat": 49.2129414,
+    "lon": -2.16953,
+    "name": "La Ruche N",
+    "ref": "4262",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 60964792,
+    "lat": 49.2466227,
+    "lon": -2.2380643,
+    "name": "Route des Landes",
+    "ref": "3653",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 60965457,
+    "lat": 49.166622,
+    "lon": -2.0696222,
+    "name": "Rocque Bay W",
+    "ref": "2458",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 60972469,
+    "lat": 49.1717805,
+    "lon": -2.0650281,
+    "name": "Priory Farm",
+    "ref": "2952",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 60972473,
+    "lat": 49.173271,
+    "lon": -2.0494367,
+    "name": "Causie Lane W",
+    "ref": "2485",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 867199516,
+    "lat": 49.1985415,
+    "lon": -2.1973203,
+    "name": "Belle Vue S",
+    "ref": "2534",
+    "shelter": "yes",
+    "bus": "yes"
+  },
+  {
+    "id": 878924387,
+    "lat": 49.2007256,
+    "lon": -2.1962694,
+    "name": "Airport Garages N",
+    "ref": "2924",
+    "shelter": "yes",
+    "bus": "yes"
+  },
+  {
+    "id": 1312124557,
+    "lat": 49.1844493,
+    "lon": -2.1824676,
+    "name": "Rose Farm W",
+    "ref": "3239",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 1312124561,
+    "lat": 49.1726878,
+    "lon": -2.1729808,
+    "name": "Portelet Bay",
+    "ref": "3574",
+    "shelter": "yes",
+    "bus": "yes"
+  },
+  {
+    "id": 1312124566,
+    "lat": 49.1768972,
+    "lon": -2.1730575,
+    "name": "Ouaisne Junction S",
+    "ref": "3572",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 1364269228,
+    "lat": 49.2091974,
+    "lon": -2.1533901,
+    "name": "Jersey War Tunnels",
+    "ref": "3973",
+    "shelter": "yes",
+    "bus": "yes"
+  },
+  {
+    "id": 1364919955,
+    "lat": 49.2134553,
+    "lon": -2.0590388,
+    "name": "La Preference",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 1605296231,
+    "lat": 49.2473655,
+    "lon": -2.2269066,
+    "name": "St Georges Church",
+    "ref": "4346",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 1776038737,
+    "lat": 49.2327163,
+    "lon": -2.1817224,
+    "name": "Les Augerez",
+    "ref": "",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 1777568964,
+    "lat": 49.1835791,
+    "lon": -2.1035151,
+    "name": "Snow Hill",
+    "ref": "3729",
+    "shelter": "yes",
+    "bus": "yes"
+  },
+  {
+    "id": 1777652672,
+    "lat": 49.1636603,
+    "lon": -2.0756455,
+    "name": "Green Island W",
+    "ref": "2723",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 1778579105,
+    "lat": 49.1997225,
+    "lon": -2.0211383,
+    "name": "Gorey Pier",
+    "ref": "2682",
+    "shelter": "yes",
+    "bus": "yes"
+  },
+  {
+    "id": 1779438004,
+    "lat": 49.1681493,
+    "lon": -2.0808248,
+    "name": "La Selliere Court",
+    "ref": "2959",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 1780003600,
+    "lat": 49.1672321,
+    "lon": -2.0828544,
+    "name": "La Mare Slipway W",
+    "ref": "2863",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 1780640233,
+    "lat": 49.1684899,
+    "lon": -2.0807788,
+    "name": "Les Hinguettes",
+    "ref": "2964",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 1780640235,
+    "lat": 49.1679301,
+    "lon": -2.0822661,
+    "name": "Maupertuis Lane",
+    "ref": "4324",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 1780733827,
+    "lat": 49.1671843,
+    "lon": -2.0616075,
+    "name": "Le Hocq Slipway W",
+    "ref": "2953",
+    "shelter": "yes",
+    "bus": "yes"
+  },
+  {
+    "id": 1781162371,
+    "lat": 49.2054775,
+    "lon": -2.0323966,
+    "name": "Ransoms N",
+    "ref": "3589",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 1781527893,
+    "lat": 49.1741523,
+    "lon": -2.0889056,
+    "name": "",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 1781527894,
+    "lat": 49.1742347,
+    "lon": -2.0890022,
+    "name": "",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 1781656330,
+    "lat": 49.2055879,
+    "lon": -2.0981779,
+    "name": "Rue de Mon Sejour S",
+    "ref": "",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 1788331071,
+    "lat": 49.1794626,
+    "lon": -2.0831791,
+    "name": "Rue de Carteret E",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 1788882286,
+    "lat": 49.1805681,
+    "lon": -2.0673738,
+    "name": "Les Cabots W",
+    "ref": "",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 1792949938,
+    "lat": 49.1925243,
+    "lon": -2.0916265,
+    "name": "Hautlieu School",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 1803732349,
+    "lat": 49.1840892,
+    "lon": -2.18044,
+    "name": "Woodbine Store",
+    "ref": "4382",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 1803732353,
+    "lat": 49.1843555,
+    "lon": -2.181187,
+    "name": "Rose Farm E",
+    "ref": "3627",
+    "shelter": "yes",
+    "bus": "yes"
+  },
+  {
+    "id": 1820980891,
+    "lat": 49.2137807,
+    "lon": -2.1413376,
+    "name": "St Lawrence Church N",
+    "ref": "3768",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 1829488965,
+    "lat": 49.1888749,
+    "lon": -2.1800928,
+    "name": "Seven Oaks N",
+    "ref": "3723",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 1839681419,
+    "lat": 49.2466585,
+    "lon": -2.1115799,
+    "name": "Betchet es Cats E",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 1865788012,
+    "lat": 49.1692913,
+    "lon": -2.0557964,
+    "name": "Pontac Slipway W",
+    "ref": "3564",
+    "shelter": "yes",
+    "bus": "yes"
+  },
+  {
+    "id": 1879060496,
+    "lat": 49.1676076,
+    "lon": -2.0645807,
+    "name": "Pontorson Lane W",
+    "ref": "2838",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 1880632717,
+    "lat": 49.2272737,
+    "lon": -2.182545,
+    "name": "Carrefour a Cendre",
+    "ref": "3848",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 1900054561,
+    "lat": 49.2223266,
+    "lon": -2.0948943,
+    "name": "La Chesnee Farm S",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 1900579052,
+    "lat": 49.1838055,
+    "lon": -2.2235755,
+    "name": "Route Du Petit Port",
+    "ref": "3852",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 2013807833,
+    "lat": 49.1975469,
+    "lon": -2.1978019,
+    "name": "Belle Vue N",
+    "ref": "3492",
+    "shelter": "yes",
+    "bus": "yes"
+  },
+  {
+    "id": 2036076164,
+    "lat": 49.2506989,
+    "lon": -2.1210367,
+    "name": "Bonne Nuit Bay",
+    "ref": "",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 2110397588,
+    "lat": 49.1698419,
+    "lon": -2.0815684,
+    "name": "La Cambrette",
+    "ref": "3474",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 2132001902,
+    "lat": 49.1983926,
+    "lon": -2.0870807,
+    "name": "Grainville School",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 2133728228,
+    "lat": 49.1903463,
+    "lon": -2.1170757,
+    "name": "Castle View",
+    "ref": "2454",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 2141146125,
+    "lat": 49.1721262,
+    "lon": -2.0741362,
+    "name": "La Blinerie",
+    "ref": "2837",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 2153239511,
+    "lat": 49.1948615,
+    "lon": -2.0827677,
+    "name": "St. Saviour's School S",
+    "ref": "",
+    "shelter": "yes",
+    "bus": "yes"
+  },
+  {
+    "id": 2169717836,
+    "lat": 49.1898536,
+    "lon": -2.1044802,
+    "name": "Convent Court",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 2175040508,
+    "lat": 49.1919336,
+    "lon": -2.2073592,
+    "name": "Enid Quenault Health Centre",
+    "ref": "4646",
+    "shelter": "yes",
+    "bus": "yes"
+  },
+  {
+    "id": 2175139409,
+    "lat": 49.1940751,
+    "lon": -2.1641823,
+    "name": "Clos de la Mielle E",
+    "ref": "2865",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 2207322462,
+    "lat": 49.1961938,
+    "lon": -2.1249372,
+    "name": "Clos St Andre N",
+    "ref": "4585",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 2210022714,
+    "lat": 49.1986668,
+    "lon": -2.1132402,
+    "name": "Jardin des Carreaux",
+    "ref": "2794",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 2210036349,
+    "lat": 49.1999988,
+    "lon": -2.1132886,
+    "name": "Powerhouse N",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 2213155202,
+    "lat": 49.1726645,
+    "lon": -2.0599955,
+    "name": "La Verte Rue",
+    "ref": "2929",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 2214524534,
+    "lat": 49.1676476,
+    "lon": -2.064778,
+    "name": "Pontorson Lane E",
+    "ref": "3567",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 2214957399,
+    "lat": 49.1819879,
+    "lon": -2.1084243,
+    "name": "Caledonia Place",
+    "ref": "",
+    "shelter": "yes",
+    "bus": "yes"
+  },
+  {
+    "id": 2214977914,
+    "lat": 49.181018,
+    "lon": -2.0879256,
+    "name": "Bagot Manor Avenue E",
+    "ref": "2535",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 2214977926,
+    "lat": 49.1825064,
+    "lon": -2.0837682,
+    "name": "Les Varines W",
+    "ref": "",
+    "shelter": "yes",
+    "bus": "yes"
+  },
+  {
+    "id": 2250087110,
+    "lat": 49.2383644,
+    "lon": -2.205535,
+    "name": "Leoville N",
+    "ref": "2976",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 2250087111,
+    "lat": 49.2429717,
+    "lon": -2.2092579,
+    "name": "The Palms Campsite",
+    "ref": "2427",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 2261379681,
+    "lat": 49.1760435,
+    "lon": -2.0318968,
+    "name": "Clos Bertram S",
+    "ref": "2436",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 2377934147,
+    "lat": 49.187946,
+    "lon": -2.1701241,
+    "name": "St Aubin N",
+    "ref": "3742",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 2384644414,
+    "lat": 49.2383906,
+    "lon": -2.1391379,
+    "name": "Le Neuf Chemin S",
+    "ref": "4572",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 2386108172,
+    "lat": 49.245644,
+    "lon": -2.1297541,
+    "name": "Green Farm E",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 2400510492,
+    "lat": 49.1880793,
+    "lon": -2.1751991,
+    "name": "St Brelade College E",
+    "ref": "3458",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 2400513217,
+    "lat": 49.1880302,
+    "lon": -2.1754995,
+    "name": "St. Brelade's College W",
+    "ref": "3747",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 2400518997,
+    "lat": 49.1940007,
+    "lon": -2.1989098,
+    "name": "Don Bridge",
+    "ref": "",
+    "shelter": "yes",
+    "bus": "yes"
+  },
+  {
+    "id": 2400520938,
+    "lat": 49.1910704,
+    "lon": -2.1999149,
+    "name": "Red Houses Shops S",
+    "ref": "",
+    "shelter": "yes",
+    "bus": "yes"
+  },
+  {
+    "id": 2400523527,
+    "lat": 49.1945758,
+    "lon": -2.1988411,
+    "name": "Don Farm",
+    "ref": "2542",
+    "shelter": "yes",
+    "bus": "yes"
+  },
+  {
+    "id": 2648323970,
+    "lat": 49.2257425,
+    "lon": -2.0935931,
+    "name": "Rue des Brulees S",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 2664161316,
+    "lat": 49.1938177,
+    "lon": -2.0349866,
+    "name": "Gorey Common",
+    "ref": "2323",
+    "shelter": "yes",
+    "bus": "yes"
+  },
+  {
+    "id": 2665975086,
+    "lat": 49.1813977,
+    "lon": -2.0593356,
+    "name": "Grouville Arsenal E",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 3140160555,
+    "lat": 49.1831476,
+    "lon": -2.0777642,
+    "name": "Longueville Manor W",
+    "ref": "",
+    "shelter": "yes",
+    "bus": "yes"
+  },
+  {
+    "id": 3370515564,
+    "lat": 49.246373,
+    "lon": -2.1390984,
+    "name": "St John's Church",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 3370515565,
+    "lat": 49.2503,
+    "lon": -2.1685173,
+    "name": "Devils Hole",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 3370532494,
+    "lat": 49.2351335,
+    "lon": -2.1729662,
+    "name": "St Marys Church",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 3370584216,
+    "lat": 49.2269921,
+    "lon": -2.145955,
+    "name": "Carrefour Selous",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 3371069313,
+    "lat": 49.2292491,
+    "lon": -2.0736618,
+    "name": "Jersey Zoo",
+    "ref": "",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 3371069314,
+    "lat": 49.2276911,
+    "lon": -2.0691294,
+    "name": "St Martins Arsenal S",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 3371069315,
+    "lat": 49.2246888,
+    "lon": -2.0681585,
+    "name": "La Piece Mauger N",
+    "ref": "",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 3371079684,
+    "lat": 49.2245048,
+    "lon": -2.0678339,
+    "name": "La Piece Mauger S",
+    "ref": "",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 3398061727,
+    "lat": 49.1844532,
+    "lon": -2.1080608,
+    "name": "Broad Street",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 3398061728,
+    "lat": 49.1877649,
+    "lon": -2.1101308,
+    "name": "Gloucester Street, Parade Gardens",
+    "ref": "3524",
+    "shelter": "yes",
+    "bus": "yes"
+  },
+  {
+    "id": 3398061729,
+    "lat": 49.2198654,
+    "lon": -2.1145051,
+    "name": "Sion Village N",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 3398080673,
+    "lat": 49.2392536,
+    "lon": -2.1114165,
+    "name": "Hautes Croix Store",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 3398112117,
+    "lat": 49.2454206,
+    "lon": -2.1250796,
+    "name": "Mont Mado",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 3398170938,
+    "lat": 49.2315368,
+    "lon": -2.1435522,
+    "name": "Glencoe N",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 3398194445,
+    "lat": 49.2372541,
+    "lon": -2.1681814,
+    "name": "West View W",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 3398206200,
+    "lat": 49.1943717,
+    "lon": -2.1276496,
+    "name": "First Tower E",
+    "ref": "2632",
+    "shelter": "yes",
+    "bus": "yes"
+  },
+  {
+    "id": 3400421383,
+    "lat": 49.2068797,
+    "lon": -2.1751052,
+    "name": "Avenue de la Reine",
+    "ref": "3874",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 3400510062,
+    "lat": 49.1821387,
+    "lon": -2.1020718,
+    "name": "Grenville Street",
+    "ref": "2734",
+    "shelter": "yes",
+    "bus": "yes"
+  },
+  {
+    "id": 3400514555,
+    "lat": 49.2280393,
+    "lon": -2.0693044,
+    "name": "St Martins Arsenal N",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 3400612095,
+    "lat": 49.2180738,
+    "lon": -2.1734618,
+    "name": "Green Hills N",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 3400612096,
+    "lat": 49.2200143,
+    "lon": -2.1832554,
+    "name": "St Peters House N",
+    "ref": "3832",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 3400612097,
+    "lat": 49.2333772,
+    "lon": -2.1830991,
+    "name": "The Windmill W",
+    "ref": "2483",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 3400612099,
+    "lat": 49.2328991,
+    "lon": -2.202621,
+    "name": "St Ouens Village N",
+    "ref": "3823",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 3400612100,
+    "lat": 49.2404029,
+    "lon": -2.2194797,
+    "name": "Five Roads",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 3400612101,
+    "lat": 49.2530805,
+    "lon": -2.2392385,
+    "name": "Grosnez House",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 3400612102,
+    "lat": 49.2513937,
+    "lon": -2.2260358,
+    "name": "Portinfer Junction",
+    "ref": "3575",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 3400612103,
+    "lat": 49.2557345,
+    "lon": -2.2269164,
+    "name": "Plemont Bay",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 3400634553,
+    "lat": 49.2200682,
+    "lon": -2.1143253,
+    "name": "Sion Village S",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 3400634554,
+    "lat": 49.1878829,
+    "lon": -2.1113043,
+    "name": "The Parade",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 3400666458,
+    "lat": 49.1815455,
+    "lon": -2.2381576,
+    "name": "Corbiere",
+    "ref": "",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 3400666459,
+    "lat": 49.1841316,
+    "lon": -2.2274984,
+    "name": "Petit Port Close",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 3400666460,
+    "lat": 49.1903609,
+    "lon": -2.2021957,
+    "name": "Red Houses Waitrose E",
+    "ref": "2529",
+    "shelter": "yes",
+    "bus": "yes"
+  },
+  {
+    "id": 3400666461,
+    "lat": 49.1916959,
+    "lon": -2.1998771,
+    "name": "Red Houses Shops N",
+    "ref": "",
+    "shelter": "yes",
+    "bus": "yes"
+  },
+  {
+    "id": 3400666462,
+    "lat": 49.2047428,
+    "lon": -2.1899127,
+    "name": "The Mermaid N",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 3400666463,
+    "lat": 49.2061597,
+    "lon": -2.1830084,
+    "name": "Jersey Aero Club E",
+    "ref": "2325",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 3400666464,
+    "lat": 49.1966687,
+    "lon": -2.1576993,
+    "name": "Beaumont E",
+    "ref": "2378",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 3400712514,
+    "lat": 49.2385068,
+    "lon": -2.0818165,
+    "name": "Bouley Bay",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 3400712515,
+    "lat": 49.2329369,
+    "lon": -2.0895098,
+    "name": "Trinity Arms",
+    "ref": "",
+    "shelter": "yes",
+    "bus": "yes"
+  },
+  {
+    "id": 3400712516,
+    "lat": 49.2165601,
+    "lon": -2.0959894,
+    "name": "Augres S",
+    "ref": "",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 3400712517,
+    "lat": 49.2016614,
+    "lon": -2.0917004,
+    "name": "Pillar Gardens",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 3400712518,
+    "lat": 49.1931616,
+    "lon": -2.1011385,
+    "name": "Trinity Gardens S",
+    "ref": "",
+    "shelter": "yes",
+    "bus": "yes"
+  },
+  {
+    "id": 3401547787,
+    "lat": 49.2046484,
+    "lon": -2.1897654,
+    "name": "The Mermaid S",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 3401558590,
+    "lat": 49.1881096,
+    "lon": -2.1888047,
+    "name": "Mont Nicolle E",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 3401578097,
+    "lat": 49.1943027,
+    "lon": -2.1277611,
+    "name": "First Tower W",
+    "ref": "2629",
+    "shelter": "yes",
+    "bus": "yes"
+  },
+  {
+    "id": 3401578098,
+    "lat": 49.1965541,
+    "lon": -2.15736,
+    "name": "Beaumont W",
+    "ref": "2748",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 3401578099,
+    "lat": 49.1878327,
+    "lon": -2.1700221,
+    "name": "St Aubin S",
+    "ref": "3743",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 3401578100,
+    "lat": 49.1882232,
+    "lon": -2.1893451,
+    "name": "Mont Nicolle W",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 3401916682,
+    "lat": 49.1693769,
+    "lon": -2.084714,
+    "name": "Greve D'azette E",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 3401916688,
+    "lat": 49.1708695,
+    "lon": -2.0824323,
+    "name": "Samares School",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 3401916691,
+    "lat": 49.1693532,
+    "lon": -2.0848079,
+    "name": "Greve D'azette W",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 3401925993,
+    "lat": 49.1784856,
+    "lon": -2.0916937,
+    "name": "Albert Road W",
+    "ref": "2656",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 3401925994,
+    "lat": 49.1792311,
+    "lon": -2.0989837,
+    "name": "Cleveland Road",
+    "ref": "3629",
+    "shelter": "yes",
+    "bus": "yes"
+  },
+  {
+    "id": 3401925995,
+    "lat": 49.178174,
+    "lon": -2.0908483,
+    "name": "Albert Road E",
+    "ref": "2658",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 3657556646,
+    "lat": 49.178248,
+    "lon": -2.0348304,
+    "name": "Fauvic Common N",
+    "ref": "3292",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 3657556647,
+    "lat": 49.1789559,
+    "lon": -2.0350681,
+    "name": "Fauvic Common S",
+    "ref": "2836",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 3657556648,
+    "lat": 49.1696614,
+    "lon": -2.0300675,
+    "name": "Seymour Inn N",
+    "ref": "3695",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 3657556649,
+    "lat": 49.1694862,
+    "lon": -2.0298254,
+    "name": "Seymour Inn S",
+    "ref": "3696",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 3657556650,
+    "lat": 49.177287,
+    "lon": -2.1047927,
+    "name": "La Collette Flats",
+    "ref": "2728",
+    "shelter": "yes",
+    "bus": "yes"
+  },
+  {
+    "id": 3657556651,
+    "lat": 49.1774113,
+    "lon": -2.1045981,
+    "name": "La Collette Shops",
+    "ref": "2846",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 3657556652,
+    "lat": 49.1798703,
+    "lon": -2.1039027,
+    "name": "The Limes",
+    "ref": "3872",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 3723243502,
+    "lat": 49.2369563,
+    "lon": -2.2342024,
+    "name": "Mont Huelin S",
+    "ref": "3246",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 4191566191,
+    "lat": 49.1955672,
+    "lon": -2.1598064,
+    "name": "York Farm W",
+    "ref": "3846",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 4191566192,
+    "lat": 49.1969456,
+    "lon": -2.1520454,
+    "name": "Parcq du Rivage W",
+    "ref": "3429",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 4376024826,
+    "lat": 49.1789002,
+    "lon": -2.092833,
+    "name": "Georgetown Road",
+    "ref": "",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 4376024827,
+    "lat": 49.1789657,
+    "lon": -2.0927712,
+    "name": "Georgetown Road E",
+    "ref": "",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 4376024828,
+    "lat": 49.1797845,
+    "lon": -2.0901601,
+    "name": "Belvedere Hill",
+    "ref": "2395",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 4376024829,
+    "lat": 49.1795285,
+    "lon": -2.090541,
+    "name": "Aubin Lane",
+    "ref": "2363",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 4379484876,
+    "lat": 49.1834938,
+    "lon": -2.2396449,
+    "name": "Le Grouet Slipway",
+    "ref": "4393",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 4379496737,
+    "lat": 49.235612,
+    "lon": -2.0457069,
+    "name": "Rozel Apple Cottage",
+    "ref": "",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 4379695587,
+    "lat": 49.1915101,
+    "lon": -2.1027572,
+    "name": "Byron Road N",
+    "ref": "3749",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 4379695588,
+    "lat": 49.1916919,
+    "lon": -2.102404,
+    "name": "Byron Road S",
+    "ref": "",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 4454516493,
+    "lat": 49.1762724,
+    "lon": -2.0925053,
+    "name": "Milllenium Court W",
+    "ref": "4376",
+    "shelter": "yes",
+    "bus": "yes"
+  },
+  {
+    "id": 4454605395,
+    "lat": 49.1985554,
+    "lon": -2.1395184,
+    "name": "Coronation Park W",
+    "ref": "",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 4907717888,
+    "lat": 49.198206,
+    "lon": -2.1355671,
+    "name": "Millbrook E",
+    "ref": "",
+    "shelter": "yes",
+    "bus": "yes"
+  },
+  {
+    "id": 4907717889,
+    "lat": 49.1985039,
+    "lon": -2.1426892,
+    "name": "St. Matthew's Church E",
+    "ref": "3797",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 4907717890,
+    "lat": 49.1978768,
+    "lon": -2.1352089,
+    "name": "Millbrook W",
+    "ref": "3692",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 4907917788,
+    "lat": 49.2458591,
+    "lon": -2.1999258,
+    "name": "Gr\u00e8ve de Lecq",
+    "ref": "",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 5599185607,
+    "lat": 49.2055369,
+    "lon": -2.222106,
+    "name": "El Tico N",
+    "ref": "3258",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 5713918222,
+    "lat": 49.1866807,
+    "lon": -2.1156165,
+    "name": "West Park Slipway",
+    "ref": "",
+    "shelter": "yes",
+    "bus": "yes"
+  },
+  {
+    "id": 5713918223,
+    "lat": 49.1890684,
+    "lon": -2.1185187,
+    "name": "West Park Shelter",
+    "ref": "",
+    "shelter": "yes",
+    "bus": "yes"
+  },
+  {
+    "id": 5713918224,
+    "lat": 49.191888,
+    "lon": -2.1223773,
+    "name": "Bay View Court",
+    "ref": "2368",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 5713918225,
+    "lat": 49.1929074,
+    "lon": -2.1247293,
+    "name": "Bellozanne Road",
+    "ref": "",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 5713918226,
+    "lat": 49.1964725,
+    "lon": -2.1330752,
+    "name": "St Andrews Park W",
+    "ref": "W",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 5713918227,
+    "lat": 49.2040454,
+    "lon": -2.1401302,
+    "name": "Hollydale Estate S",
+    "ref": "3457",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 5713918228,
+    "lat": 49.2058862,
+    "lon": -2.1426213,
+    "name": "Mont Cambrai N",
+    "ref": "2659",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 5713918229,
+    "lat": 49.2077694,
+    "lon": -2.1430282,
+    "name": "Ville Emphrie N",
+    "ref": "2589",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 5713918230,
+    "lat": 49.2192579,
+    "lon": -2.1405076,
+    "name": "Three Oaks N",
+    "ref": "3894",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 5713918231,
+    "lat": 49.221844,
+    "lon": -2.1417259,
+    "name": "Hamptonne Museum",
+    "ref": "4367",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 5713918232,
+    "lat": 49.2225406,
+    "lon": -2.1420789,
+    "name": "Oxenford Close",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 5713918233,
+    "lat": 49.2274556,
+    "lon": -2.1498724,
+    "name": "Six Roads W",
+    "ref": "3727",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 5713918234,
+    "lat": 49.2313012,
+    "lon": -2.1548725,
+    "name": "Broadfields S",
+    "ref": "2824",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 5713918235,
+    "lat": 49.2353601,
+    "lon": -2.1611712,
+    "name": "La Ruette N",
+    "ref": "3849",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 5713918236,
+    "lat": 49.2361419,
+    "lon": -2.1645381,
+    "name": "Rue de Bel Air W",
+    "ref": "3949",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 5713918237,
+    "lat": 49.2353155,
+    "lon": -2.1681171,
+    "name": "St Mary's Garage",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 5713918238,
+    "lat": 49.2350864,
+    "lon": -2.1702569,
+    "name": "Bethlehem Chapel E",
+    "ref": "3796",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 5713918239,
+    "lat": 49.2362654,
+    "lon": -2.1743609,
+    "name": "St Marys School W",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 5713918240,
+    "lat": 49.2405605,
+    "lon": -2.1642694,
+    "name": "Haute Tombette S",
+    "ref": "",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 5713918241,
+    "lat": 49.2452137,
+    "lon": -2.1658823,
+    "name": "Rue d'Olive N",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 5713918242,
+    "lat": 49.2446827,
+    "lon": -2.160435,
+    "name": "Timaru Farm",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 5713918243,
+    "lat": 49.2417705,
+    "lon": -2.1551975,
+    "name": "Rue du Cerf E",
+    "ref": "",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 5863252585,
+    "lat": 49.2009321,
+    "lon": -2.0637866,
+    "name": "La Hougue Bie W",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 6535354085,
+    "lat": 49.2007069,
+    "lon": -2.0632954,
+    "name": "La Hougue Bie E",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 6541001153,
+    "lat": 49.1673321,
+    "lon": -2.0622654,
+    "name": "Le Hocq Slipway E",
+    "ref": "2954",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 6541001154,
+    "lat": 49.1693874,
+    "lon": -2.0556363,
+    "name": "Pontac Slipway E",
+    "ref": "2793",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 6541001155,
+    "lat": 49.1697905,
+    "lon": -2.0528252,
+    "name": "Bon Air Apartments",
+    "ref": "",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 6541001156,
+    "lat": 49.1697402,
+    "lon": -2.0528252,
+    "name": "Sydney Crill Park W",
+    "ref": "2428",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 6541001157,
+    "lat": 49.1698147,
+    "lon": -2.0517416,
+    "name": "Sydney Crill Park E",
+    "ref": "4383",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 6541001159,
+    "lat": 49.1697371,
+    "lon": -2.0480626,
+    "name": "Pontac Common W",
+    "ref": "3563",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 6541001160,
+    "lat": 49.1694609,
+    "lon": -2.0474248,
+    "name": "Pontac Common E",
+    "ref": "3565",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 6541001162,
+    "lat": 49.167878,
+    "lon": -2.0431957,
+    "name": "Le Bourg E",
+    "ref": "2875",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 6541001163,
+    "lat": 49.1677229,
+    "lon": -2.043082,
+    "name": "Le Bourg W",
+    "ref": "2937",
+    "shelter": "yes",
+    "bus": "yes"
+  },
+  {
+    "id": 6541001164,
+    "lat": 49.1668211,
+    "lon": -2.0398436,
+    "name": "Hameau de la Mer W",
+    "ref": "2784",
+    "shelter": "yes",
+    "bus": "yes"
+  },
+  {
+    "id": 6541001165,
+    "lat": 49.1668052,
+    "lon": -2.0395344,
+    "name": "Hameau de la Mer E",
+    "ref": "2765",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 6541001166,
+    "lat": 49.1664311,
+    "lon": -2.0379672,
+    "name": "Rue de la Lourderie",
+    "ref": "3767",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 6541001167,
+    "lat": 49.1659333,
+    "lon": -2.0365935,
+    "name": "Clos de la Rocque",
+    "ref": "2526",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 6541001168,
+    "lat": 49.1651712,
+    "lon": -2.0355198,
+    "name": "Headlands",
+    "ref": "2674",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 6541001169,
+    "lat": 49.1650976,
+    "lon": -2.0352428,
+    "name": "Saramar",
+    "ref": "3685",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 6541001170,
+    "lat": 49.1654734,
+    "lon": -2.031801,
+    "name": "La Rocque Harbour N",
+    "ref": "2896",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 6541001171,
+    "lat": 49.1653704,
+    "lon": -2.0319031,
+    "name": "La Rocque Harbour S",
+    "ref": "2898",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 6541068800,
+    "lat": 49.1771896,
+    "lon": -2.1016604,
+    "name": "Marett Road E",
+    "ref": "",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 6541068801,
+    "lat": 49.1800727,
+    "lon": -2.1038868,
+    "name": "The Cedars",
+    "ref": "",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 6541068802,
+    "lat": 49.1769964,
+    "lon": -2.1019105,
+    "name": "Marett Road W",
+    "ref": "",
+    "shelter": "yes",
+    "bus": "yes"
+  },
+  {
+    "id": 6541068803,
+    "lat": 49.1774633,
+    "lon": -2.0985787,
+    "name": "Havre des Pas E",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 6541068804,
+    "lat": 49.1774094,
+    "lon": -2.0980626,
+    "name": "Havre des Pas W",
+    "ref": "",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 6541068805,
+    "lat": 49.1769873,
+    "lon": -2.0966634,
+    "name": "Beach Road W",
+    "ref": "2574",
+    "shelter": "yes",
+    "bus": "yes"
+  },
+  {
+    "id": 6541068806,
+    "lat": 49.1770771,
+    "lon": -2.0964024,
+    "name": "Beach Road E",
+    "ref": "3482",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 6549048140,
+    "lat": 49.2444235,
+    "lon": -2.2440893,
+    "name": "Les Landes Common",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 6681821886,
+    "lat": 49.1983312,
+    "lon": -2.1132781,
+    "name": "Chestnut farm",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 6681835486,
+    "lat": 49.2149125,
+    "lon": -2.113325,
+    "name": "Surville Cemetery S",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 6681835487,
+    "lat": 49.2029669,
+    "lon": -2.1136472,
+    "name": "Mont a l'Abbe Sch S",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 6715534686,
+    "lat": 49.2499206,
+    "lon": -2.0960311,
+    "name": "",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 6985707052,
+    "lat": 49.1856419,
+    "lon": -2.1983895,
+    "name": "St Brelades Bay E",
+    "ref": "4545",
+    "shelter": "yes",
+    "bus": "yes"
+  },
+  {
+    "id": 7105258486,
+    "lat": 49.1925784,
+    "lon": -2.1666027,
+    "name": "La Haule Slipway N",
+    "ref": "2948",
+    "shelter": "yes",
+    "bus": "yes"
+  },
+  {
+    "id": 7105258487,
+    "lat": 49.195425,
+    "lon": -2.160595,
+    "name": "York Farm E",
+    "ref": "3987",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 7105258488,
+    "lat": 49.1927486,
+    "lon": -2.1241476,
+    "name": "Bellozanne Avenue",
+    "ref": "2394",
+    "shelter": "yes",
+    "bus": "yes"
+  },
+  {
+    "id": 7105275786,
+    "lat": 49.1982116,
+    "lon": -2.1462789,
+    "name": "Bel Royal Gardens",
+    "ref": "2385",
+    "shelter": "yes",
+    "bus": "yes"
+  },
+  {
+    "id": 7105277785,
+    "lat": 49.1969658,
+    "lon": -2.1528045,
+    "name": "Parcq du Rivage E",
+    "ref": "3525",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 7105277885,
+    "lat": 49.1986118,
+    "lon": -2.1398747,
+    "name": "Coronation Park E",
+    "ref": "",
+    "shelter": "yes",
+    "bus": "yes"
+  },
+  {
+    "id": 7105746785,
+    "lat": 49.1942092,
+    "lon": -2.1636782,
+    "name": "Clos de la Mieille W",
+    "ref": "",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 7106910687,
+    "lat": 49.1846569,
+    "lon": -2.1881081,
+    "name": "Biarritz Hotel E",
+    "ref": "4292",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 7106910688,
+    "lat": 49.1850257,
+    "lon": -2.1934587,
+    "name": "L'Horizon Hotel E",
+    "ref": "3248",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 7107004686,
+    "lat": 49.1855874,
+    "lon": -2.1994746,
+    "name": "St Brelades Bay W",
+    "ref": "2463",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 7107004687,
+    "lat": 49.1890142,
+    "lon": -2.2094369,
+    "name": "Quenevais Drive W",
+    "ref": "2847",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 7107030585,
+    "lat": 49.1799979,
+    "lon": -2.1754893,
+    "name": "Travers Farm Lane N",
+    "ref": "3573",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 7107030586,
+    "lat": 49.1852564,
+    "lon": -2.1958988,
+    "name": "Midbay W",
+    "ref": "3427",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 7107030587,
+    "lat": 49.1880331,
+    "lon": -2.2151281,
+    "name": "La Moye School W",
+    "ref": "4238",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 7107030588,
+    "lat": 49.1813056,
+    "lon": -2.2206083,
+    "name": "Rue Baal",
+    "ref": "",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 7107030685,
+    "lat": 49.1855952,
+    "lon": -2.2177782,
+    "name": "La Moye Garage N",
+    "ref": "2868",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 7107862591,
+    "lat": 49.1859169,
+    "lon": -2.2211578,
+    "name": "Le Feugerel W",
+    "ref": "",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 7107862592,
+    "lat": 49.1860334,
+    "lon": -2.2208558,
+    "name": "Le Feugerel E",
+    "ref": "2946",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 7108929987,
+    "lat": 49.1957717,
+    "lon": -2.131389,
+    "name": "St Andrews Park E",
+    "ref": "",
+    "shelter": "yes",
+    "bus": "yes"
+  },
+  {
+    "id": 7108929988,
+    "lat": 49.1865052,
+    "lon": -2.114886,
+    "name": "Century Buildings",
+    "ref": "",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 7108958985,
+    "lat": 49.191759,
+    "lon": -2.1219154,
+    "name": "George V Homes",
+    "ref": "2829",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 7918570299,
+    "lat": 49.2274847,
+    "lon": -2.1496889,
+    "name": "Six Roads E",
+    "ref": "3728",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 8415381548,
+    "lat": 49.2042744,
+    "lon": -2.1405235,
+    "name": "Hollydale Estate N",
+    "ref": "2768",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 8437605077,
+    "lat": 49.2449311,
+    "lon": -2.1344044,
+    "name": "",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 8437605078,
+    "lat": 49.2447488,
+    "lon": -2.1345668,
+    "name": "",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 8755382484,
+    "lat": 49.2130754,
+    "lon": -2.182341,
+    "name": "St Peter's Village S",
+    "ref": "3835",
+    "shelter": "yes",
+    "bus": "yes"
+  },
+  {
+    "id": 8755382485,
+    "lat": 49.2130192,
+    "lon": -2.1825019,
+    "name": "St Peter's Village N",
+    "ref": "3829",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 8755382486,
+    "lat": 49.2164798,
+    "lon": -2.1850764,
+    "name": "St Peter Tech Park S",
+    "ref": "2839",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 8755382487,
+    "lat": 49.2158814,
+    "lon": -2.1844186,
+    "name": "St Peter Tech Park N",
+    "ref": "2792",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 8755382488,
+    "lat": 49.2174869,
+    "lon": -2.1859582,
+    "name": "Croix au Lion S",
+    "ref": "2562",
+    "shelter": "yes",
+    "bus": "yes"
+  },
+  {
+    "id": 8755382489,
+    "lat": 49.2175746,
+    "lon": -2.1861474,
+    "name": "Croix au Lion N",
+    "ref": "3873",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 8755382490,
+    "lat": 49.2329123,
+    "lon": -2.2025052,
+    "name": "St Ouen's Village S",
+    "ref": "3826",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 8812366183,
+    "lat": 49.1769913,
+    "lon": -2.0883528,
+    "name": "Grasett Park",
+    "ref": "2697",
+    "shelter": "yes",
+    "bus": "yes"
+  },
+  {
+    "id": 8829915013,
+    "lat": 49.1764148,
+    "lon": -2.0926417,
+    "name": "Millennium Court E",
+    "ref": "4375",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 8830021718,
+    "lat": 49.1765451,
+    "lon": -2.0922702,
+    "name": "Coastlands Avenue W",
+    "ref": "3954",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 8830021719,
+    "lat": 49.1766251,
+    "lon": -2.0922579,
+    "name": "Coastlands Avenue E",
+    "ref": "3732",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 8850130227,
+    "lat": 49.1808556,
+    "lon": -2.0971429,
+    "name": "Howard Davis Park",
+    "ref": "",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 8850130228,
+    "lat": 49.1799805,
+    "lon": -2.0953908,
+    "name": "James Street",
+    "ref": "",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 8875022207,
+    "lat": 49.1824771,
+    "lon": -2.0963522,
+    "name": "Earls Court Flats",
+    "ref": "3463",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 8875376942,
+    "lat": 49.18414,
+    "lon": -2.0951765,
+    "name": "College Hill",
+    "ref": "3956",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 8880583244,
+    "lat": 49.1832878,
+    "lon": -2.1001736,
+    "name": "",
+    "ref": "3763",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 8890249610,
+    "lat": 49.2035891,
+    "lon": -2.0333241,
+    "name": "Ruette de Faldouet E",
+    "ref": "2928",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 8890249611,
+    "lat": 49.2036747,
+    "lon": -2.0331462,
+    "name": "Ruette de Faldouet W",
+    "ref": "3736",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 8890735368,
+    "lat": 49.2055004,
+    "lon": -2.0323596,
+    "name": "Ransoms S",
+    "ref": "2648",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 8901835305,
+    "lat": 49.1984459,
+    "lon": -2.1427741,
+    "name": "St. Matthew's Church W",
+    "ref": "2673",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 8901835306,
+    "lat": 49.2010192,
+    "lon": -2.1527549,
+    "name": "La Providence W",
+    "ref": "4282",
+    "shelter": "yes",
+    "bus": "yes"
+  },
+  {
+    "id": 8901835308,
+    "lat": 49.2011486,
+    "lon": -2.1960284,
+    "name": "Airport Garages S",
+    "ref": "2327",
+    "shelter": "yes",
+    "bus": "yes"
+  },
+  {
+    "id": 8910381335,
+    "lat": 49.2034366,
+    "lon": -2.020647,
+    "name": "Jeffreys Leap W",
+    "ref": "4254",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 8919539542,
+    "lat": 49.1992194,
+    "lon": -2.0264546,
+    "name": "Mont de Gouray W",
+    "ref": "3456",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 8919539543,
+    "lat": 49.1992267,
+    "lon": -2.0261724,
+    "name": "Mont de Gouray E",
+    "ref": "3689",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 8920349302,
+    "lat": 49.2005604,
+    "lon": -2.0208082,
+    "name": "Castle Green N",
+    "ref": "3467",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 8920349303,
+    "lat": 49.2005085,
+    "lon": -2.0208204,
+    "name": "Castle Green S",
+    "ref": "2482",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 9004818496,
+    "lat": 49.1937991,
+    "lon": -2.0349371,
+    "name": "Gorey Common",
+    "ref": "2323",
+    "shelter": "yes",
+    "bus": "yes"
+  },
+  {
+    "id": 9004818504,
+    "lat": 49.1938796,
+    "lon": -2.0348647,
+    "name": "Gorey Common",
+    "ref": "2686",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 9247201151,
+    "lat": 49.2059197,
+    "lon": -2.1946483,
+    "name": "Jersey Airport",
+    "ref": "",
+    "shelter": "yes",
+    "bus": "yes"
+  },
+  {
+    "id": 9468411252,
+    "lat": 49.1835705,
+    "lon": -2.1793803,
+    "name": "Clos du Verger",
+    "ref": "3985",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 9577468029,
+    "lat": 49.2464487,
+    "lon": -2.1998565,
+    "name": "",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 10130239500,
+    "lat": 49.1900821,
+    "lon": -2.1100898,
+    "name": "Pomona Road N",
+    "ref": "",
+    "shelter": "yes",
+    "bus": "yes"
+  },
+  {
+    "id": 10130239501,
+    "lat": 49.1902928,
+    "lon": -2.1097674,
+    "name": "Pomona Road S",
+    "ref": "",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 10130239502,
+    "lat": 49.1920646,
+    "lon": -2.1090963,
+    "name": "Gloster Terrace N",
+    "ref": "",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 10130239503,
+    "lat": 49.1918326,
+    "lon": -2.1091084,
+    "name": "Gloster Terrace S",
+    "ref": "",
+    "shelter": "yes",
+    "bus": "yes"
+  },
+  {
+    "id": 10130239504,
+    "lat": 49.1928755,
+    "lon": -2.1072524,
+    "name": "Raleigh Avenue",
+    "ref": "",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 10130239505,
+    "lat": 49.1885217,
+    "lon": -2.098332,
+    "name": "Salisbury Crescent",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 10130239506,
+    "lat": 49.187932,
+    "lon": -2.0972352,
+    "name": "Tunnell Street",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 10130239507,
+    "lat": 49.1836772,
+    "lon": -2.1025698,
+    "name": "La Motte Street",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 10130239508,
+    "lat": 49.1845601,
+    "lon": -2.0993119,
+    "name": "Brooklyn Street N",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 10130239509,
+    "lat": 49.1822893,
+    "lon": -2.0987679,
+    "name": "Royal Crescent",
+    "ref": "",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 10130239510,
+    "lat": 49.1865086,
+    "lon": -2.0396448,
+    "name": "Grouville Station N",
+    "ref": "2747",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 10130239511,
+    "lat": 49.1900504,
+    "lon": -2.0388129,
+    "name": "Links Estate S",
+    "ref": "2936",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 10130239512,
+    "lat": 49.1961272,
+    "lon": -2.0312824,
+    "name": "Longbeach S",
+    "ref": "3268",
+    "shelter": "yes",
+    "bus": "yes"
+  },
+  {
+    "id": 10130239513,
+    "lat": 49.1967099,
+    "lon": -2.0307867,
+    "name": "Longbeach N",
+    "ref": "2685",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 10130239514,
+    "lat": 49.2181315,
+    "lon": -2.1144489,
+    "name": "Sion Lodge S",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 10130239515,
+    "lat": 49.2116669,
+    "lon": -2.1131909,
+    "name": "The Union Inn",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 10130239516,
+    "lat": 49.2146353,
+    "lon": -2.1834225,
+    "name": "Sunnyfields Farm",
+    "ref": "3269",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 10130250117,
+    "lat": 49.2086672,
+    "lon": -2.1757001,
+    "name": "Mont Fallu N",
+    "ref": "",
+    "shelter": "yes",
+    "bus": "yes"
+  },
+  {
+    "id": 10130250118,
+    "lat": 49.2061908,
+    "lon": -2.1788322,
+    "name": "St Peter's Garden Centre",
+    "ref": "",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 10130250119,
+    "lat": 49.2061187,
+    "lon": -2.1838336,
+    "name": "Jersey Aero Club W",
+    "ref": "2798",
+    "shelter": "yes",
+    "bus": "yes"
+  },
+  {
+    "id": 10130250120,
+    "lat": 49.20852,
+    "lon": -2.0655148,
+    "name": "Midlands Stores N",
+    "ref": "",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 10130250121,
+    "lat": 49.2081068,
+    "lon": -2.0662662,
+    "name": "Midland Stores S",
+    "ref": "",
+    "shelter": "yes",
+    "bus": "yes"
+  },
+  {
+    "id": 10130250122,
+    "lat": 49.2095287,
+    "lon": -2.0628747,
+    "name": "Maufant Village N",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 10130250123,
+    "lat": 49.2189816,
+    "lon": -2.053307,
+    "name": "St Martins Hall W",
+    "ref": "",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 10130250124,
+    "lat": 49.2178662,
+    "lon": -2.0510144,
+    "name": "The Royal W",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12050693073,
+    "lat": 49.1976264,
+    "lon": -2.0286102,
+    "name": "Clos du Rivage S",
+    "ref": "2684",
+    "shelter": "yes",
+    "bus": "yes"
+  },
+  {
+    "id": 12093108742,
+    "lat": 49.190483,
+    "lon": -2.2009145,
+    "name": "Red Houses Waitrose W",
+    "ref": "3597",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12093126478,
+    "lat": 49.189612,
+    "lon": -2.2063617,
+    "name": "Clos de Sables E",
+    "ref": "3537",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12093126479,
+    "lat": 49.18957,
+    "lon": -2.206292,
+    "name": "Clos de Sables W",
+    "ref": "3236",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12093126633,
+    "lat": 49.1981102,
+    "lon": -2.1467976,
+    "name": "Bel Royal Terrace",
+    "ref": "2386",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12093128972,
+    "lat": 49.185282,
+    "lon": -2.1957164,
+    "name": "Midbay E",
+    "ref": "3426",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12093138086,
+    "lat": 49.192591,
+    "lon": -2.1664021,
+    "name": "La Haule Slipway S",
+    "ref": "2949",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12093141154,
+    "lat": 49.1846294,
+    "lon": -2.1883037,
+    "name": "Biarritz Hotel W",
+    "ref": "2397",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12093141155,
+    "lat": 49.1847844,
+    "lon": -2.1922763,
+    "name": "L'Horizon Hotel W",
+    "ref": "4384",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12093142334,
+    "lat": 49.1885405,
+    "lon": -2.179625,
+    "name": "Seven Oaks S",
+    "ref": "3698",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12093167955,
+    "lat": 49.1831073,
+    "lon": -2.1784081,
+    "name": "Clos de Noirmont",
+    "ref": "2528",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12093171902,
+    "lat": 49.177181,
+    "lon": -2.1732694,
+    "name": "Ouaisne Junction N",
+    "ref": "3497",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12093194936,
+    "lat": 49.1798174,
+    "lon": -2.1752371,
+    "name": "Travers Farm Lane S",
+    "ref": "3279",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12093240183,
+    "lat": 49.1850016,
+    "lon": -2.2032284,
+    "name": "St Brelade Church E",
+    "ref": "3746",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12093240184,
+    "lat": 49.185056,
+    "lon": -2.2040603,
+    "name": "St Brelade Church W",
+    "ref": "3748",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12093261493,
+    "lat": 49.1891066,
+    "lon": -2.2096505,
+    "name": "Quennevais Drive E",
+    "ref": "3582",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12093262215,
+    "lat": 49.187001,
+    "lon": -2.2167476,
+    "name": "Clos Orange N",
+    "ref": "2536",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12093262216,
+    "lat": 49.1868031,
+    "lon": -2.2167583,
+    "name": "Clos Orange S",
+    "ref": "2653",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12093267112,
+    "lat": 49.188106,
+    "lon": -2.2152128,
+    "name": "La Moye School E",
+    "ref": "2869",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12093268249,
+    "lat": 49.1841742,
+    "lon": -2.2203937,
+    "name": "Beauvoir",
+    "ref": "4548",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12093272324,
+    "lat": 49.1854522,
+    "lon": -2.2178131,
+    "name": "La Moye Garage S",
+    "ref": "3485",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12093272325,
+    "lat": 49.1856565,
+    "lon": -2.2186198,
+    "name": "Clos de la Gare",
+    "ref": "4389",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12093272953,
+    "lat": 49.1839665,
+    "lon": -2.2341015,
+    "name": "Sea Crest Apts",
+    "ref": "3843",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12093272954,
+    "lat": 49.1839244,
+    "lon": -2.2373148,
+    "name": "Gorse Hill",
+    "ref": "2689",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12093272955,
+    "lat": 49.1806774,
+    "lon": -2.2314622,
+    "name": "Les Vaux Larrons",
+    "ref": "4397",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12093272956,
+    "lat": 49.1800848,
+    "lon": -2.2289946,
+    "name": "New Kingdom Hall",
+    "ref": "2832",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12093272957,
+    "lat": 49.1800294,
+    "lon": -2.226198,
+    "name": "Les Fourneaux Est",
+    "ref": "3965",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12093589559,
+    "lat": 49.1680524,
+    "lon": -2.0792648,
+    "name": "Petites Hinguettes",
+    "ref": "2962",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12093589560,
+    "lat": 49.1673439,
+    "lon": -2.0793077,
+    "name": "Le Marais",
+    "ref": "4392",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12093593217,
+    "lat": 49.167365,
+    "lon": -2.0828161,
+    "name": "La Mare Slipway E",
+    "ref": "3646",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12093596485,
+    "lat": 49.172699,
+    "lon": -2.031046,
+    "name": "La Rocque Church N",
+    "ref": "2897",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12093596486,
+    "lat": 49.1730118,
+    "lon": -2.0309851,
+    "name": "La Rocque Church S",
+    "ref": "3425",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12093596487,
+    "lat": 49.1759285,
+    "lon": -2.031832,
+    "name": "Clos Bertram N",
+    "ref": "2437",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12093596488,
+    "lat": 49.1798543,
+    "lon": -2.0353682,
+    "name": "La Grande Mielle",
+    "ref": "4387",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12093600577,
+    "lat": 49.1681165,
+    "lon": -2.0290725,
+    "name": "Grenville Court S",
+    "ref": "3924",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12093600578,
+    "lat": 49.1684155,
+    "lon": -2.0291699,
+    "name": "Grenville Court N",
+    "ref": "2732",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12093603964,
+    "lat": 49.1668178,
+    "lon": -2.0693192,
+    "name": "Rocque Bay E",
+    "ref": "3697",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12093605463,
+    "lat": 49.1647974,
+    "lon": -2.0794687,
+    "name": "Avalon Park W",
+    "ref": "2834",
+    "shelter": "yes",
+    "bus": "yes"
+  },
+  {
+    "id": 12093605464,
+    "lat": 49.1641309,
+    "lon": -2.0781222,
+    "name": "Avalon Park E",
+    "ref": "2358",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12093605465,
+    "lat": 49.1647342,
+    "lon": -2.0735463,
+    "name": "Green Island E",
+    "ref": "2724",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12093641797,
+    "lat": 49.1964134,
+    "lon": -2.1245989,
+    "name": "Close St Andre S",
+    "ref": "4259",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12096634835,
+    "lat": 49.1800199,
+    "lon": -2.1027659,
+    "name": "Lime Grove E",
+    "ref": "4285",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12096634836,
+    "lat": 49.1798689,
+    "lon": -2.1027225,
+    "name": "Lime Grove W",
+    "ref": "4286",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12096638473,
+    "lat": 49.1808492,
+    "lon": -2.1027283,
+    "name": "Regent Road",
+    "ref": "4574",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12096659592,
+    "lat": 49.2053009,
+    "lon": -2.0227147,
+    "name": "Anne Port Slipway N",
+    "ref": "4345",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12096659593,
+    "lat": 49.2052345,
+    "lon": -2.022605,
+    "name": "Anne Port Slipway S",
+    "ref": "4343",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12096669815,
+    "lat": 49.2034485,
+    "lon": -2.0208687,
+    "name": "Jeffreys Leap E",
+    "ref": "2797",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12096670631,
+    "lat": 49.2184192,
+    "lon": -2.0300258,
+    "name": "La Maison Slipway N",
+    "ref": "3257",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12096670632,
+    "lat": 49.2183709,
+    "lon": -2.0299857,
+    "name": "La Maison Slipway S",
+    "ref": "3256",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12096673391,
+    "lat": 49.221963,
+    "lon": -2.0262854,
+    "name": "Belval N",
+    "ref": "3428",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12096673392,
+    "lat": 49.2219691,
+    "lon": -2.0261776,
+    "name": "Belval S",
+    "ref": "2672",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12096678455,
+    "lat": 49.2241828,
+    "lon": -2.0203923,
+    "name": "St Catherine",
+    "ref": "3752",
+    "shelter": "yes",
+    "bus": "yes"
+  },
+  {
+    "id": 12096678631,
+    "lat": 49.2103163,
+    "lon": -2.0259392,
+    "name": "Archirondel N",
+    "ref": "2349",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12096683132,
+    "lat": 49.2173908,
+    "lon": -2.0313414,
+    "name": "St Catheines Wood N",
+    "ref": "3754",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12096683133,
+    "lat": 49.2173707,
+    "lon": -2.031252,
+    "name": "St Catherines Wood S",
+    "ref": "3753",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12096808064,
+    "lat": 49.1976383,
+    "lon": -2.0287707,
+    "name": "Clos de Rivage N",
+    "ref": "2679",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12096808065,
+    "lat": 49.198519,
+    "lon": -2.02674,
+    "name": "Les Residences",
+    "ref": "2578",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12096835434,
+    "lat": 49.1950011,
+    "lon": -2.0331222,
+    "name": "Fort William S",
+    "ref": "2676",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12096835435,
+    "lat": 49.1951421,
+    "lon": -2.0330206,
+    "name": "Fort William N",
+    "ref": "3946",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12096850782,
+    "lat": 49.174021,
+    "lon": -2.0897994,
+    "name": "Clos de Charriere W",
+    "ref": "4379",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12096850783,
+    "lat": 49.1738832,
+    "lon": -2.089641,
+    "name": "Clos de Charriere E",
+    "ref": "4378",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12096856719,
+    "lat": 49.171026,
+    "lon": -2.0865343,
+    "name": "Clos des Blanches E",
+    "ref": "4567",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12096856720,
+    "lat": 49.171252,
+    "lon": -2.0868005,
+    "name": "Clos de Blanches W",
+    "ref": "4568",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12096861510,
+    "lat": 49.1902512,
+    "lon": -2.0387359,
+    "name": "Links Estate N",
+    "ref": "3262",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12096863562,
+    "lat": 49.1733165,
+    "lon": -2.049313,
+    "name": "Causie Lane E",
+    "ref": "3495",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12096863563,
+    "lat": 49.1752066,
+    "lon": -2.045221,
+    "name": "Les Tours",
+    "ref": "2769",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12096863827,
+    "lat": 49.1830057,
+    "lon": -2.0379595,
+    "name": "Verona Stores N",
+    "ref": "3952",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12096863828,
+    "lat": 49.1829413,
+    "lon": -2.0378578,
+    "name": "Verona Stores S",
+    "ref": "2472",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12096864648,
+    "lat": 49.1723592,
+    "lon": -2.0880205,
+    "name": "St Nicholas Avenue",
+    "ref": "3798",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12096864649,
+    "lat": 49.1731372,
+    "lon": -2.08898,
+    "name": "Grande Charriere",
+    "ref": "3623",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12096871179,
+    "lat": 49.1742311,
+    "lon": -2.0832585,
+    "name": "Samares Avenue",
+    "ref": "2624",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12096871180,
+    "lat": 49.1739718,
+    "lon": -2.0823076,
+    "name": "Manor Close",
+    "ref": "3284",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12096891258,
+    "lat": 49.1734838,
+    "lon": -2.0792221,
+    "name": "Samares Manor E",
+    "ref": "3683",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12096891259,
+    "lat": 49.1734352,
+    "lon": -2.0791518,
+    "name": "Samares Manor W",
+    "ref": "3765",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12096891260,
+    "lat": 49.1720971,
+    "lon": -2.0740474,
+    "name": "Rue de Samares",
+    "ref": "3682",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12096891261,
+    "lat": 49.1719289,
+    "lon": -2.0715704,
+    "name": "Rue au Blancq E",
+    "ref": "3637",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12096891262,
+    "lat": 49.1717544,
+    "lon": -2.0709654,
+    "name": "Rue au Blancq W",
+    "ref": "3898",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12096891888,
+    "lat": 49.1758406,
+    "lon": -2.0894333,
+    "name": "Ryburn Road E",
+    "ref": "2726",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12096891889,
+    "lat": 49.1756448,
+    "lon": -2.0890398,
+    "name": "Ryburn Road W",
+    "ref": "3593",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12096891890,
+    "lat": 49.1749605,
+    "lon": -2.0856689,
+    "name": "St Clements Gardens W",
+    "ref": "3757",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12096891891,
+    "lat": 49.1749083,
+    "lon": -2.0852732,
+    "name": "St Clements Garden E",
+    "ref": "3758",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12096894224,
+    "lat": 49.1726098,
+    "lon": -2.0601127,
+    "name": "Rue de la Houguette",
+    "ref": "2497",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12096894225,
+    "lat": 49.1737013,
+    "lon": -2.0559696,
+    "name": "St Clements Church",
+    "ref": "2469",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12096894226,
+    "lat": 49.1737514,
+    "lon": -2.0548652,
+    "name": "Clos de Corvez",
+    "ref": "3756",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12096894762,
+    "lat": 49.1988987,
+    "lon": -2.1142581,
+    "name": "Clarke Avenue",
+    "ref": "2523",
+    "shelter": "yes",
+    "bus": "yes"
+  },
+  {
+    "id": 12096901989,
+    "lat": 49.1718466,
+    "lon": -2.064886,
+    "name": "Rectory Close",
+    "ref": "3595",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12096939951,
+    "lat": 49.1934133,
+    "lon": -2.115407,
+    "name": "The Crematorium",
+    "ref": "2548",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12096939952,
+    "lat": 49.1914641,
+    "lon": -2.1164473,
+    "name": "Overdale Hospital",
+    "ref": "3498",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12096943322,
+    "lat": 49.1946642,
+    "lon": -2.1095321,
+    "name": "Leamington Court",
+    "ref": "3584",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12096943323,
+    "lat": 49.1943873,
+    "lon": -2.1094598,
+    "name": "Queens Lane",
+    "ref": "3583",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12096946928,
+    "lat": 49.196253,
+    "lon": -2.1136827,
+    "name": "Abbotsmount",
+    "ref": "2539",
+    "shelter": "yes",
+    "bus": "yes"
+  },
+  {
+    "id": 12097076632,
+    "lat": 49.1931754,
+    "lon": -2.1043921,
+    "name": "Clarendon Road",
+    "ref": "2639",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12097076633,
+    "lat": 49.1938704,
+    "lon": -2.1041475,
+    "name": "Mont Cantel",
+    "ref": "3276",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12097076634,
+    "lat": 49.1951692,
+    "lon": -2.106912,
+    "name": "Richmond Road",
+    "ref": "2532",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12097076635,
+    "lat": 49.1980359,
+    "lon": -2.1096895,
+    "name": "Manor Park Road",
+    "ref": "2568",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12097076636,
+    "lat": 49.2005405,
+    "lon": -2.1123584,
+    "name": "Highview Lane",
+    "ref": "2763",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12097077590,
+    "lat": 49.1943785,
+    "lon": -2.0994729,
+    "name": "Town Mills S",
+    "ref": "2947",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12097077591,
+    "lat": 49.1944258,
+    "lon": -2.0990164,
+    "name": "Town Mills N",
+    "ref": "3925",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12097077592,
+    "lat": 49.196285,
+    "lon": -2.0967534,
+    "name": "Troy Court S",
+    "ref": "3936",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12097077593,
+    "lat": 49.1964905,
+    "lon": -2.0966132,
+    "name": "Troy Court N",
+    "ref": "3937",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12097077594,
+    "lat": 49.197473,
+    "lon": -2.0957827,
+    "name": "Grands Vaux Court N",
+    "ref": "2693",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12097077595,
+    "lat": 49.1976317,
+    "lon": -2.0956443,
+    "name": "Grands Vaux Court S",
+    "ref": "3576",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12097077596,
+    "lat": 49.2000344,
+    "lon": -2.0952292,
+    "name": "Sutton Court S",
+    "ref": "3983",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12097077597,
+    "lat": 49.2007004,
+    "lon": -2.0946874,
+    "name": "Sutton Court N",
+    "ref": "3856",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12097077598,
+    "lat": 49.2026589,
+    "lon": -2.0912775,
+    "name": "Grands Vaux School",
+    "ref": "2696",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12097077599,
+    "lat": 49.2042709,
+    "lon": -2.0853539,
+    "name": "Highfield Lane N",
+    "ref": "2762",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12097077600,
+    "lat": 49.2065362,
+    "lon": -2.0842482,
+    "name": "Paul Mill N",
+    "ref": "3532",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12097133537,
+    "lat": 49.2516577,
+    "lon": -2.1221334,
+    "name": "Falaise de Fremont",
+    "ref": "4283",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12097139480,
+    "lat": 49.204887,
+    "lon": -2.1549704,
+    "name": "Tesson Chapel E",
+    "ref": "3859",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12097139481,
+    "lat": 49.2047953,
+    "lon": -2.1549074,
+    "name": "Tesson Chapel W",
+    "ref": "3862",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12097139482,
+    "lat": 49.2024007,
+    "lon": -2.1549724,
+    "name": "Sandybrook N",
+    "ref": "3684",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12097139483,
+    "lat": 49.2023967,
+    "lon": -2.1549338,
+    "name": "Sandybrook S",
+    "ref": "3247",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12097139484,
+    "lat": 49.2008985,
+    "lon": -2.1522445,
+    "name": "La Providence E",
+    "ref": "4279",
+    "shelter": "yes",
+    "bus": "yes"
+  },
+  {
+    "id": 12097139493,
+    "lat": 49.1996593,
+    "lon": -2.1490307,
+    "name": "Bel Royal School W",
+    "ref": "2387",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12097139494,
+    "lat": 49.1996553,
+    "lon": -2.1489413,
+    "name": "Bel Royal School E",
+    "ref": "3948",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12097159772,
+    "lat": 49.2560372,
+    "lon": -2.147366,
+    "name": "Les Fontaines",
+    "ref": "4245",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12097163201,
+    "lat": 49.2125094,
+    "lon": -2.0823978,
+    "name": "Oaklands Manor",
+    "ref": "3489",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12097163202,
+    "lat": 49.2165084,
+    "lon": -2.0815053,
+    "name": "Victoria Village",
+    "ref": "3962",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12097163203,
+    "lat": 49.2188,
+    "lon": -2.0763781,
+    "name": "Rue des Boulees",
+    "ref": "3648",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12097163204,
+    "lat": 49.2162734,
+    "lon": -2.0750234,
+    "name": "Rue du Pont",
+    "ref": "3675",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12097187533,
+    "lat": 49.2394726,
+    "lon": -2.2400187,
+    "name": "La Blanche Maison S",
+    "ref": "3979",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12097187534,
+    "lat": 49.2393629,
+    "lon": -2.2396849,
+    "name": "La Blanche Maison N",
+    "ref": "2752",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12097187535,
+    "lat": 49.2369887,
+    "lon": -2.2343815,
+    "name": "Mont Huelin N",
+    "ref": "3275",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12097187536,
+    "lat": 49.2354376,
+    "lon": -2.2291751,
+    "name": "Pres d'Auvergne",
+    "ref": "2975",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12097187537,
+    "lat": 49.2354298,
+    "lon": -2.2290318,
+    "name": "Dessous Les Hougues",
+    "ref": "3926",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12097213978,
+    "lat": 49.2111773,
+    "lon": -2.1613227,
+    "name": "Victoria Hotel S",
+    "ref": "3958",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12097213979,
+    "lat": 49.2108328,
+    "lon": -2.1612661,
+    "name": "Victoria Hotel N",
+    "ref": "3959",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12097224360,
+    "lat": 49.2198469,
+    "lon": -2.2263119,
+    "name": "Kempt Tower N",
+    "ref": "2828",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12097224361,
+    "lat": 49.2199082,
+    "lon": -2.2262877,
+    "name": "Kempt Tower S",
+    "ref": "2494",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12097224362,
+    "lat": 49.2151691,
+    "lon": -2.2248903,
+    "name": "St Ouens Pond S",
+    "ref": "4235",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12097224363,
+    "lat": 49.2151305,
+    "lon": -2.2249278,
+    "name": "St Ouens Pond N",
+    "ref": "2398",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12097224364,
+    "lat": 49.2100002,
+    "lon": -2.2233614,
+    "name": "Watersplash N",
+    "ref": "3974",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12097224365,
+    "lat": 49.2099819,
+    "lon": -2.2233209,
+    "name": "Watersplash S",
+    "ref": "3853",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12097226643,
+    "lat": 49.2330352,
+    "lon": -2.232497,
+    "name": "Chemin du Moulin N",
+    "ref": "2926",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12097226644,
+    "lat": 49.2329214,
+    "lon": -2.2325507,
+    "name": "Chemin du Moulin S",
+    "ref": "2634",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12097226645,
+    "lat": 49.2310263,
+    "lon": -2.2336852,
+    "name": "Jersey Pearl N",
+    "ref": "2825",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12097226646,
+    "lat": 49.2310841,
+    "lon": -2.2335458,
+    "name": "Jersey Pearl S",
+    "ref": "3679",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12097226647,
+    "lat": 49.2266929,
+    "lon": -2.2306275,
+    "name": "Five Mile Avenue S",
+    "ref": "2369",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12097226648,
+    "lat": 49.2263863,
+    "lon": -2.2305202,
+    "name": "Five Mile Avenue N",
+    "ref": "4232",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12097229250,
+    "lat": 49.1980291,
+    "lon": -2.2237664,
+    "name": "Le Braye S",
+    "ref": "2938",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12097229251,
+    "lat": 49.198122,
+    "lon": -2.2237798,
+    "name": "Le Braye N",
+    "ref": "2939",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12097233058,
+    "lat": 49.2057192,
+    "lon": -2.222133,
+    "name": "El Tico S",
+    "ref": "2585",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12097233185,
+    "lat": 49.2148883,
+    "lon": -2.1834425,
+    "name": "Jubilee Homes",
+    "ref": "3879",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098362028,
+    "lat": 49.2184515,
+    "lon": -2.1402536,
+    "name": "Three Oaks S",
+    "ref": "3893",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098370997,
+    "lat": 49.2353489,
+    "lon": -2.2038089,
+    "name": "La Croix N",
+    "ref": "3526",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12098370998,
+    "lat": 49.2362591,
+    "lon": -2.2043248,
+    "name": "La Croix S",
+    "ref": "3432",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098370999,
+    "lat": 49.2386636,
+    "lon": -2.2054943,
+    "name": "Leoville S",
+    "ref": "3543",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12098371000,
+    "lat": 49.2441009,
+    "lon": -2.2123232,
+    "name": "Blanches Pierres",
+    "ref": "2426",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098405284,
+    "lat": 49.2061562,
+    "lon": -2.1427804,
+    "name": "Mont Cambrai S",
+    "ref": "3984",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098405285,
+    "lat": 49.2079724,
+    "lon": -2.1428285,
+    "name": "Ville Emphrie S",
+    "ref": "3968",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098405286,
+    "lat": 49.2137006,
+    "lon": -2.1412415,
+    "name": "St Lawrence Church S",
+    "ref": "2459",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098407935,
+    "lat": 49.2113562,
+    "lon": -2.1804934,
+    "name": "Rue de St Clement N",
+    "ref": "3863",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098407936,
+    "lat": 49.2118223,
+    "lon": -2.1808064,
+    "name": "Rue de St Clement S",
+    "ref": "3486",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098411757,
+    "lat": 49.2311988,
+    "lon": -2.1548893,
+    "name": "Broadfields N",
+    "ref": "2823",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098411758,
+    "lat": 49.2354595,
+    "lon": -2.1612965,
+    "name": "La Ruette S",
+    "ref": "2892",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098414470,
+    "lat": 49.2361497,
+    "lon": -2.1647358,
+    "name": "Rue de Bel Air E",
+    "ref": "2725",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098414471,
+    "lat": 49.2350587,
+    "lon": -2.1704869,
+    "name": "Bethlehem Chapel W",
+    "ref": "2396",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098433037,
+    "lat": 49.2192939,
+    "lon": -2.1880694,
+    "name": "La Neuve Route",
+    "ref": "3475",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12098433038,
+    "lat": 49.219574,
+    "lon": -2.1883804,
+    "name": "Rue des Niemes",
+    "ref": "3528",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12098433039,
+    "lat": 49.2228533,
+    "lon": -2.1924012,
+    "name": "aMaizin! Park S",
+    "ref": "2859",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12098433040,
+    "lat": 49.2228686,
+    "lon": -2.1924755,
+    "name": "aMaizin! Park N",
+    "ref": "2392",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12098433041,
+    "lat": 49.2248899,
+    "lon": -2.1954381,
+    "name": "St Ouen Manor S",
+    "ref": "2927",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12098433042,
+    "lat": 49.2249151,
+    "lon": -2.1955133,
+    "name": "St Ouen Manor N",
+    "ref": "3825",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12098433043,
+    "lat": 49.2271639,
+    "lon": -2.198229,
+    "name": "Rue du Manoir",
+    "ref": "3285",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12098433044,
+    "lat": 49.2271639,
+    "lon": -2.1981579,
+    "name": "Rue du Douet",
+    "ref": "3673",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12098433045,
+    "lat": 49.2297174,
+    "lon": -2.2001379,
+    "name": "St Ouen Garage S",
+    "ref": "2878",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098433046,
+    "lat": 49.2300007,
+    "lon": -2.2004192,
+    "name": "St Ouen Garage N",
+    "ref": "3824",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098440546,
+    "lat": 49.2489209,
+    "lon": -2.222031,
+    "name": "La Hougue Farm",
+    "ref": "2862",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098440547,
+    "lat": 49.2522802,
+    "lon": -2.2306865,
+    "name": "Sea View Farm",
+    "ref": "2737",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098440548,
+    "lat": 49.2506799,
+    "lon": -2.2407272,
+    "name": "Le Hurel Farm",
+    "ref": "2956",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098440549,
+    "lat": 49.2445035,
+    "lon": -2.2413959,
+    "name": "Maison des Landes",
+    "ref": "3278",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098440550,
+    "lat": 49.2451012,
+    "lon": -2.2291939,
+    "name": "Les Perrons",
+    "ref": "3542",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098440551,
+    "lat": 49.2441967,
+    "lon": -2.2267175,
+    "name": "Millais",
+    "ref": "3439",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098440552,
+    "lat": 49.2429923,
+    "lon": -2.2225043,
+    "name": "La Profonde Rue",
+    "ref": "2945",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098440553,
+    "lat": 49.2391283,
+    "lon": -2.2159803,
+    "name": "Woodbine Farm",
+    "ref": "4264",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098440554,
+    "lat": 49.2373543,
+    "lon": -2.2097967,
+    "name": "Champ Donne",
+    "ref": "2487",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12098450301,
+    "lat": 49.2452142,
+    "lon": -2.2152192,
+    "name": "Petit Bois",
+    "ref": "3535",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098450302,
+    "lat": 49.2468234,
+    "lon": -2.2183489,
+    "name": "Vinchelez",
+    "ref": "3969",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098451318,
+    "lat": 49.2336501,
+    "lon": -2.1949344,
+    "name": "La Chasse",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098451319,
+    "lat": 49.2348168,
+    "lon": -2.1900179,
+    "name": "Brampton Farm W",
+    "ref": "2457",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098451320,
+    "lat": 49.2349445,
+    "lon": -2.1892405,
+    "name": "Brampton Farm E",
+    "ref": "2872",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098451321,
+    "lat": 49.2337192,
+    "lon": -2.1863984,
+    "name": "Rue de la Preterie",
+    "ref": "2782",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098457698,
+    "lat": 49.233415,
+    "lon": -2.1834531,
+    "name": "The Windmill E",
+    "ref": "3878",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098459053,
+    "lat": 49.2344448,
+    "lon": -2.1779814,
+    "name": "St Marys Arsenal",
+    "ref": "4293",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12098465787,
+    "lat": 49.22742,
+    "lon": -2.1824996,
+    "name": "Carrefour a Cendre",
+    "ref": "2475",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098465788,
+    "lat": 49.2249357,
+    "lon": -2.1819583,
+    "name": "Les Charrieres S",
+    "ref": "2987",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098465789,
+    "lat": 49.224598,
+    "lon": -2.1819103,
+    "name": "Les Charrieres N",
+    "ref": "2985",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098465790,
+    "lat": 49.2201755,
+    "lon": -2.1831743,
+    "name": "St Peters House S",
+    "ref": "3834",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12098467557,
+    "lat": 49.1992734,
+    "lon": -2.1789486,
+    "name": "Route du Francfief N",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098467558,
+    "lat": 49.1992734,
+    "lon": -2.1788816,
+    "name": "Route du Francfief S",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098477242,
+    "lat": 49.2055185,
+    "lon": -2.1813636,
+    "name": "Jersey Rugby Club S",
+    "ref": "2464",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098477243,
+    "lat": 49.2053346,
+    "lon": -2.1813409,
+    "name": "Jersey Rugby Club N",
+    "ref": "3678",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098477244,
+    "lat": 49.2042425,
+    "lon": -2.1808224,
+    "name": "Rue Cappelain S",
+    "ref": "2565",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098477245,
+    "lat": 49.2041851,
+    "lon": -2.1808347,
+    "name": "Rue Cappelain N",
+    "ref": "2564",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098477246,
+    "lat": 49.2017291,
+    "lon": -2.1802857,
+    "name": "St Peters Arsenal N",
+    "ref": "3827",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098477247,
+    "lat": 49.2016828,
+    "lon": -2.1802179,
+    "name": "St Peters Arsenal S",
+    "ref": "3438",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098493216,
+    "lat": 49.19597,
+    "lon": -2.1771381,
+    "name": "Hotel La Place S",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098493217,
+    "lat": 49.1958372,
+    "lon": -2.1772154,
+    "name": "Hotel La Place N",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098807523,
+    "lat": 49.2315754,
+    "lon": -2.1434048,
+    "name": "Glencoe S",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098846995,
+    "lat": 49.1999349,
+    "lon": -2.1131934,
+    "name": "Powerhouse S",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098862024,
+    "lat": 49.218278,
+    "lon": -2.1145431,
+    "name": "Sion Lodge N",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098869766,
+    "lat": 49.2456236,
+    "lon": -2.1295188,
+    "name": "Green Farm W",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098869767,
+    "lat": 49.2480626,
+    "lon": -2.1286919,
+    "name": "La Porte",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098869768,
+    "lat": 49.2423581,
+    "lon": -2.1178335,
+    "name": "Chestnute Grove E",
+    "ref": "2874",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098869769,
+    "lat": 49.2422462,
+    "lon": -2.1177224,
+    "name": "Chestnut Grove W",
+    "ref": "3286",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098869770,
+    "lat": 49.2396023,
+    "lon": -2.1173181,
+    "name": "Rue Militaire N",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098869771,
+    "lat": 49.2395621,
+    "lon": -2.117321,
+    "name": "Rue Militaire S",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098869772,
+    "lat": 49.2394646,
+    "lon": -2.1120422,
+    "name": "Hautes Croix Store",
+    "ref": "2753",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098869773,
+    "lat": 49.2399328,
+    "lon": -2.1113314,
+    "name": "Hautes Croix House",
+    "ref": "2754",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098869774,
+    "lat": 49.2385545,
+    "lon": -2.1114641,
+    "name": "Hautes Croix Store",
+    "ref": "2468",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098881014,
+    "lat": 49.2349519,
+    "lon": -2.1127432,
+    "name": "Les Ruettes S",
+    "ref": "2835",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098881015,
+    "lat": 49.2347323,
+    "lon": -2.1129364,
+    "name": "Les Ruettes N",
+    "ref": "3693",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098881016,
+    "lat": 49.2313753,
+    "lon": -2.1153061,
+    "name": "Chemin de Herupe S",
+    "ref": "2375",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098881017,
+    "lat": 49.2313509,
+    "lon": -2.1153809,
+    "name": "Chemin de Herupe N",
+    "ref": "3483",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098881018,
+    "lat": 49.2280591,
+    "lon": -2.1147989,
+    "name": "Rue de la Chesnaie S",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098881019,
+    "lat": 49.227608,
+    "lon": -2.1146965,
+    "name": "Rue de la Chesnaie N",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098884560,
+    "lat": 49.2250258,
+    "lon": -2.1137791,
+    "name": "Rue de Bechet S",
+    "ref": "3638",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098884561,
+    "lat": 49.2247747,
+    "lon": -2.113744,
+    "name": "Rue de Bechet N",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098885096,
+    "lat": 49.2152003,
+    "lon": -2.1134533,
+    "name": "Surville Cemetery N",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098890520,
+    "lat": 49.2110884,
+    "lon": -2.1128572,
+    "name": "Rue des Arbres",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098890521,
+    "lat": 49.2097735,
+    "lon": -2.1127871,
+    "name": "La Hougue Avenue S",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098890522,
+    "lat": 49.209749,
+    "lon": -2.1128362,
+    "name": "La Hougue Avenue N",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098890523,
+    "lat": 49.2065684,
+    "lon": -2.1132822,
+    "name": "Rue des Cotils",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098890524,
+    "lat": 49.2063716,
+    "lon": -2.1134293,
+    "name": "Ruelle de Rauvlet",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098892539,
+    "lat": 49.2030229,
+    "lon": -2.1137492,
+    "name": "Mont a l'Abbe Sch N",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098918206,
+    "lat": 49.2402315,
+    "lon": -2.1042907,
+    "name": "The Old Forge",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098918207,
+    "lat": 49.2382968,
+    "lon": -2.0999868,
+    "name": "Ebenezer Chapel E",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098918208,
+    "lat": 49.2382125,
+    "lon": -2.0998701,
+    "name": "Ebenezer Chapel W",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098919344,
+    "lat": 49.1889645,
+    "lon": -2.0894343,
+    "name": "Bagatelle Lane S",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098919345,
+    "lat": 49.189118,
+    "lon": -2.0892255,
+    "name": "Bagatelle Lane N",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098919346,
+    "lat": 49.1906906,
+    "lon": -2.0873429,
+    "name": "Bon Air Lane",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098919347,
+    "lat": 49.1937081,
+    "lon": -2.0842479,
+    "name": "St Saviours School N",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098919348,
+    "lat": 49.1954456,
+    "lon": -2.0827146,
+    "name": "Bagatelle Parade N",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098919349,
+    "lat": 49.1960634,
+    "lon": -2.0826261,
+    "name": "Bagatelle Parade S",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098919350,
+    "lat": 49.1980288,
+    "lon": -2.0819864,
+    "name": "Fayreways Flats",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098919351,
+    "lat": 49.1974968,
+    "lon": -2.0847236,
+    "name": "Chasse Brunet E",
+    "ref": "",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12098919352,
+    "lat": 49.1975092,
+    "lon": -2.0846507,
+    "name": "Chasse Brunet W",
+    "ref": "",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12098919353,
+    "lat": 49.1965873,
+    "lon": -2.0883518,
+    "name": "Langtry Gardens E",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098919354,
+    "lat": 49.1965188,
+    "lon": -2.0883796,
+    "name": "Langtry Gardens W",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098919355,
+    "lat": 49.196155,
+    "lon": -2.0898962,
+    "name": "Birches Avenue W",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098919356,
+    "lat": 49.1961625,
+    "lon": -2.0900156,
+    "name": "Birches Avenue E",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098919357,
+    "lat": 49.1949625,
+    "lon": -2.0908197,
+    "name": "St Saviours Church S",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098919358,
+    "lat": 49.1948558,
+    "lon": -2.0908567,
+    "name": "St Saviours Church N",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098929911,
+    "lat": 49.2370167,
+    "lon": -2.0936667,
+    "name": "Les Croix S",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098929912,
+    "lat": 49.2373205,
+    "lon": -2.0935738,
+    "name": "Les Croix N",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098929913,
+    "lat": 49.2366976,
+    "lon": -2.0935003,
+    "name": "Rue des Croix W",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098929914,
+    "lat": 49.2367601,
+    "lon": -2.0932818,
+    "name": "La Nouvelle Croix E",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098929915,
+    "lat": 49.234938,
+    "lon": -2.0915459,
+    "name": "Trinity Youth Club S",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098929916,
+    "lat": 49.2347227,
+    "lon": -2.0916018,
+    "name": "Trinity Youth Club N",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098929917,
+    "lat": 49.2335149,
+    "lon": -2.0918335,
+    "name": "Trinity Church N",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098929918,
+    "lat": 49.233422,
+    "lon": -2.0916262,
+    "name": "Trinity Church S",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098929919,
+    "lat": 49.2318382,
+    "lon": -2.0933786,
+    "name": "R.J. Showground N",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098929920,
+    "lat": 49.2319298,
+    "lon": -2.0933712,
+    "name": "R.J. Showground S",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098932396,
+    "lat": 49.182234,
+    "lon": -2.0963903,
+    "name": "The Cloisters",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098932397,
+    "lat": 49.186008,
+    "lon": -2.0951147,
+    "name": "Langford",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098932398,
+    "lat": 49.1874357,
+    "lon": -2.0924958,
+    "name": "Hautmont Estate N",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098932399,
+    "lat": 49.1874035,
+    "lon": -2.0924065,
+    "name": "Hautmont Estate S",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098935662,
+    "lat": 49.2288418,
+    "lon": -2.0934691,
+    "name": "Trinity School",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098935663,
+    "lat": 49.2256685,
+    "lon": -2.0936096,
+    "name": "Rue des Brulees N",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098935664,
+    "lat": 49.2222311,
+    "lon": -2.0948572,
+    "name": "La Chesnee Farm N",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098935665,
+    "lat": 49.2202711,
+    "lon": -2.0941739,
+    "name": "Le Hurel S",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098935666,
+    "lat": 49.2201864,
+    "lon": -2.0941852,
+    "name": "Le Hurel N",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098935667,
+    "lat": 49.216499,
+    "lon": -2.0960153,
+    "name": "Augres N",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098935668,
+    "lat": 49.21316,
+    "lon": -2.0970779,
+    "name": "La Grange N",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098935669,
+    "lat": 49.2129083,
+    "lon": -2.0971199,
+    "name": "La Grange S",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098935670,
+    "lat": 49.211749,
+    "lon": -2.0970583,
+    "name": "Rue de la Garenne",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098935671,
+    "lat": 49.211087,
+    "lon": -2.0970242,
+    "name": "Rue de la Croiserie",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098935672,
+    "lat": 49.206054,
+    "lon": -2.0980575,
+    "name": "Rue de Mon Sejour N",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098935673,
+    "lat": 49.2060369,
+    "lon": -2.0975716,
+    "name": "",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098935674,
+    "lat": 49.2001549,
+    "lon": -2.099223,
+    "name": "Oak Tree Gardens N",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098935675,
+    "lat": 49.1994659,
+    "lon": -2.0990684,
+    "name": "Oak Tree Gardens S",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098935676,
+    "lat": 49.1969968,
+    "lon": -2.0995514,
+    "name": "Old Trinity Hill S",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098935677,
+    "lat": 49.1961832,
+    "lon": -2.0997351,
+    "name": "Old Trinity Hill N",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098935678,
+    "lat": 49.1935693,
+    "lon": -2.1009376,
+    "name": "Trinity Gardens N",
+    "ref": "",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12098935679,
+    "lat": 49.1912203,
+    "lon": -2.0994861,
+    "name": "Springfield Stadium",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098935680,
+    "lat": 49.190583,
+    "lon": -2.0970896,
+    "name": "Hotel de France S",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098935681,
+    "lat": 49.1905448,
+    "lon": -2.0971526,
+    "name": "Hotel de France N",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098960271,
+    "lat": 49.1978396,
+    "lon": -2.0800237,
+    "name": "Cinq Chenes Estate E",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098960272,
+    "lat": 49.1974611,
+    "lon": -2.0789577,
+    "name": "Cinq Chenes Estate W",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098960273,
+    "lat": 49.1981678,
+    "lon": -2.0726416,
+    "name": "Rue du Tapon W",
+    "ref": "",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12098960274,
+    "lat": 49.1983711,
+    "lon": -2.0722564,
+    "name": "Rue du Tapon E",
+    "ref": "",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12098968824,
+    "lat": 49.19649,
+    "lon": -2.0897156,
+    "name": "Langley Avenue",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098968825,
+    "lat": 49.1988248,
+    "lon": -2.090889,
+    "name": "Langley Park W",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098968826,
+    "lat": 49.198989,
+    "lon": -2.0909669,
+    "name": "Langley Park E",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098969833,
+    "lat": 49.2066973,
+    "lon": -2.065745,
+    "name": "Southfork Farm",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098969834,
+    "lat": 49.2041749,
+    "lon": -2.0644292,
+    "name": "I.J. Bathe Field S",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098969835,
+    "lat": 49.2042134,
+    "lon": -2.0645056,
+    "name": "I.J. Bathe Field N",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098969836,
+    "lat": 49.200576,
+    "lon": -2.0589067,
+    "name": "Le Catillon E",
+    "ref": "",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12098969838,
+    "lat": 49.2005681,
+    "lon": -2.0591181,
+    "name": "Le Catillon W",
+    "ref": "",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12098969839,
+    "lat": 49.2021115,
+    "lon": -2.0532753,
+    "name": "St Bernards W",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098969840,
+    "lat": 49.2022363,
+    "lon": -2.0531778,
+    "name": "St Bernards E",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098969841,
+    "lat": 49.2027512,
+    "lon": -2.045504,
+    "name": "Marina Cottages",
+    "ref": "",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12098969842,
+    "lat": 49.2027929,
+    "lon": -2.0456916,
+    "name": "Clinique Pinel",
+    "ref": "",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12098969843,
+    "lat": 49.2026428,
+    "lon": -2.0423505,
+    "name": "Queens Valley W",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098969844,
+    "lat": 49.2028067,
+    "lon": -2.0413632,
+    "name": "Queens Valley E",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098969845,
+    "lat": 49.2019595,
+    "lon": -2.0369917,
+    "name": "Les Monts W",
+    "ref": "",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12098969846,
+    "lat": 49.2020351,
+    "lon": -2.0366438,
+    "name": "Les Monts E",
+    "ref": "",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12098970982,
+    "lat": 49.1987823,
+    "lon": -2.0802023,
+    "name": "Five Oaks S",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098970983,
+    "lat": 49.198965,
+    "lon": -2.0798905,
+    "name": "Five Oaks N",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098970984,
+    "lat": 49.19954,
+    "lon": -2.0789097,
+    "name": "Mountrow Villas",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098970985,
+    "lat": 49.2030766,
+    "lon": -2.0739155,
+    "name": "Les Routeurs N",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098970986,
+    "lat": 49.2032354,
+    "lon": -2.0736045,
+    "name": "Les Routeurs S",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098970987,
+    "lat": 49.204778,
+    "lon": -2.071163,
+    "name": "Fosse a l'Ecrivain",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098970988,
+    "lat": 49.2047138,
+    "lon": -2.0711753,
+    "name": "Eden Chapel",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098970989,
+    "lat": 49.2093966,
+    "lon": -2.0631024,
+    "name": "Maufant Village S",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12098970990,
+    "lat": 49.2106575,
+    "lon": -2.0656379,
+    "name": "Maufant Vineries",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12099011924,
+    "lat": 49.2077748,
+    "lon": -2.0335338,
+    "name": "Cloverley Court N",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12099011925,
+    "lat": 49.2081447,
+    "lon": -2.0339052,
+    "name": "Cloverley Court S",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12099017211,
+    "lat": 49.2105108,
+    "lon": -2.0367317,
+    "name": "Chateau des Reves S",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12099017212,
+    "lat": 49.2105333,
+    "lon": -2.036815,
+    "name": "Chateau des Reves N",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12099017213,
+    "lat": 49.2123553,
+    "lon": -2.0387217,
+    "name": "La Croix Messervy E",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12099017214,
+    "lat": 49.2125903,
+    "lon": -2.0393946,
+    "name": "La Croix Messervy W",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12099017215,
+    "lat": 49.2159182,
+    "lon": -2.0447417,
+    "name": "La Longue Rue E",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12099017216,
+    "lat": 49.2157894,
+    "lon": -2.0445485,
+    "name": "La Longue Rue W",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12099017217,
+    "lat": 49.2167618,
+    "lon": -2.0466004,
+    "name": "Clos Le Troquer",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100101881,
+    "lat": 49.1872006,
+    "lon": -2.1116547,
+    "name": "Spectrum",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100101882,
+    "lat": 49.1846286,
+    "lon": -2.1117175,
+    "name": "Castle Street",
+    "ref": "",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12100101883,
+    "lat": 49.1846785,
+    "lon": -2.1068135,
+    "name": "King Street",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100101884,
+    "lat": 49.1852378,
+    "lon": -2.1045434,
+    "name": "Halkett Place",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100101885,
+    "lat": 49.1860111,
+    "lon": -2.1029105,
+    "name": "Minden Place Carpark",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100101886,
+    "lat": 49.1844262,
+    "lon": -2.0993734,
+    "name": "Brooklyn Street S",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100101887,
+    "lat": 49.1816223,
+    "lon": -2.0998114,
+    "name": "Colomberie Parade",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100101888,
+    "lat": 49.1797583,
+    "lon": -2.0985501,
+    "name": "Hastings Road",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100101889,
+    "lat": 49.1785494,
+    "lon": -2.0978637,
+    "name": "Dunell Road",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100101890,
+    "lat": 49.1761262,
+    "lon": -2.0878604,
+    "name": "Ryburn Avenue S",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100101891,
+    "lat": 49.1759701,
+    "lon": -2.088024,
+    "name": "Ryburn Avenue N",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100101892,
+    "lat": 49.1795179,
+    "lon": -2.0828809,
+    "name": "Rue de Carteret W",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100101893,
+    "lat": 49.1809034,
+    "lon": -2.0812162,
+    "name": "Jersey Post",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100101894,
+    "lat": 49.1826153,
+    "lon": -2.0798164,
+    "name": "Clos de Longueville",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100101895,
+    "lat": 49.1825995,
+    "lon": -2.079921,
+    "name": "The Manor Lodge",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100102366,
+    "lat": 49.2178041,
+    "lon": -2.0502492,
+    "name": "The Royal E",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100102367,
+    "lat": 49.2191265,
+    "lon": -2.0535686,
+    "name": "St Martins Hall E",
+    "ref": "",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12100136621,
+    "lat": 49.2358224,
+    "lon": -2.0866505,
+    "name": "The Mount",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100136622,
+    "lat": 49.2350333,
+    "lon": -2.0856375,
+    "name": "Rue du Boulay S",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100136623,
+    "lat": 49.2332353,
+    "lon": -2.0693726,
+    "name": "Les Hougues",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100136624,
+    "lat": 49.2366112,
+    "lon": -2.0640217,
+    "name": "L'Etacquerel Fort W",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100136625,
+    "lat": 49.2366837,
+    "lon": -2.0638818,
+    "name": "L'Etacquerel Fort E",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100136626,
+    "lat": 49.2376271,
+    "lon": -2.0546009,
+    "name": "Rue du Catel W",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100136627,
+    "lat": 49.2377211,
+    "lon": -2.0541854,
+    "name": "Rue du Catel E",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100146367,
+    "lat": 49.2204787,
+    "lon": -2.057413,
+    "name": "Rue du Hucquet",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100146368,
+    "lat": 49.2206371,
+    "lon": -2.0582024,
+    "name": "Rue du Hucquet E",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100146369,
+    "lat": 49.220452,
+    "lon": -2.0576748,
+    "name": "Croix au Maitre",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100146370,
+    "lat": 49.2166291,
+    "lon": -2.0589985,
+    "name": "La Fantaisie",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100146371,
+    "lat": 49.2125393,
+    "lon": -2.0591087,
+    "name": "Les Carrieres",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100146372,
+    "lat": 49.21585,
+    "lon": -2.0540204,
+    "name": "Rue des Buttes N",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100146373,
+    "lat": 49.2153975,
+    "lon": -2.0544227,
+    "name": "Rue des Buttes S",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100146374,
+    "lat": 49.2106523,
+    "lon": -2.0610856,
+    "name": "Poplar Avenue",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100146375,
+    "lat": 49.2016077,
+    "lon": -2.0186675,
+    "name": "Roche du Lion",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100146376,
+    "lat": 49.2015006,
+    "lon": -2.0188229,
+    "name": "La Hacienda",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100146377,
+    "lat": 49.1999277,
+    "lon": -2.0233327,
+    "name": "Devon Gardens",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100146378,
+    "lat": 49.2009048,
+    "lon": -2.1295406,
+    "name": "Landscape Grove N",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100146379,
+    "lat": 49.2011362,
+    "lon": -2.1293277,
+    "name": "Landscape Grove S",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100146380,
+    "lat": 49.2029409,
+    "lon": -2.1283996,
+    "name": "Rue Cyril Mauger",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100146381,
+    "lat": 49.216798,
+    "lon": -2.1264141,
+    "name": "Le Bu de la Rue",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100146382,
+    "lat": 49.2220927,
+    "lon": -2.1252328,
+    "name": "Le Couvent",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100146383,
+    "lat": 49.1899012,
+    "lon": -2.1974373,
+    "name": "Bradford Avenue E",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100146384,
+    "lat": 49.1896503,
+    "lon": -2.1965329,
+    "name": "Bradford Avenue W",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100146385,
+    "lat": 49.1890289,
+    "lon": -2.1937709,
+    "name": "Tabor Park W",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100146386,
+    "lat": 49.1890106,
+    "lon": -2.193374,
+    "name": "Tabor Park E",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100146387,
+    "lat": 49.189096,
+    "lon": -2.113864,
+    "name": "Lewis Lane",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100146388,
+    "lat": 49.1896844,
+    "lon": -2.1145046,
+    "name": "Westmount Park E",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100146389,
+    "lat": 49.1895737,
+    "lon": -2.1144018,
+    "name": "Westmount Park W",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100190217,
+    "lat": 49.2254007,
+    "lon": -2.2063021,
+    "name": "St Ouens Church",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100196321,
+    "lat": 49.1811827,
+    "lon": -2.0873928,
+    "name": "Bagot Manor Avenue W",
+    "ref": "",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12100196322,
+    "lat": 49.1823171,
+    "lon": -2.0845899,
+    "name": "Les Varines E",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100196323,
+    "lat": 49.183085,
+    "lon": -2.0820992,
+    "name": "Miladi Farm Parade E",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100196324,
+    "lat": 49.1832041,
+    "lon": -2.0815184,
+    "name": "Miladi Farm Parade W",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100196325,
+    "lat": 49.1833689,
+    "lon": -2.0781911,
+    "name": "Longueville Manor E",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100196326,
+    "lat": 49.1825829,
+    "lon": -2.0749128,
+    "name": "Longueville Court W",
+    "ref": "",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12100196327,
+    "lat": 49.182643,
+    "lon": -2.0746301,
+    "name": "Longueville Court E",
+    "ref": "",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12100196328,
+    "lat": 49.1820044,
+    "lon": -2.0710375,
+    "name": "Le Vier Mont E",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100196329,
+    "lat": 49.181433,
+    "lon": -2.0704577,
+    "name": "Le Vier Mont W",
+    "ref": "3869",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12100196330,
+    "lat": 49.1807769,
+    "lon": -2.0667328,
+    "name": "Les Cabots E",
+    "ref": "",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12100196331,
+    "lat": 49.1813707,
+    "lon": -2.0598637,
+    "name": "Grouville Arsenal W",
+    "ref": "",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12100196332,
+    "lat": 49.1836678,
+    "lon": -2.0498487,
+    "name": "Grouville Church W",
+    "ref": "",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12100196333,
+    "lat": 49.1838492,
+    "lon": -2.049575,
+    "name": "Grouville Church E",
+    "ref": "",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12100196334,
+    "lat": 49.1858886,
+    "lon": -2.0455281,
+    "name": "Rue des Fonds W",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100196335,
+    "lat": 49.1860929,
+    "lon": -2.0452307,
+    "name": "Rue des Fonds E",
+    "ref": "",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12100196336,
+    "lat": 49.1867011,
+    "lon": -2.0436987,
+    "name": "Grouville School",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100196337,
+    "lat": 49.1881331,
+    "lon": -2.0414085,
+    "name": "La Croix Crescent",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100196338,
+    "lat": 49.1778623,
+    "lon": -2.087581,
+    "name": "Plat Douet Stores",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100196339,
+    "lat": 49.1793764,
+    "lon": -2.08784,
+    "name": "Plat Douet School",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100196340,
+    "lat": 49.1893332,
+    "lon": -2.0955702,
+    "name": "Beaulieu School",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100196341,
+    "lat": 49.1906968,
+    "lon": -2.0922744,
+    "name": "De La Salle College",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100196342,
+    "lat": 49.1911383,
+    "lon": -2.0904371,
+    "name": "Oakfield",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100196343,
+    "lat": 49.1986529,
+    "lon": -2.1149803,
+    "name": "Haute Vallee School",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100196344,
+    "lat": 49.2005377,
+    "lon": -2.1155997,
+    "name": "West Hill",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100196345,
+    "lat": 49.2037209,
+    "lon": -2.1154544,
+    "name": "Chestnut Lea",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100217105,
+    "lat": 49.2339793,
+    "lon": -2.0386475,
+    "name": "Le Saie S",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100217106,
+    "lat": 49.2322731,
+    "lon": -2.0433603,
+    "name": "La Fosse N",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100217107,
+    "lat": 49.2323101,
+    "lon": -2.043047,
+    "name": "La Fosse S",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100217108,
+    "lat": 49.2292161,
+    "lon": -2.0441173,
+    "name": "Route des Pelles N",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100217109,
+    "lat": 49.2291426,
+    "lon": -2.0439778,
+    "name": "Route des Pelles S",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100217110,
+    "lat": 49.2273279,
+    "lon": -2.0469926,
+    "name": "Rozel Manor S",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100217111,
+    "lat": 49.2271131,
+    "lon": -2.0469707,
+    "name": "Rozel Manor N",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100217112,
+    "lat": 49.2205216,
+    "lon": -2.0484333,
+    "name": "Rue de Belin N",
+    "ref": "",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12100217113,
+    "lat": 49.2203734,
+    "lon": -2.0484088,
+    "name": "Rue de Belin S",
+    "ref": "",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12100278005,
+    "lat": 49.2124988,
+    "lon": -2.1849565,
+    "name": "St Peters School",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100278006,
+    "lat": 49.2122867,
+    "lon": -2.1867097,
+    "name": "Ville de l'Eglise W",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100278007,
+    "lat": 49.2121457,
+    "lon": -2.1872908,
+    "name": "Ville de l'Eglise E",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100278008,
+    "lat": 49.2109399,
+    "lon": -2.1919734,
+    "name": "Rue des Fontaines",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100278009,
+    "lat": 49.2136237,
+    "lon": -2.1893909,
+    "name": "Rue du Bocage",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100278010,
+    "lat": 49.2150284,
+    "lon": -2.1885689,
+    "name": "Rue de la Presse",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100423704,
+    "lat": 49.1871257,
+    "lon": -2.2259238,
+    "name": "Atlantic Hotel W",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100423705,
+    "lat": 49.1868578,
+    "lon": -2.2253712,
+    "name": "Atlantic Hotel E",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100423706,
+    "lat": 49.1838863,
+    "lon": -2.2200147,
+    "name": "The Poplars",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100423710,
+    "lat": 49.2128236,
+    "lon": -2.1691363,
+    "name": "La Ruche S",
+    "ref": "4263",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12100423711,
+    "lat": 49.2148524,
+    "lon": -2.1711205,
+    "name": "Gargate S",
+    "ref": "",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12100423712,
+    "lat": 49.2146053,
+    "lon": -2.1710107,
+    "name": "Gargate N",
+    "ref": "",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12100423713,
+    "lat": 49.2177625,
+    "lon": -2.1731786,
+    "name": "Greenhills S",
+    "ref": "",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12100423772,
+    "lat": 49.1710964,
+    "lon": -2.0681871,
+    "name": "St Clements School E",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100423773,
+    "lat": 49.1709576,
+    "lon": -2.0679465,
+    "name": "St Clements School W",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100423774,
+    "lat": 49.1707114,
+    "lon": -2.0672005,
+    "name": "Le Rocquier School",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100446796,
+    "lat": 49.2002405,
+    "lon": -2.0876585,
+    "name": "F.C.J. School",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100484568,
+    "lat": 49.1901112,
+    "lon": -2.1034414,
+    "name": "St Marks Church",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100484569,
+    "lat": 49.1888826,
+    "lon": -2.1029995,
+    "name": "David Place",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100484570,
+    "lat": 49.1865752,
+    "lon": -2.1058688,
+    "name": "Craig Street",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100489058,
+    "lat": 49.2376537,
+    "lon": -2.1677135,
+    "name": "West View S",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100489059,
+    "lat": 49.2374872,
+    "lon": -2.167976,
+    "name": "West View Hotel N",
+    "ref": "",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12100520021,
+    "lat": 49.2405207,
+    "lon": -2.1643711,
+    "name": "Haute Tombette N",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100520022,
+    "lat": 49.2452959,
+    "lon": -2.1658962,
+    "name": "Rue d'Olive S",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100520023,
+    "lat": 49.2418061,
+    "lon": -2.1549369,
+    "name": "Rue du Cerf W",
+    "ref": "",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12100520024,
+    "lat": 49.2456815,
+    "lon": -2.1432349,
+    "name": "St John Cemetery E",
+    "ref": "",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12100520025,
+    "lat": 49.2457584,
+    "lon": -2.1427099,
+    "name": "St John Cemetery W",
+    "ref": "",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12100520026,
+    "lat": 49.2466873,
+    "lon": -2.1114415,
+    "name": "Betchet es Cats W",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100520027,
+    "lat": 49.2464617,
+    "lon": -2.1117993,
+    "name": "La Mare des Pres N",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100520028,
+    "lat": 49.2462775,
+    "lon": -2.1116676,
+    "name": "La Mare des Pres S",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100520029,
+    "lat": 49.2463375,
+    "lon": -2.106104,
+    "name": "La Lande E",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100520030,
+    "lat": 49.2463191,
+    "lon": -2.1063482,
+    "name": "La Lande W",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100520031,
+    "lat": 49.2458223,
+    "lon": -2.1017791,
+    "name": "Hougue des Platons",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100520032,
+    "lat": 49.2457005,
+    "lon": -2.1014837,
+    "name": "Hougue des Platons",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100520033,
+    "lat": 49.2453394,
+    "lon": -2.0987744,
+    "name": "Rue d'Egypte E",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100520034,
+    "lat": 49.2453002,
+    "lon": -2.0989902,
+    "name": "Rue d'Egypte W",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100520035,
+    "lat": 49.2448491,
+    "lon": -2.0939182,
+    "name": "La Pellerie",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100520036,
+    "lat": 49.2390675,
+    "lon": -2.0937319,
+    "name": "Rue de Cambrai S",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100520037,
+    "lat": 49.239187,
+    "lon": -2.0938295,
+    "name": "Rue de Cambrai N",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100520038,
+    "lat": 49.2344883,
+    "lon": -2.0928238,
+    "name": "Acorn",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100520052,
+    "lat": 49.2391304,
+    "lon": -2.1808319,
+    "name": "Le Rondin",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100520053,
+    "lat": 49.2362997,
+    "lon": -2.1741803,
+    "name": "St Marys School E",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100520054,
+    "lat": 49.2356559,
+    "lon": -2.1729387,
+    "name": "Route de l'eglise",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100529262,
+    "lat": 49.1842014,
+    "lon": -2.1155216,
+    "name": "Radisson Hotel",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100529263,
+    "lat": 49.1826478,
+    "lon": -2.1148146,
+    "name": "Castle Quay",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100529264,
+    "lat": 49.1823609,
+    "lon": -2.113423,
+    "name": "Albert Place N",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100529265,
+    "lat": 49.1823059,
+    "lon": -2.1131614,
+    "name": "Albert Place S",
+    "ref": "",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12100576538,
+    "lat": 49.1885906,
+    "lon": -2.2295533,
+    "name": "La Pulente N",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100576539,
+    "lat": 49.1883626,
+    "lon": -2.2297947,
+    "name": "La Pulente S",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100662289,
+    "lat": 49.2273044,
+    "lon": -2.145494,
+    "name": "Carrefour Sellous N",
+    "ref": "",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12100810149,
+    "lat": 49.2086646,
+    "lon": -2.1755479,
+    "name": "Mont Fallu S",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12100826836,
+    "lat": 49.1818625,
+    "lon": -2.0785287,
+    "name": "Rue des Pres Estate",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12145963589,
+    "lat": 49.2152083,
+    "lon": -2.0661009,
+    "name": "Clos des Champs S",
+    "ref": "2647",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12146012891,
+    "lat": 49.1870804,
+    "lon": -2.1864486,
+    "name": "Les Landes Avenue E",
+    "ref": "3234",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12146012892,
+    "lat": 49.1869538,
+    "lon": -2.1862425,
+    "name": "Les Landes Avnue W",
+    "ref": "2638",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12146017959,
+    "lat": 49.1965798,
+    "lon": -2.1551894,
+    "name": "Perquage Car Park",
+    "ref": "3694",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12146020446,
+    "lat": 49.2338007,
+    "lon": -2.1984864,
+    "name": "Ville des Marettes",
+    "ref": "3967",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12146020477,
+    "lat": 49.2378446,
+    "lon": -2.1395683,
+    "name": "Le Neuf Chemin N",
+    "ref": "4569",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12146066639,
+    "lat": 49.176209,
+    "lon": -2.041652,
+    "name": "Fauvic Farm",
+    "ref": "",
+    "shelter": "",
+    "bus": "yes"
+  },
+  {
+    "id": 12146080597,
+    "lat": 49.2087913,
+    "lon": -2.1610311,
+    "name": "Moulin de Quetivel",
+    "ref": "3469",
+    "shelter": "no",
+    "bus": "yes"
+  },
+  {
+    "id": 12146080598,
+    "lat": 49.2087804,
+    "lon": -2.1609717,
+    "name": "Moulin de Quetivel",
+    "ref": "",
+    "shelter": "no",
+    "bus": "yes"
+  }
+]

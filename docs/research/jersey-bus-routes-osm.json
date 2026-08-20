@@ -1,0 +1,332 @@
+[
+  {
+    "id": 1797522,
+    "ref": "15",
+    "name": "15 (Outbound)",
+    "operator": "Liberty Bus",
+    "network": "JE:Bus",
+    "from": "Liberation Station",
+    "to": "Aiport",
+    "colour": ""
+  },
+  {
+    "id": 1903013,
+    "ref": "1",
+    "name": "1 (Outbound)",
+    "operator": "Liberty Bus",
+    "network": "JE:Bus",
+    "from": "",
+    "to": "",
+    "colour": ""
+  },
+  {
+    "id": 2216551,
+    "ref": "16",
+    "name": "16 (Outbound)",
+    "operator": "Liberty Bus",
+    "network": "JE:Bus",
+    "from": "",
+    "to": "",
+    "colour": ""
+  },
+  {
+    "id": 4626222,
+    "ref": "27",
+    "name": "27 to Liberation Station (Inbound)",
+    "operator": "Liberty Bus",
+    "network": "myBus",
+    "from": "Liberation Bus Station",
+    "to": "Devil's Hole",
+    "colour": ""
+  },
+  {
+    "id": 4626915,
+    "ref": "3",
+    "name": "Bus Route 3",
+    "operator": "Liberty Bus",
+    "network": "myBus",
+    "from": "",
+    "to": "",
+    "colour": ""
+  },
+  {
+    "id": 4672064,
+    "ref": "5",
+    "name": "5 (Outbound)",
+    "operator": "Liberty Bus",
+    "network": "JE:Bus",
+    "from": "Liberation Station",
+    "to": "St John's Church",
+    "colour": ""
+  },
+  {
+    "id": 4672322,
+    "ref": "27",
+    "name": "27 to Liberation Station (Inbound)",
+    "operator": "Liberty Bus",
+    "network": "myBus",
+    "from": "St John's Church",
+    "to": "Liberation Station",
+    "colour": ""
+  },
+  {
+    "id": 4675393,
+    "ref": "1A",
+    "name": "1A (Outbound)",
+    "operator": "Liberty Bus",
+    "network": "myBus",
+    "from": "",
+    "to": "",
+    "colour": ""
+  },
+  {
+    "id": 4675448,
+    "ref": "1A",
+    "name": "1A (Inbound)",
+    "operator": "Liberty Bus",
+    "network": "myBus",
+    "from": "Gorey Pier",
+    "to": "Liberation Station",
+    "colour": ""
+  },
+  {
+    "id": 4675532,
+    "ref": "8",
+    "name": "8 (Outbound)",
+    "operator": "Liberty Bus",
+    "network": "JE:Bus",
+    "from": "Liberation Station",
+    "to": "Pl\u00e9mont",
+    "colour": ""
+  },
+  {
+    "id": 4675770,
+    "ref": "22",
+    "name": "22 (Inbound)",
+    "operator": "Liberty Bus",
+    "network": "JE:Bus",
+    "from": "L'Etacq",
+    "to": "Liberation Station",
+    "colour": ""
+  },
+  {
+    "id": 4675842,
+    "ref": "4",
+    "name": "4 (Inbound)",
+    "operator": "Liberty Bus",
+    "network": "JE:Bus",
+    "from": "Trinity",
+    "to": "Liberation Station",
+    "colour": ""
+  },
+  {
+    "id": 4676921,
+    "ref": "15",
+    "name": "15 (Inbound)",
+    "operator": "Liberty Bus",
+    "network": "JE:Bus",
+    "from": "Airport",
+    "to": "Liberation Station",
+    "colour": ""
+  },
+  {
+    "id": 8404728,
+    "ref": "7",
+    "name": "7 (Outbound)",
+    "operator": "Liberty Bus",
+    "network": "Liberty Bus",
+    "from": "",
+    "to": "",
+    "colour": ""
+  },
+  {
+    "id": 12248830,
+    "ref": "2",
+    "name": "2 (Outbound)",
+    "operator": "Liberty Bus",
+    "network": "JE:Bus",
+    "from": "St Helier",
+    "to": "St Catherine",
+    "colour": ""
+  },
+  {
+    "id": 12248831,
+    "ref": "2",
+    "name": "2 (Inbound)",
+    "operator": "Liberty Bus",
+    "network": "JE:Bus",
+    "from": "St Catherines",
+    "to": "St Helier",
+    "colour": ""
+  },
+  {
+    "id": 12293825,
+    "ref": "4",
+    "name": "4 (Outbound)",
+    "operator": "Liberty Bus",
+    "network": "JE:Bus",
+    "from": "Liberation Station",
+    "to": "Bouley Bay",
+    "colour": ""
+  },
+  {
+    "id": 12293850,
+    "ref": "5",
+    "name": "5 (Inbound)",
+    "operator": "Liberty Bus",
+    "network": "JE:Bus",
+    "from": "St John's Church",
+    "to": "Liberation Station",
+    "colour": ""
+  },
+  {
+    "id": 12300712,
+    "ref": "3",
+    "name": "3 (Outbound)",
+    "operator": "Liberty Bus",
+    "network": "JE:Bus",
+    "from": "Liberation Station",
+    "to": "Jersey Zoo",
+    "colour": ""
+  },
+  {
+    "id": 12300846,
+    "ref": "3",
+    "name": "3 (Inbound)",
+    "operator": "Liberty Bus",
+    "network": "JE:Bus",
+    "from": "Jersey Zoo",
+    "to": "Liberation Station",
+    "colour": ""
+  },
+  {
+    "id": 12308843,
+    "ref": "9",
+    "name": "9 (Inbound)",
+    "operator": "Liberty Bus",
+    "network": "JE:Bus",
+    "from": "Gr\u00e8ve de Lecq",
+    "to": "St Helier",
+    "colour": ""
+  },
+  {
+    "id": 12308844,
+    "ref": "9",
+    "name": "9 (Outbound)",
+    "operator": "Liberty Bus",
+    "network": "JE:Bus",
+    "from": "Liberation Station",
+    "to": "Gr\u00e8ve de Lecq",
+    "colour": ""
+  },
+  {
+    "id": 12308929,
+    "ref": "19",
+    "name": "19",
+    "operator": "Liberty Bus",
+    "network": "JE:Bus",
+    "from": "Liberation Station",
+    "to": "St Helier",
+    "colour": ""
+  },
+  {
+    "id": 12308950,
+    "ref": "21",
+    "name": "21 (Outbound)",
+    "operator": "Liberty Bus",
+    "network": "JE:Bus",
+    "from": "Liberation Station",
+    "to": "Maufant (via Grands Vaux)",
+    "colour": ""
+  },
+  {
+    "id": 12346090,
+    "ref": "21",
+    "name": "21 (Inbound)",
+    "operator": "Liberty Bus",
+    "network": "JE:Bus",
+    "from": "Maufant",
+    "to": "St Helier",
+    "colour": ""
+  },
+  {
+    "id": 12760062,
+    "ref": "12a",
+    "name": "12a (Outbound)",
+    "operator": "Liberty Bus",
+    "network": "JE:Bus",
+    "from": "St Helier",
+    "to": "Corbiere",
+    "colour": ""
+  },
+  {
+    "id": 12760063,
+    "ref": "12a",
+    "name": "12a (Inbound)",
+    "operator": "Liberty Bus",
+    "network": "JE:Bus",
+    "from": "Corbiere",
+    "to": "St Helier",
+    "colour": ""
+  },
+  {
+    "id": 12924686,
+    "ref": "14",
+    "name": "14 (Outbound)",
+    "operator": "LibertyBus",
+    "network": "JE:Bus",
+    "from": "St Helier",
+    "to": "St Brelade's Bay",
+    "colour": ""
+  },
+  {
+    "id": 12924687,
+    "ref": "14",
+    "name": "14 (Inbound)",
+    "operator": "LibertyBus",
+    "network": "JE:Bus",
+    "from": "St Brelade's Bay",
+    "to": "St Helier",
+    "colour": ""
+  },
+  {
+    "id": 12928770,
+    "ref": "22",
+    "name": "22 (Outbound)",
+    "operator": "LibertyBus",
+    "network": "JE:Bus",
+    "from": "St Helier",
+    "to": "L'Etacq",
+    "colour": ""
+  },
+  {
+    "id": 12928771,
+    "ref": "22",
+    "name": "22 (Outbound)",
+    "operator": "Liberty Bus",
+    "network": "JE:Bus",
+    "from": "St. Helier",
+    "to": "L'\u00c9tacq",
+    "colour": ""
+  },
+  {
+    "id": 14601818,
+    "ref": "13",
+    "name": "13 (Inbound)",
+    "operator": "Libertybus",
+    "network": "JE:Bus",
+    "from": "Jersey Zoo",
+    "to": "Liberation Station",
+    "colour": ""
+  },
+  {
+    "id": 14601819,
+    "ref": "13",
+    "name": "13 (Outbound)",
+    "operator": "Libertybus",
+    "network": "JE:Bus",
+    "from": "Liberation Station",
+    "to": "Jersey Zoo",
+    "colour": ""
+  }
+]
