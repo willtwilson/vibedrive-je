@@ -235,6 +235,103 @@
       font-family: 'JetBrains Mono', monospace;
     }
     #mission-display .mission-timer.urgent { color: var(--rally-red); }
+
+    /* ====== USERNAME MODAL ====== */
+    #username-modal {
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh; z-index: 300;
+      background: rgba(10, 26, 63, 0.92); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      display: flex; align-items: center; justify-content: center;
+      transition: opacity 0.3s;
+    }
+    #username-modal.hidden { opacity: 0; pointer-events: none; }
+    #username-modal .modal-card {
+      background: var(--atlantic-blue); border: 2px solid var(--jersey-green);
+      border-radius: 0; padding: 32px 40px; text-align: center; max-width: 400px; width: 90%;
+      box-shadow: 0 0 40px rgba(0, 168, 107, 0.3), 0 8px 32px rgba(0, 0, 0, 0.5);
+    }
+    #username-modal .modal-title {
+      font-family: 'Inter', sans-serif; font-size: 22px; font-weight: 900;
+      text-transform: uppercase; letter-spacing: 0.04em; color: var(--sprint-yellow);
+      margin-bottom: 6px;
+    }
+    #username-modal .modal-sub {
+      font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 500;
+      color: var(--text-secondary); margin-bottom: 20px;
+    }
+    #username-modal input {
+      width: 100%; padding: 12px 16px; border-radius: 0;
+      border: 1px solid var(--hud-border); border-bottom: 2px solid var(--jersey-green);
+      background: rgba(240, 244, 255, 0.05); color: var(--text-primary);
+      font-family: 'Inter', sans-serif; font-size: 18px; font-weight: 700;
+      text-align: center; letter-spacing: 0.02em; outline: none;
+      transition: border-color 0.2s;
+    }
+    #username-modal input:focus { border-color: var(--jersey-green); }
+    #username-modal input::placeholder { color: var(--text-muted); font-weight: 400; }
+    #username-modal .modal-error {
+      font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600;
+      color: var(--rally-red); margin-top: 8px; min-height: 16px;
+      text-transform: uppercase; letter-spacing: 0.02em;
+    }
+    #username-modal .modal-btn {
+      margin-top: 16px; width: 100%; padding: 14px; border-radius: 0;
+      border: none; background: var(--jersey-green); color: var(--atlantic-blue);
+      font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 900;
+      text-transform: uppercase; letter-spacing: 0.06em; cursor: pointer;
+      transition: transform 0.1s, box-shadow 0.2s;
+    }
+    #username-modal .modal-btn:hover { box-shadow: 0 0 20px rgba(0, 168, 107, 0.5); }
+    #username-modal .modal-btn:active { transform: scale(0.97); }
+
+    /* ====== SETTINGS PANEL ====== */
+    #settings-btn {
+      position: fixed; top: 12px; right: 260px; z-index: 50;
+      width: 36px; height: 36px; border-radius: 0;
+      border: 1px solid var(--hud-border); border-top: 2px solid var(--jersey-green);
+      background: var(--hud-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      color: var(--jersey-green); font-size: 18px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s; pointer-events: auto;
+    }
+    #settings-btn:hover { box-shadow: 0 0 12px rgba(0, 168, 107, 0.3); border-color: var(--jersey-green); }
+    #settings-btn:active { transform: scale(0.92); }
+
+    #settings-panel {
+      position: fixed; top: 56px; right: 12px; z-index: 55;
+      background: var(--atlantic-blue); border: 2px solid var(--jersey-green);
+      border-radius: 0; padding: 20px 24px; text-align: center; width: 300px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+      display: none; pointer-events: auto;
+    }
+    #settings-panel.show { display: block; }
+    #settings-panel .panel-title {
+      font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 900;
+      text-transform: uppercase; letter-spacing: 0.04em; color: var(--sprint-yellow);
+      margin-bottom: 14px;
+    }
+    #settings-panel input {
+      width: 100%; padding: 10px 14px; border-radius: 0;
+      border: 1px solid var(--hud-border); border-bottom: 2px solid var(--jersey-green);
+      background: rgba(240, 244, 255, 0.05); color: var(--text-primary);
+      font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 700;
+      text-align: center; outline: none;
+    }
+    #settings-panel .panel-error {
+      font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600;
+      color: var(--rally-red); margin-top: 6px; min-height: 14px;
+    }
+    #settings-panel .panel-btn {
+      margin-top: 12px; width: 100%; padding: 10px; border-radius: 0;
+      border: none; background: var(--jersey-green); color: var(--atlantic-blue);
+      font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 900;
+      text-transform: uppercase; letter-spacing: 0.04em; cursor: pointer;
+    }
+    #settings-panel .panel-btn:active { transform: scale(0.97); }
+    #settings-panel .panel-close {
+      position: absolute; top: 8px; right: 12px; cursor: pointer;
+      font-size: 18px; color: var(--text-secondary); font-weight: 700;
+    }
+    #settings-panel .panel-close:hover { color: var(--rally-red); }
   </style>
 </head>
 <body>
@@ -252,6 +349,7 @@
     <div class="loc" id="loc">Jersey, Channel Islands</div>
     <div class="players" id="players">4 players online</div>
     <div class="mode-name" id="mode-name">🚗 Drive Mode</div>
+    <div id="hud-username" style="font-family:'Inter',sans-serif;font-size:12px;font-weight:700;color:var(--jersey-green);margin-top:6px;padding-top:6px;border-top:1px solid rgba(0,168,107,0.15);">👤 —</div>
   </div>
 
   <div id="modes">
@@ -309,12 +407,162 @@
     <div class="ad-pts">+5 pts</div>
   </div>
 
+  <!-- Username Modal -->
+  <div id="username-modal">
+    <div class="modal-card">
+      <div class="modal-title">⚡ Welcome to Vibe Drive</div>
+      <div class="modal-sub">Enter your driver name to start</div>
+      <input type="text" id="username-input" placeholder="e.g. Speedy-Racer" maxlength="15" autocomplete="off" spellcheck="false" />
+      <div class="modal-error" id="username-error"></div>
+      <button class="modal-btn" id="username-submit">Start Driving</button>
+    </div>
+  </div>
+
+  <!-- Settings Button + Panel -->
+  <button id="settings-btn" title="Settings">⚙️</button>
+  <div id="settings-panel">
+    <span class="panel-close" id="settings-close">×</span>
+    <div class="panel-title">⚙️ Change Username</div>
+    <input type="text" id="settings-username-input" maxlength="15" autocomplete="off" spellcheck="false" />
+    <div class="panel-error" id="settings-error"></div>
+    <button class="panel-btn" id="settings-save">Save</button>
+  </div>
+
   <script type="importmap">
   { "imports": { "three": "https://unpkg.com/three@0.185.0/build/three.module.js" } }
   </script>
 
   <script type="module">
     import * as THREE from 'three';
+
+    // ====== USERNAME SYSTEM ======
+    let playerUsername = localStorage.getItem('vibedrive_username') || '';
+    let usernameSprite = null;
+
+    function validateUsername(name) {
+      if (!name || name.length < 3) return 'Must be at least 3 characters';
+      if (name.length > 15) return 'Must be 15 characters or fewer';
+      if (!/^[a-zA-Z0-9-]+$/.test(name)) return 'Only letters, numbers, and hyphens';
+      if (name.includes(' ')) return 'No spaces allowed';
+      return null; // valid
+    }
+
+    function makeUsernameSprite(text) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 256;
+      canvas.height = 64;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = 'rgba(0, 168, 107, 0.7)';
+      ctx.fillRect(0, 12, 256, 40);
+      ctx.font = 'bold 26px Inter, sans-serif';
+      ctx.fillStyle = '#F0F4FF';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, 128, 33);
+      const texture = new THREE.CanvasTexture(canvas);
+      const spriteMat = new THREE.SpriteMaterial({ map: texture, transparent: true, opacity: 0.9, depthTest: false });
+      const sprite = new THREE.Sprite(spriteMat);
+      sprite.scale.set(8, 2, 1);
+      sprite.renderOrder = 999;
+      return sprite;
+    }
+
+    function updateUsernameSprite() {
+      if (usernameSprite) {
+        carGroup.remove(usernameSprite);
+        usernameSprite = null;
+      }
+      if (playerUsername) {
+        usernameSprite = makeUsernameSprite(playerUsername);
+        usernameSprite.position.set(0, 4.5, 0);
+        carGroup.add(usernameSprite);
+      }
+    }
+
+    function updateHUDUsername() {
+      const el = document.getElementById('hud-username');
+      if (el) el.textContent = '👤 ' + (playerUsername || '—');
+    }
+
+    function setUsername(name) {
+      playerUsername = name;
+      localStorage.setItem('vibedrive_username', name);
+      updateUsernameSprite();
+      updateHUDUsername();
+    }
+
+    // Username modal elements
+    const usernameModal = document.getElementById('username-modal');
+    const usernameInput = document.getElementById('username-input');
+    const usernameError = document.getElementById('username-error');
+    const usernameSubmit = document.getElementById('username-submit');
+
+    function showUsernameModal() {
+      usernameModal.classList.remove('hidden');
+      usernameInput.value = '';
+      usernameError.textContent = '';
+      setTimeout(() => usernameInput.focus(), 100);
+    }
+
+    function hideUsernameModal() {
+      usernameModal.classList.add('hidden');
+    }
+
+    function handleUsernameSubmit() {
+      const name = usernameInput.value.trim();
+      const err = validateUsername(name);
+      if (err) {
+        usernameError.textContent = err;
+        return;
+      }
+      setUsername(name);
+      hideUsernameModal();
+      if (typeof showToast === 'function') showToast('Welcome, ' + name + '!');
+    }
+
+    usernameSubmit.addEventListener('click', handleUsernameSubmit);
+    usernameInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') handleUsernameSubmit();
+    });
+
+    // Settings panel elements
+    const settingsBtn = document.getElementById('settings-btn');
+    const settingsPanel = document.getElementById('settings-panel');
+    const settingsClose = document.getElementById('settings-close');
+    const settingsInput = document.getElementById('settings-username-input');
+    const settingsError = document.getElementById('settings-error');
+    const settingsSave = document.getElementById('settings-save');
+
+    settingsBtn.addEventListener('click', () => {
+      const isVisible = settingsPanel.classList.toggle('show');
+      if (isVisible) {
+        settingsInput.value = playerUsername;
+        settingsError.textContent = '';
+      }
+    });
+    settingsClose.addEventListener('click', () => settingsPanel.classList.remove('show'));
+    settingsSave.addEventListener('click', () => {
+      const name = settingsInput.value.trim();
+      const err = validateUsername(name);
+      if (err) {
+        settingsError.textContent = err;
+        return;
+      }
+      setUsername(name);
+      settingsPanel.classList.remove('show');
+      if (typeof showToast === 'function') showToast('Username changed to ' + name);
+    });
+    settingsInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') settingsSave.click();
+    });
+
+    // Initialize on load
+    if (playerUsername) {
+      hideUsernameModal();
+      updateHUDUsername();
+    } else {
+      showUsernameModal();
+    }
 
     // ====== SCENE ======
     const scene = new THREE.Scene();
@@ -635,6 +883,11 @@
       { name: '⛰️ Sorel Point', x: 14.7, z: -116.2, awarded: false },
       { name: '🌊 St Catherine\'s Breakwater', x: 93.1, z: -100.5, awarded: false },
       { name: '⚓ Bouley Bay Pier', x: 54.9, z: -110.3, awarded: false },
+      { name: '🏫 Victoria College', x: 53.9, z: -66.2, awarded: false, points: 50 },
+      { name: '🏫 St Michael\'s School', x: 59.8, z: -72.9, awarded: false, points: 50 },
+      { name: '🎾 Caesarean Tennis Club', x: 58.3, z: -70.6, awarded: false, points: 25 },
+      { name: '🎾 Island Padel', x: 60.8, z: -64.7, awarded: false, points: 25 },
+      { name: '⚓ Elizabeth Marina', x: 43.4, z: -59.4, awarded: false, points: 50 },
     ];
     let speedTimer = 0; // seconds above 60 km/h
     let speedBonusAwarded = false;
@@ -925,6 +1178,260 @@
     }
     addPier(54.9, -110.3);
 
+    // ====== PERSONAL FAMILY LANDMARKS ======
+
+    // Victoria College — Victorian school building with pitched roof, arched entrance, tower
+    function addVictoriaCollege(x, z) {
+      const h = getTerrainHeight(x, z);
+      const group = new THREE.Group();
+      const stoneMat = new THREE.MeshStandardMaterial({ color: 0xccc4b0, roughness: 0.85 });
+
+      // Main building: 20×12×8 stone-colored box
+      const main = new THREE.Mesh(new THREE.BoxGeometry(20, 8, 12), stoneMat);
+      main.position.y = 4; main.castShadow = true; group.add(main);
+
+      // Pitched roof: two slanted boxes
+      const roofMat = new THREE.MeshStandardMaterial({ color: 0x6b3a2a, roughness: 0.7 });
+      const roofL = new THREE.Mesh(new THREE.BoxGeometry(10.5, 0.4, 13), roofMat);
+      roofL.position.set(-2.8, 8 + 3, 0); roofL.rotation.z = -0.5; roofL.castShadow = true; group.add(roofL);
+      const roofR = new THREE.Mesh(new THREE.BoxGeometry(10.5, 0.4, 13), roofMat);
+      roofR.position.set(2.8, 8 + 3, 0); roofR.rotation.z = 0.5; roofR.castShadow = true; group.add(roofR);
+
+      // Arched entrance: dark box doorway
+      const doorMat = new THREE.MeshStandardMaterial({ color: 0x3a2a1a, roughness: 0.8 });
+      const door = new THREE.Mesh(new THREE.BoxGeometry(2, 4, 0.5), doorMat);
+      door.position.set(0, 2, 6.1); group.add(door);
+      // Arch top (half-cylinder)
+      const arch = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 0.5, 12, 1, true, 0, Math.PI), doorMat);
+      arch.rotation.z = Math.PI / 2; arch.rotation.y = Math.PI / 2;
+      arch.position.set(0, 4, 6.1); group.add(arch);
+
+      // Small tower on corner
+      const tower = new THREE.Mesh(new THREE.BoxGeometry(3, 11, 3), stoneMat);
+      tower.position.set(-7.5, 5.5, -3.5); tower.castShadow = true; group.add(tower);
+      const towerRoof = new THREE.Mesh(new THREE.ConeGeometry(2.5, 3, 4), roofMat);
+      towerRoof.position.set(-7.5, 13, -3.5); towerRoof.castShadow = true; group.add(towerRoof);
+
+      group.position.set(x, h, z);
+      scene.add(group);
+
+      const label = makeTextLabel('Victoria College');
+      label.position.set(x, h + 18, z);
+      scene.add(label);
+    }
+    addVictoriaCollege(53.9, -66.2);
+
+    // St Michael's School — red-brick building with flat roof and flag pole
+    function addStMichaelsSchool(x, z) {
+      const h = getTerrainHeight(x, z);
+      const group = new THREE.Group();
+      const brickMat = new THREE.MeshStandardMaterial({ color: 0xa04030, roughness: 0.8 });
+
+      // Main building: 15×10×6 red-brick box
+      const main = new THREE.Mesh(new THREE.BoxGeometry(15, 6, 10), brickMat);
+      main.position.y = 3; main.castShadow = true; group.add(main);
+
+      // Flat roof slab
+      const roofMat = new THREE.MeshStandardMaterial({ color: 0x554444, roughness: 0.7 });
+      const roof = new THREE.Mesh(new THREE.BoxGeometry(15.5, 0.5, 10.5), roofMat);
+      roof.position.y = 6.25; roof.castShadow = true; group.add(roof);
+
+      // Windows (dark rectangles on front)
+      const winMat = new THREE.MeshStandardMaterial({ color: 0x223344, roughness: 0.3, metalness: 0.5 });
+      for (let i = -2; i <= 2; i++) {
+        const win = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 0.2), winMat);
+        win.position.set(i * 3, 3, 5.05); group.add(win);
+      }
+
+      // Flag pole
+      const poleMat = new THREE.MeshStandardMaterial({ color: 0xcccccc, roughness: 0.3, metalness: 0.8 });
+      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 8, 8), poleMat);
+      pole.position.set(6, 10, -4); pole.castShadow = true; group.add(pole);
+      const flag = new THREE.Mesh(new THREE.PlaneGeometry(2, 1.2), new THREE.MeshStandardMaterial({ color: 0x2244cc, side: THREE.DoubleSide }));
+      flag.position.set(7, 13, -4); group.add(flag);
+
+      group.position.set(x, h, z);
+      scene.add(group);
+
+      const label = makeTextLabel("St Michael's School");
+      label.position.set(x, h + 16, z);
+      scene.add(label);
+    }
+    addStMichaelsSchool(59.8, -72.9);
+
+    // Caesarean Tennis Club — tennis court with green surface, white lines, chain-link fence
+    function addTennisClub(x, z) {
+      const h = getTerrainHeight(x, z);
+      const group = new THREE.Group();
+
+      // Green court surface 10×6, raised 0.1
+      const courtMat = new THREE.MeshStandardMaterial({ color: 0x2a7a3a, roughness: 0.8 });
+      const court = new THREE.Mesh(new THREE.BoxGeometry(10, 0.2, 6), courtMat);
+      court.position.y = 0.1; court.castShadow = true; group.add(court);
+
+      // White line markings (thin white boxes)
+      const lineMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.5 });
+      // Outer boundary lines
+      const lineN = new THREE.Mesh(new THREE.BoxGeometry(10, 0.22, 0.15), lineMat);
+      lineN.position.set(0, 0.12, -2.9); group.add(lineN);
+      const lineS = new THREE.Mesh(new THREE.BoxGeometry(10, 0.22, 0.15), lineMat);
+      lineS.position.set(0, 0.12, 2.9); group.add(lineS);
+      const lineE = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.22, 6), lineMat);
+      lineE.position.set(4.9, 0.12, 0); group.add(lineE);
+      const lineW = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.22, 6), lineMat);
+      lineW.position.set(-4.9, 0.12, 0); group.add(lineW);
+      // Center service line
+      const lineC = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.22, 6), lineMat);
+      lineC.position.set(0, 0.12, 0); group.add(lineC);
+      // Service lines
+      const lineSvcN = new THREE.Mesh(new THREE.BoxGeometry(10, 0.22, 0.15), lineMat);
+      lineSvcN.position.set(0, 0.12, -1.5); group.add(lineSvcN);
+      const lineSvcS = new THREE.Mesh(new THREE.BoxGeometry(10, 0.22, 0.15), lineMat);
+      lineSvcS.position.set(0, 0.12, 1.5); group.add(lineSvcS);
+
+      // Chain-link fence: 4 thin transparent boxes around perimeter
+      const fenceMat = new THREE.MeshStandardMaterial({ color: 0xaaaabb, transparent: true, opacity: 0.25, roughness: 0.5 });
+      const fH = 2;
+      const fenceN = new THREE.Mesh(new THREE.BoxGeometry(10.5, fH, 0.1), fenceMat);
+      fenceN.position.set(0, fH/2, -3.2); fenceN.castShadow = true; group.add(fenceN);
+      const fenceS = new THREE.Mesh(new THREE.BoxGeometry(10.5, fH, 0.1), fenceMat);
+      fenceS.position.set(0, fH/2, 3.2); fenceS.castShadow = true; group.add(fenceS);
+      const fenceE = new THREE.Mesh(new THREE.BoxGeometry(0.1, fH, 6.5), fenceMat);
+      fenceE.position.set(5.2, fH/2, 0); fenceE.castShadow = true; group.add(fenceE);
+      const fenceW = new THREE.Mesh(new THREE.BoxGeometry(0.1, fH, 6.5), fenceMat);
+      fenceW.position.set(-5.2, fH/2, 0); fenceW.castShadow = true; group.add(fenceW);
+
+      group.position.set(x, h, z);
+      scene.add(group);
+
+      const label = makeTextLabel('Caesarean Tennis Club');
+      label.position.set(x, h + 8, z);
+      scene.add(label);
+    }
+    addTennisClub(58.3, -70.6);
+
+    // Island Padel — blue-tinted glass walls, mesh surface court
+    function addIslandPadel(x, z) {
+      const h = getTerrainHeight(x, z);
+      const group = new THREE.Group();
+
+      // Mesh surface court 10×20
+      const surfaceMat = new THREE.MeshStandardMaterial({ color: 0x2a4a3a, roughness: 0.9 });
+      const surface = new THREE.Mesh(new THREE.BoxGeometry(10, 0.2, 20), surfaceMat);
+      surface.position.y = 0.1; surface.castShadow = true; group.add(surface);
+
+      // Blue-tinted glass walls: 4 transparent blue boxes, 3m tall
+      const glassMat = new THREE.MeshStandardMaterial({ color: 0x4488cc, transparent: true, opacity: 0.3, roughness: 0.1, metalness: 0.3 });
+      const wH = 3;
+      const wallN = new THREE.Mesh(new THREE.BoxGeometry(10, wH, 0.2), glassMat);
+      wallN.position.set(0, wH/2, -10); wallN.castShadow = true; group.add(wallN);
+      const wallS = new THREE.Mesh(new THREE.BoxGeometry(10, wH, 0.2), glassMat);
+      wallS.position.set(0, wH/2, 10); wallS.castShadow = true; group.add(wallS);
+      const wallE = new THREE.Mesh(new THREE.BoxGeometry(0.2, wH, 20), glassMat);
+      wallE.position.set(5, wH/2, 0); wallE.castShadow = true; group.add(wallE);
+      const wallW = new THREE.Mesh(new THREE.BoxGeometry(0.2, wH, 20), glassMat);
+      wallW.position.set(-5, wH/2, 0); wallW.castShadow = true; group.add(wallW);
+
+      // Net across center
+      const netMat = new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.4, roughness: 0.8 });
+      const net = new THREE.Mesh(new THREE.BoxGeometry(10, 1, 0.05), netMat);
+      net.position.set(0, 0.5, 0); group.add(net);
+
+      group.position.set(x, h, z);
+      scene.add(group);
+
+      const label = makeTextLabel('Island Padel');
+      label.position.set(x, h + 8, z);
+      scene.add(label);
+    }
+    addIslandPadel(60.8, -64.7);
+
+    // Elizabeth Marina — wooden pontoons in T-shape, small boats, and 'Aura' yacht
+    function addElizabethMarina(x, z) {
+      const h = Math.max(getTerrainHeight(x, z), 0);
+      const group = new THREE.Group();
+      const pontoonMat = new THREE.MeshStandardMaterial({ color: 0x6B4220, roughness: 0.8 });
+
+      // 3 wooden pontoons in T-shape
+      const pontoonH = 0.2;
+      // Horizontal pontoon
+      const p1 = new THREE.Mesh(new THREE.BoxGeometry(12, pontoonH, 2), pontoonMat);
+      p1.position.set(0, 0.15, -1); p1.castShadow = true; group.add(p1);
+      // Vertical pontoon (stem of T)
+      const p2 = new THREE.Mesh(new THREE.BoxGeometry(2, pontoonH, 8), pontoonMat);
+      p2.position.set(0, 0.15, 3); p2.castShadow = true; group.add(p2);
+      // Small connector pontoon
+      const p3 = new THREE.Mesh(new THREE.BoxGeometry(2, pontoonH, 3), pontoonMat);
+      p3.position.set(-4, 0.15, 2); p3.castShadow = true; group.add(p3);
+
+      // Small boats: white hulls with cabins, various colors
+      const boatColors = [0xcc3333, 0x3366cc, 0x33aa55, 0xccaa33, 0x9933cc, 0xcc6633];
+      const boatPositions = [
+        [-4, 0.15, -1], [4, 0.15, -1], [-4, 0.15, 4], [4, 0.15, 4], [-2, 0.15, 7], [2, 0.15, 7]
+      ];
+      boatPositions.forEach((pos, i) => {
+        const boat = new THREE.Group();
+        const hullMat = new THREE.MeshStandardMaterial({ color: 0xf0f0f0, roughness: 0.4 });
+        const hull = new THREE.Mesh(new THREE.BoxGeometry(2, 0.8, 4), hullMat);
+        hull.position.y = 0.4; hull.castShadow = true; boat.add(hull);
+        // Cabin
+        const cabinMat = new THREE.MeshStandardMaterial({ color: boatColors[i % boatColors.length], roughness: 0.5 });
+        const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.5, 1, 1.8), cabinMat);
+        cabin.position.set(0, 1, -0.3); cabin.castShadow = true; boat.add(cabin);
+        boat.position.set(pos[0], pos[1], pos[2]);
+        group.add(boat);
+      });
+
+      // 'Aura' — Sunseeker Superhawk 43: sleek white hull 12×3×2, flybridge, large cockpit
+      const aura = new THREE.Group();
+      const auraHullMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2, metalness: 0.1 });
+      // Hull: 12 long, 3 wide, 2 tall
+      const auraHull = new THREE.Mesh(new THREE.BoxGeometry(3, 2, 12), auraHullMat);
+      auraHull.position.y = 1; auraHull.castShadow = true; aura.add(auraHull);
+      // Lower hull taper (bow)
+      const bow = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 0.8, 3, 4), auraHullMat);
+      bow.rotation.x = Math.PI / 2; bow.position.set(0, 1, 7.5); bow.castShadow = true; aura.add(bow);
+
+      // Large cockpit area (raised rear deck)
+      const cockpitMat = new THREE.MeshStandardMaterial({ color: 0x224488, roughness: 0.3 });
+      const cockpit = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.3, 4), cockpitMat);
+      cockpit.position.set(0, 2.1, -4); cockpit.castShadow = true; aura.add(cockpit);
+
+      // Flybridge (upper deck)
+      const flybridgeMat = new THREE.MeshStandardMaterial({ color: 0xe8e8e8, roughness: 0.3 });
+      const flybridge = new THREE.Mesh(new THREE.BoxGeometry(2.5, 1.2, 3), flybridgeMat);
+      flybridge.position.set(0, 3, -2); flybridge.castShadow = true; aura.add(flybridge);
+      // Flybridge windscreen
+      const screenMat = new THREE.MeshStandardMaterial({ color: 0x88aacc, transparent: true, opacity: 0.5, roughness: 0.1 });
+      const screen = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.8, 0.1), screenMat);
+      screen.position.set(0, 3.5, -0.5); aura.add(screen);
+      // Radar arch
+      const archMat = new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.4, metalness: 0.6 });
+      const archL = new THREE.Mesh(new THREE.BoxGeometry(0.15, 1.5, 0.15), archMat);
+      archL.position.set(-1.1, 3.5, -3.5); archL.castShadow = true; aura.add(archL);
+      const archR = new THREE.Mesh(new THREE.BoxGeometry(0.15, 1.5, 0.15), archMat);
+      archR.position.set(1.1, 3.5, -3.5); archR.castShadow = true; aura.add(archR);
+
+      // Position Aura at the end of the marina
+      aura.position.set(0, 0.15, -5);
+      group.add(aura);
+
+      group.position.set(x, h, z);
+      scene.add(group);
+
+      // 'Aura' named label
+      const auraLabel = makeTextLabel('Aura');
+      auraLabel.position.set(x, h + 7, z - 5);
+      auraLabel.scale.set(8, 2, 1);
+      scene.add(auraLabel);
+
+      // Marina label
+      const label = makeTextLabel('Elizabeth Marina');
+      label.position.set(x, h + 10, z);
+      scene.add(label);
+    }
+    addElizabethMarina(43.4, -59.4);
+
     // ====== PARISH LABELS ======
     function makeTextLabel(text) {
       const canvas = document.createElement('canvas');
@@ -1183,6 +1690,8 @@
     scene.add(carGroup);
     // Keep a reference to the original car for mode restoration
     const originalCar = carGroup;
+    // Attach username sprite if username is set
+    updateUsernameSprite();
 
     // ====== AI PLAYERS ======
     const aiCars = [];
@@ -1408,6 +1917,7 @@
           const terrainH = getTerrainHeight(carX, carZ);
           carGroup.position.set(carX, terrainH + 5, carZ);
           scene.add(carGroup);
+          updateUsernameSprite();
           // Smooth takeoff: start at terrain+5, rise to 50 over 2 seconds
           planeAlt = terrainH + 5;
           planeTakeoffTarget = 50;
@@ -1441,6 +1951,7 @@
           }
           carGroup.position.set(carX, tideLevel + 1, carZ);
           scene.add(carGroup);
+          updateUsernameSprite();
           // Initialize wake trail line
           if (wakeTrailLine) scene.remove(wakeTrailLine);
           wakeTrailPoints = [];
@@ -1462,6 +1973,7 @@
           const th = getTerrainHeight(carX, carZ);
           carGroup.position.set(carX, Math.max(th + 0.5, 0), carZ);
           scene.add(carGroup);
+          updateUsernameSprite();
           document.getElementById('mode-name').textContent = '🚗 Drive Mode';
           if (planeShadow) planeShadow.visible = false;
           document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
@@ -2106,7 +2618,7 @@
         const d = Math.sqrt(dx*dx + dz*dz);
         if (d < 20) {
           lm.awarded = true;
-          addPoints(50, `🏛️ ${lm.name} discovered! +50 pts`);
+          addPoints(lm.points || 50, `🏛️ ${lm.name} discovered! +${lm.points || 50} pts`);
         }
       });
 
