@@ -77,20 +77,19 @@ Server-backed persistent leaderboard for highest scores.
 ## ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 ### T-REAL-ROADS: Drive on actual Jersey streets
-**Priority:** HIGH | **Effort:** HIGH | **Status:** OPEN
+**Priority:** HIGH | **Effort:** HIGH | **Status:** RESEARCH COMPLETE — Ready for Tournament Mode
 
-Replace the procedural terrain with a real road network from OpenStreetMap, so players drive on actual Jersey streets.
+Replace the procedural terrain with a real road network from OpenStreetMap.
 
-**Requirements:**
-- Fetch OSM road data via Overpass API (retry with smaller queries, or use a static export)
-- Build road mesh network in Three.js — roads as flat textured strips
-- Car physics: constrain car to road surface (off-road = slow down)
-- Road textures: asphalt for main roads, lighter for residential
-- Lane markings: white dashed center line, drive on the LEFT (Jersey)
-- Road names as floating text at intersections
-- GPS-style minimap showing road network (not just island shape)
+**Research findings:**
+- 8,664 road segments from OSM via overpass.openstreetmap.fr (6.5MB, saved to research/osm-roads.json)
+- ~5,200 driveable roads with names, speed limits, surface types, lane counts
+- Recommended: Approach A (overlay on procedural terrain, flat ribbon rendering, ~70K triangles)
+- DEM elevation data available (Copernicus 30m) for future terrain upgrade
+- Three.js: use ExtrudeGeometry along CatmullRomCurve3, LOD for distant roads
 
-**Dependencies:** Overpass API availability (was down during hackathon — retry needed)
+**Tournament Mode:** 3 contenders (k2.7-code, glm-5.2, deepseek-pro-v4), judge on different model
+**Dependencies:** None (data in hand)
 
 ### T-GTA-TRAFFIC: Real traffic system on roads
 **Priority:** MEDIUM | **Effort:** HIGH | **Status:** OPEN
@@ -117,46 +116,53 @@ Simple chat overlay for multiplayer sessions.
 ## OPEN TICKETS — Phase 3: Real-World Data Integration
 ## ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-### T-SCHOOLS: Add Victoria College and St Michael's
+### T-PERSONAL-LANDMARKS: Family landmarks
 **Priority:** MEDIUM | **Effort:** LOW | **Status:** OPEN
 
-Add the kids' schools as landmarks.
+Add personal landmarks meaningful to the family.
+
+**Landmarks to add:**
+- Victoria College: (53.9, -66.2) — Victorian school building, +50 pts
+- St Michael's School: (59.8, -72.9) — school building, +50 pts
+- Caesarean Tennis Club: (58.3, -70.6) — tennis court model (green surface + fence), +25 pts
+- Island Padel: (60.8, -64.7) — padel court model (blue glass walls), +25 pts
+- Elizabeth Marina: (43.4, -59.4) — marina with boats docked, +50 pts. Family boat: Sunseeker Superhawk 43 "Aura" — model a sleek motor yacht at the marina
 
 **Requirements:**
-- Victoria College: 49.187, -2.089 (St Helier) — school building model
-- St Michael's School: 49.196, -2.077 (St Saviour) — school building model
-- School buildings: distinctive architecture (Victorian for Victoria College)
-- School name as floating label
-- Add to landmarks array for rewards (+50 pts)
+- Each landmark gets a distinctive 3D model (not just a label)
+- Floating name label above each
+- Add to landmarks array for rewards
+- Elizabeth Marina: render marina pontoons with several boats, with "Aura" named
+- Schools: distinctive architecture (Victoria College = Victorian stone building)
 
 **Dependencies:** None
 
 ### T-BUS-ROUTES: Real Liberty Bus routes and live data
-**Priority:** MEDIUM | **Effort:** MEDIUM | **Status:** OPEN
+**Priority:** MEDIUM | **Effort:** MEDIUM | **Status:** RESEARCH COMPLETE
 
 Integrate Liberty Bus API to show real bus positions and routes on the map.
 
-**Requirements:**
-- Research Liberty Bus API (libertybus.je) — find API endpoint or scrape
-- Real bus routes as colored lines on the 3D map
-- Live bus positions as bus models moving along routes
-- Bus stop markers at real positions
-- HUD toggle to show/hide bus routes
-- Route numbers displayed above buses
+**Research findings:**
+- LibertyBus API: api2.libertybus.je/v1/ (no auth, Tenant: jsy header)
+- 30 routes, full timetables, service alerts
+- 744 OSM bus stops with coordinates and names (research/jersey-bus-stops-osm.json)
+- 33 OSM route relations + 607 way geometries as GeoJSON (research/jersey-bus-route-ways-osm.geojson)
+- No real-time live tracking (Guernsey only) — simulate positions via timetable interpolation
+- Phased: (1) static route lines + stops, (2) simulated live buses via timetable, (3) contact LibertyBus for real API
 
-**Dependencies:** T-REAL-ROADS (for road network), Liberty Bus API access
+**Dependencies:** T-REAL-ROADS (for road network to follow)
 
 ### T-FLIGHT-DATA: Live Jersey Airport flight tracking
-**Priority:** LOW | **Effort:** MEDIUM | **Status:** OPEN**
+**Priority:** LOW | **Effort:** MEDIUM | **Status:** RESEARCH COMPLETE
 
 Show live arrivals/departures from Jersey Airport and live flight data.
 
-**Requirements:**
-- Jersey Airport arrivals/departures board (web scrape from jerseyairport.com)
-- Live flight positions from FlightRadar24 API or OpenSky Network
-- Flights shown as plane models in the sky when in fly mode
-- Airport HUD panel showing next departures/arrivals
-- Flight number, destination, status (on time/delayed/cancelled)
+**Research findings:**
+- Ports of Jersey CDN: pojcdn.blob.core.windows.net/data/airportArrivals48h.json — free, no auth
+- 56 arrivals + 56 departures, 48h window. Fields: Flightnumber, From, To, Scheduled, Status, Airline
+- OpenSky Network API: opensky-network.org/api/states/all — free, 400 calls/day, real-time 3D aircraft positions
+- Verified live: 18 aircraft in Channel Islands region
+- Routes: London Gatwick/Heathrow, Glasgow, Manchester, Dublin, Paris, Amsterdam, Guernsey
 
 **Dependencies:** None (can work independently)
 
