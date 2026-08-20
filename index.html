@@ -710,7 +710,10 @@
   <script src="jersey-roads.js"></script>
   <script src="jersey-bus-data.js"></script>
   <script type="importmap">
-  { "imports": { "three": "https://unpkg.com/three@0.185.0/build/three.module.js" } }
+  { "imports": {
+    "three": "https://unpkg.com/three@0.185.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.185.0/examples/jsm/"
+  } }
   </script>
 
   <script>
@@ -913,6 +916,13 @@
 
   <script type="module">
     import * as THREE from 'three';
+    import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+    import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+    import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+    import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+    import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+    import { FXAAShader } from 'three/addons/shaders/FXAAShader.js';
+    import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
     // ====== USERNAME SYSTEM ======
     let playerUsername = localStorage.getItem('vibedrive_username') || '';
@@ -1052,16 +1062,253 @@
     // ====== SCENE ======
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x87CEEB);
-    scene.fog = new THREE.Fog(0x87CEEB, 200, 1000);
+    scene.fog = new THREE.FogExp2(0x87CEEB, 0.0008);
     const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.5, 3000);
     camera.position.set(0, 50, 100);
-    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+
+    // ====== DEVICE TIER DETECTION ======
+    function detectDeviceTier() {
+      const gl = document.createElement('canvas').getContext('webgl2');
+      if (!gl) return { tier: 'degraded', isMobile: true, isIPad: false, pixelRatio: 1, shadowMapSize: 512, bloom: false, bloomRes: 0.5 };
+      const isIPad = /iPad/.test(navigator.userAgent);
+      const isMobile = /iPhone|iPad|Android|Mobile/.test(navigator.userAgent);
+      const maxTexSize = gl.getParameter(gl.MAX_TEXTURE_SIZE);
+      const dpr = window.devicePixelRatio;
+      const isAppleSilicon = isIPad && maxTexSize >= 4096;
+      let tier = 'desktop';
+      if (isMobile) tier = isAppleSilicon ? 'mobile-high' : 'mobile';
+      return {
+        tier,
+        isMobile, isIPad, maxTexSize, dpr,
+        pixelRatio: tier === 'desktop' ? Math.min(dpr, 2) : Math.min(dpr, 1.5),
+        shadowMapSize: tier === 'desktop' ? 2048 : 1024,
+        bloom: tier !== 'degraded',
+        bloomRes: tier === 'desktop' ? 1.0 : 0.5,
+      };
+    }
+    const deviceTier = detectDeviceTier();
+
+    const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: 'high-performance', stencil: false });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(deviceTier.pixelRatio);
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.0;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.domElement.id = 'game-canvas';
     document.body.appendChild(renderer.domElement);
+
+    // ====== PMREM ENVIRONMENT MAP (procedural sky for IBL) ======
+    let pmremGenerator = new THREE.PMREMGenerator(renderer);
+    let currentEnvMap = null;
+
+    function getSkyColorsForTOD(tod) {
+      if (tod === 'night') return { top: [0.02, 0.02, 0.08], mid: [0.05, 0.05, 0.12], bot: [0.08, 0.08, 0.15] };
+      if (tod === 'dawn') return { top: [0.3, 0.4, 0.7], mid: [0.8, 0.5, 0.3], bot: [0.9, 0.6, 0.4] };
+      if (tod === 'dusk') return { top: [0.2, 0.2, 0.4], mid: [0.9, 0.4, 0.2], bot: [0.8, 0.3, 0.15] };
+      return { top: [0.25, 0.45, 0.9], mid: [0.45, 0.65, 0.95], bot: [0.7, 0.8, 0.95] };
+    }
+
+    function createSkyEnvironment(sunPos, skyTop, skyMid, skyBot) {
+      const envScene = new THREE.Scene();
+      const skyGeo = new THREE.SphereGeometry(50, 32, 16);
+      const skyMat = new THREE.MeshBasicMaterial({ side: THREE.BackSide, vertexColors: true });
+      const positions = skyGeo.attributes.position;
+      const vColors = new Float32Array(positions.count * 3);
+      for (let i = 0; i < positions.count; i++) {
+        const y = positions.getY(i);
+        const t = (y / 50 + 1) / 2;
+        let r, g, b;
+        if (t < 0.5) {
+          const tt = t * 2;
+          r = skyBot[0] * (1 - tt) + skyMid[0] * tt;
+          g = skyBot[1] * (1 - tt) + skyMid[1] * tt;
+          b = skyBot[2] * (1 - tt) + skyMid[2] * tt;
+        } else {
+          const tt = (t - 0.5) * 2;
+          r = skyMid[0] * (1 - tt) + skyTop[0] * tt;
+          g = skyMid[1] * (1 - tt) + skyTop[1] * tt;
+          b = skyMid[2] * (1 - tt) + skyTop[2] * tt;
+        }
+        vColors[i * 3] = r; vColors[i * 3 + 1] = g; vColors[i * 3 + 2] = b;
+      }
+      skyGeo.setAttribute('color', new THREE.BufferAttribute(vColors, 3));
+      envScene.add(new THREE.Mesh(skyGeo, skyMat));
+      if (sunPos) {
+        const sunMesh = new THREE.Mesh(
+          new THREE.SphereGeometry(3, 16, 16),
+          new THREE.MeshBasicMaterial({ color: 0xffffaa })
+        );
+        sunMesh.position.copy(sunPos).multiplyScalar(40);
+        envScene.add(sunMesh);
+      }
+      const envMap = pmremGenerator.fromScene(envScene, 0.04).texture;
+      envScene.remove(envScene.children[0]);
+      return envMap;
+    }
+
+    function updateEnvironmentForTOD(tod, sunPos) {
+      const sc = getSkyColorsForTOD(tod);
+      const newEnv = createSkyEnvironment(sunPos, sc.top, sc.mid, sc.bot);
+      if (scene.environment) scene.environment.dispose();
+      scene.environment = newEnv;
+      currentEnvMap = newEnv;
+    }
+
+    // Initial environment (day)
+    {
+      const sc = getSkyColorsForTOD('day');
+      currentEnvMap = createSkyEnvironment(new THREE.Vector3(0.5, 0.8, 0.3).normalize(), sc.top, sc.mid, sc.bot);
+      scene.environment = currentEnvMap;
+    }
+
+    // ====== POST-PROCESSING PIPELINE ======
+    const composer = new EffectComposer(renderer);
+    const renderPass = new RenderPass(scene, camera);
+    composer.addPass(renderPass);
+    const bloomPass = new UnrealBloomPass(
+      new THREE.Vector2(window.innerWidth * deviceTier.bloomRes, window.innerHeight * deviceTier.bloomRes),
+      deviceTier.bloom ? 0.6 : 0, 0.4, 0.85
+    );
+    composer.addPass(bloomPass);
+    const fxaaPass = new ShaderPass(FXAAShader);
+    composer.addPass(fxaaPass);
+    const outputPass = new OutputPass();
+    composer.addPass(outputPass);
+    function updateFXAAResolution() {
+      const pr = renderer.getPixelRatio();
+      fxaaPass.material.uniforms['resolution'].value.set(
+        1 / (window.innerWidth * pr), 1 / (window.innerHeight * pr)
+      );
+    }
+    updateFXAAResolution();
+
+    // ====== PROCEDURAL TEXTURES (Canvas2D — no downloads) ======
+    function createRoadTexture() {
+      const size = 512;
+      const canvas = document.createElement('canvas');
+      canvas.width = canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#2a2a30';
+      ctx.fillRect(0, 0, size, size);
+      for (let i = 0; i < 8000; i++) {
+        const x = Math.random() * size, y = Math.random() * size, v = Math.random() * 30;
+        ctx.fillStyle = `rgb(${42 + v | 0},${42 + v | 0},${48 + v | 0})`;
+        ctx.fillRect(x, y, 1, 1);
+      }
+      ctx.fillStyle = '#FFD60A';
+      for (let y = 0; y < size; y += 80) ctx.fillRect(size / 2 - 3, y, 6, 40);
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(1, 1);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      return tex;
+    }
+
+    function createRoadNormalMap() {
+      const size = 256;
+      const canvas = document.createElement('canvas');
+      canvas.width = canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      const imgData = ctx.createImageData(size, size);
+      for (let i = 0; i < size * size; i++) {
+        const n = Math.random() * 20 - 10;
+        imgData.data[i * 4] = 128 + n;
+        imgData.data[i * 4 + 1] = 128 + n;
+        imgData.data[i * 4 + 2] = 255;
+        imgData.data[i * 4 + 3] = 255;
+      }
+      ctx.putImageData(imgData, 0, 0);
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(1, 1);
+      return tex;
+    }
+
+    function createGrassTexture() {
+      const size = 512;
+      const canvas = document.createElement('canvas');
+      canvas.width = canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#2d6e2d';
+      ctx.fillRect(0, 0, size, size);
+      for (let i = 0; i < 12000; i++) {
+        const x = Math.random() * size, y = Math.random() * size;
+        const len = 3 + Math.random() * 8, angle = Math.random() * Math.PI;
+        const shade = Math.random() * 60 - 30;
+        ctx.strokeStyle = `rgb(${Math.max(0, 45 + shade | 0)},${Math.max(0, 110 + shade | 0)},${Math.max(0, 45 + shade | 0)})`;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x + Math.cos(angle) * len, y + Math.sin(angle) * len);
+        ctx.stroke();
+      }
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(30, 30);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      return tex;
+    }
+
+    function createBuildingFacadeTexture() {
+      const size = 256;
+      const canvas = document.createElement('canvas');
+      canvas.width = canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#ccccdd';
+      ctx.fillRect(0, 0, size, size);
+      const winRows = 6, winCols = 4;
+      const winW = size / (winCols + 1), winH = size / (winRows + 1);
+      for (let row = 0; row < winRows; row++) {
+        for (let col = 0; col < winCols; col++) {
+          const x = (col + 0.5) * winW + winW * 0.1;
+          const y = (row + 0.5) * winH + winH * 0.1;
+          const w = winW * 0.8, h = winH * 0.7;
+          ctx.fillStyle = `rgb(${30 + Math.random() * 40 | 0},${40 + Math.random() * 40 | 0},${50 + Math.random() * 40 | 0})`;
+          ctx.fillRect(x, y, w, h);
+          ctx.strokeStyle = '#333333';
+          ctx.lineWidth = 1;
+          ctx.strokeRect(x, y, w, h);
+        }
+      }
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      return tex;
+    }
+
+    function createBuildingEmissiveTexture() {
+      const size = 256;
+      const canvas = document.createElement('canvas');
+      canvas.width = canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(0, 0, size, size);
+      const winRows = 6, winCols = 4;
+      const winW = size / (winCols + 1), winH = size / (winRows + 1);
+      for (let row = 0; row < winRows; row++) {
+        for (let col = 0; col < winCols; col++) {
+          const x = (col + 0.5) * winW + winW * 0.1;
+          const y = (row + 0.5) * winH + winH * 0.1;
+          const w = winW * 0.8, h = winH * 0.7;
+          if (Math.random() > 0.6) {
+            ctx.fillStyle = `rgb(${200 + Math.random() * 55 | 0},${180 + Math.random() * 50 | 0},${100 + Math.random() * 80 | 0})`;
+          } else {
+            ctx.fillStyle = '#000000';
+          }
+          ctx.fillRect(x, y, w, h);
+        }
+      }
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      return tex;
+    }
+
+    const roadTexture = createRoadTexture();
+    const roadNormalTexture = createRoadNormalMap();
+    const grassTexture = createGrassTexture();
+    const buildingFacadeTex = createBuildingFacadeTexture();
+    const buildingEmissiveTex = createBuildingEmissiveTexture();
 
     // ====== WEATHER EFFECTS SYSTEM (T-WEATHER #12) ======
     let weatherCode = 0;          // current Open-Meteo weather code
@@ -1185,9 +1432,9 @@
       const tod = forceNight ? 'night' : getTimeOfDay();
       const skyHex = skyColors[tod];
       if (cat === 'fog') {
-        scene.fog = new THREE.Fog(skyHex, 30, 50); // reduced visibility ~50u
+        scene.fog = new THREE.FogExp2(skyHex, 0.02); // reduced visibility ~50u
       } else {
-        scene.fog = new THREE.Fog(skyHex, tod === 'night' ? 100 : 200, tod === 'night' ? 500 : 1000);
+        scene.fog = new THREE.FogExp2(skyHex, tod === 'night' ? 0.0015 : 0.0008);
       }
       // Rain particles
       if (cat === 'rain' || cat === 'snow' || cat === 'showers') {
@@ -1215,11 +1462,13 @@
     const sunLight = new THREE.DirectionalLight(0xffffee, 1.0);
     sunLight.position.set(100, 200, 100);
     sunLight.castShadow = true;
-    sunLight.shadow.mapSize.width = 2048;
-    sunLight.shadow.mapSize.height = 2048;
+    sunLight.shadow.mapSize.width = deviceTier.shadowMapSize;
+    sunLight.shadow.mapSize.height = deviceTier.shadowMapSize;
     sunLight.shadow.camera.left = -500; sunLight.shadow.camera.right = 500;
     sunLight.shadow.camera.top = 500; sunLight.shadow.camera.bottom = -500;
     sunLight.shadow.camera.far = 800;
+    sunLight.shadow.bias = -0.0005;
+    sunLight.shadow.normalBias = 0.02;
     scene.add(sunLight);
 
     // --- Time-based sky & sun arc ---
@@ -1247,7 +1496,7 @@
       targetSkyColor.setHex(skyHex);
       skyTransitionStart = performance.now();
       skyTransitionActive = true;
-      scene.fog = new THREE.Fog(skyHex, tod === 'night' ? 100 : 200, tod === 'night' ? 500 : 1000);
+      scene.fog = new THREE.FogExp2(skyHex, tod === 'night' ? 0.0015 : 0.0008);
       // T-WEATHER: re-apply weather fog override if foggy weather active
       if (weatherCategory === 'fog') applyWeatherEffects();
       // Sun arc: angle based on hour (6am=0° east, 6pm=180° west, 12pm=90° overhead)
@@ -1257,6 +1506,9 @@
       const sunX = Math.cos(sunAngle) * sunRadius;
       const sunY = Math.sin(sunAngle) * sunRadius;
       sunLight.position.set(sunX, Math.max(sunY, 50), 100);
+      // Update PMREM environment map for this time of day
+      const sunDir = new THREE.Vector3(sunX, Math.max(sunY, 50), 100).normalize();
+      updateEnvironmentForTOD(tod, sunDir);
       const isNight = tod === 'night';
       if (isNight) {
         sunLight.intensity = 0.15;
@@ -1265,8 +1517,7 @@
         hemiLight.color.setHex(0x1a1a3e);
         hemiLight.groundColor.setHex(0x1a2a1a);
         if (moonMesh) moonMesh.visible = true;
-        buildingMat.emissive.setHex(0x332211); buildingMat.emissiveIntensity = 0.3;
-        buildingMat2.emissive.setHex(0x332211); buildingMat2.emissiveIntensity = 0.3;
+        buildingMat.emissiveIntensity = 0.8;
         roofMat.emissive.setHex(0x221100); roofMat.emissiveIntensity = 0.2;
       } else if (tod === 'dawn' || tod === 'dusk') {
         sunLight.intensity = 0.7;
@@ -1275,7 +1526,7 @@
         hemiLight.color.setHex(0xff8844);
         hemiLight.groundColor.setHex(0x3a5a2a);
         if (moonMesh) moonMesh.visible = false;
-        buildingMat.emissive.setHex(0x000000); buildingMat2.emissive.setHex(0x000000);
+        buildingMat.emissiveIntensity = 0.0;
         roofMat.emissive.setHex(0x000000);
       } else {
         sunLight.intensity = 1.0;
@@ -1284,7 +1535,7 @@
         hemiLight.color.setHex(0x87CEEB);
         hemiLight.groundColor.setHex(0x3a5a2a);
         if (moonMesh) moonMesh.visible = false;
-        buildingMat.emissive.setHex(0x000000); buildingMat2.emissive.setHex(0x000000);
+        buildingMat.emissiveIntensity = 0.0;
         roofMat.emissive.setHex(0x000000);
       }
       // Toggle headlights (intensity 3.0 at night) and taillight glow (0.8 at night)
@@ -1369,59 +1620,129 @@
     }
     terrainGeo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
     terrainGeo.computeVertexNormals();
-    const terrain = new THREE.Mesh(terrainGeo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.9, metalness: 0.0 }));
+    const terrain = new THREE.Mesh(terrainGeo, new THREE.MeshStandardMaterial({ vertexColors: true, map: grassTexture, roughness: 0.9, metalness: 0.0, envMapIntensity: 0.5 }));
     terrain.receiveShadow = true;
     scene.add(terrain);
 
     // ====== WATER ======
     const waterGeo = new THREE.PlaneGeometry(3000, 3000);
     waterGeo.rotateX(-Math.PI / 2);
-    const water = new THREE.Mesh(waterGeo, new THREE.MeshStandardMaterial({ color: 0x1a4a7a, transparent: true, opacity: 0.55, roughness: 0.3, metalness: 0.6 }));
+    const water = new THREE.Mesh(waterGeo, new THREE.MeshPhysicalMaterial({ color: 0x1a4a7a, transparent: true, opacity: 0.55, roughness: 0.1, metalness: 0.0, envMapIntensity: 1.5, clearcoat: 1.0, clearcoatRoughness: 0.1 }));
     water.position.y = -3;
     scene.add(water);
 
-    // ====== TREES ======
+    // ====== TREES (InstancedMesh — merged trunk+foliage, 1 draw call) ======
     const treeGroup = new THREE.Group();
-    const trunkGeo = new THREE.CylinderGeometry(0.15, 0.25, 1.5, 6);
-    const trunkMat = new THREE.MeshStandardMaterial({ color: 0x4a3220, roughness: 0.9 });
-    const leafGeo = new THREE.ConeGeometry(1.2, 3, 7);
-    const leafMat = new THREE.MeshStandardMaterial({ color: 0x2d6e2d, roughness: 0.8 });
-    const leafMat2 = new THREE.MeshStandardMaterial({ color: 0x3a8a3a, roughness: 0.8 });
-    for (let i = 0; i < 150; i++) {
-      const angle = Math.random() * Math.PI * 2;
-      const r = Math.random() * ISLAND_SIZE * 0.4;
-      const x = Math.cos(angle) * r, z = -50 + Math.sin(angle) * r;
-      const h = getTerrainHeight(x, z);
-      if (h < 1 || h > 28) continue;
-      const tree = new THREE.Group();
-      const trunk = new THREE.Mesh(trunkGeo, trunkMat); trunk.position.y = 0.75; trunk.castShadow = true; tree.add(trunk);
-      const leaves = new THREE.Mesh(leafGeo, Math.random() > 0.5 ? leafMat : leafMat2); leaves.position.y = 2.5; leaves.castShadow = true; tree.add(leaves);
-      const leaves2 = new THREE.Mesh(new THREE.ConeGeometry(0.8, 2, 6), leaves.material); leaves2.position.y = 3.5; leaves2.castShadow = true; tree.add(leaves2);
-      const scale = 0.6 + Math.random() * 0.6; tree.scale.set(scale, scale, scale);
-      tree.position.set(x, h, z); tree.rotation.y = Math.random() * Math.PI;
-      treeGroup.add(tree);
+    // Build merged tree geometry with vertex colors (trunk=brown, foliage=green)
+    {
+      const trunkG = new THREE.CylinderGeometry(0.15, 0.25, 1.5, 6);
+      trunkG.translate(0, 0.75, 0);
+      const leafG = new THREE.ConeGeometry(1.2, 3, 7);
+      leafG.translate(0, 2.5, 0);
+      const leafG2 = new THREE.ConeGeometry(0.8, 2, 6);
+      leafG2.translate(0, 3.5, 0);
+      // Add vertex colors
+      function addVertexColor(geo, r, g, b) {
+        const count = geo.attributes.position.count;
+        const colors = new Float32Array(count * 3);
+        for (let i = 0; i < count; i++) { colors[i*3]=r; colors[i*3+1]=g; colors[i*3+2]=b; }
+        geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+      }
+      addVertexColor(trunkG, 0.29, 0.20, 0.13);
+      addVertexColor(leafG, 0.18, 0.43, 0.18);
+      addVertexColor(leafG2, 0.23, 0.54, 0.23);
+      const mergedTreeGeo = mergeGeometries([trunkG, leafG, leafG2]);
+      const treeMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.8, envMapIntensity: 0.5 });
+      // Collect tree positions
+      const treePositions = [];
+      for (let i = 0; i < 150; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const r = Math.random() * ISLAND_SIZE * 0.4;
+        const x = Math.cos(angle) * r, z = -50 + Math.sin(angle) * r;
+        const h = getTerrainHeight(x, z);
+        if (h < 1 || h > 28) continue;
+        treePositions.push({ x, h, z, scale: 0.6 + Math.random() * 0.6, rotY: Math.random() * Math.PI });
+      }
+      if (treePositions.length > 0) {
+        const treeMesh = new THREE.InstancedMesh(mergedTreeGeo, treeMat, treePositions.length);
+        treeMesh.castShadow = true; treeMesh.receiveShadow = true;
+        const _tMatrix = new THREE.Matrix4();
+        const _tPos = new THREE.Vector3();
+        const _tQuat = new THREE.Quaternion();
+        const _tScale = new THREE.Vector3();
+        const _tEuler = new THREE.Euler();
+        for (let i = 0; i < treePositions.length; i++) {
+          const t = treePositions[i];
+          _tPos.set(t.x, t.h, t.z);
+          _tEuler.set(0, t.rotY, 0);
+          _tQuat.setFromEuler(_tEuler);
+          _tScale.set(t.scale, t.scale, t.scale);
+          _tMatrix.compose(_tPos, _tQuat, _tScale);
+          treeMesh.setMatrixAt(i, _tMatrix);
+        }
+        treeMesh.instanceMatrix.needsUpdate = true;
+        treeGroup.add(treeMesh);
+      }
     }
     scene.add(treeGroup);
 
-    // ====== BUILDINGS ======
+    // ====== BUILDINGS (InstancedMesh — 1 draw call for all bodies, 1 for roofs) ======
     const buildingGroup = new THREE.Group();
-    const buildingMat = new THREE.MeshStandardMaterial({ color: 0xccccdd, roughness: 0.7 });
-    const buildingMat2 = new THREE.MeshStandardMaterial({ color: 0xaaaa99, roughness: 0.7 });
-    const roofMat = new THREE.MeshStandardMaterial({ color: 0x884422, roughness: 0.8 });
+    const buildingMat = new THREE.MeshStandardMaterial({
+      map: buildingFacadeTex, emissiveMap: buildingEmissiveTex,
+      roughness: 0.6, metalness: 0.1, envMapIntensity: 1.0,
+      emissive: 0xffffff, emissiveIntensity: 0.0,
+    });
+    const buildingMat2 = buildingMat; // alias — applySkyAndSun toggles both
+    const roofMat = new THREE.MeshStandardMaterial({ color: 0x884422, roughness: 0.8, envMapIntensity: 0.5 });
     const buildingLocations = [
       [5,55,3,3],[-8,58,4,2.5],[12,62,5,3],[-15,50,3,4],[20,45,4,3],[-25,60,6,3],[8,70,4,2.5],[-5,72,3,3],
       [30,55,5,4],[-35,65,4,3],[15,75,3,2.5],[-20,78,5,3],[40,60,6,4],[-42,52,4,3],[25,80,3,2.5],[-30,85,5,3],
       [-100,20,4,3],[-110,15,3,2.5],[-95,25,5,3],[90,-20,4,3],[100,-15,3,2.5],
       [50,-50,3,4],[-60,-80,4,3],[70,10,3,3],[-70,100,3,4],
     ];
+    // Pre-compute building data for instancing
+    const buildingData = [];
     buildingLocations.forEach(([x, z, w, d]) => {
       const h = getTerrainHeight(x, z); if (h < 1) return;
       const height = 2 + Math.random() * 6;
-      const bldg = new THREE.Mesh(new THREE.BoxGeometry(w, height, d), Math.random() > 0.5 ? buildingMat : buildingMat2);
-      bldg.position.set(x, h + height/2, z); bldg.castShadow = true; bldg.receiveShadow = true; buildingGroup.add(bldg);
-      const roof = new THREE.Mesh(new THREE.BoxGeometry(w + 0.2, 0.3, d + 0.2), roofMat);
-      roof.position.set(x, h + height + 0.15, z); roof.castShadow = true; buildingGroup.add(roof);
+      buildingData.push({ x, z, w, d, h, height });
     });
+    // Building bodies InstancedMesh (unit box scaled per instance)
+    const bUnitGeo = new THREE.BoxGeometry(1, 1, 1);
+    const bMesh = new THREE.InstancedMesh(bUnitGeo, buildingMat, buildingData.length);
+    bMesh.castShadow = true; bMesh.receiveShadow = true;
+    const _bMatrix = new THREE.Matrix4();
+    const _bColor = new THREE.Color();
+    for (let i = 0; i < buildingData.length; i++) {
+      const b = buildingData[i];
+      _bMatrix.compose(
+        new THREE.Vector3(b.x, b.h + b.height / 2, b.z),
+        new THREE.Quaternion(),
+        new THREE.Vector3(b.w, b.height, b.d)
+      );
+      bMesh.setMatrixAt(i, _bMatrix);
+      _bColor.setHex(Math.random() > 0.5 ? 0xccccdd : 0xaaaa99);
+      bMesh.setColorAt(i, _bColor);
+    }
+    bMesh.instanceMatrix.needsUpdate = true;
+    if (bMesh.instanceColor) bMesh.instanceColor.needsUpdate = true;
+    buildingGroup.add(bMesh);
+    // Roof InstancedMesh
+    const rUnitGeo = new THREE.BoxGeometry(1, 1, 1);
+    const rMesh = new THREE.InstancedMesh(rUnitGeo, roofMat, buildingData.length);
+    rMesh.castShadow = true; rMesh.receiveShadow = true;
+    for (let i = 0; i < buildingData.length; i++) {
+      const b = buildingData[i];
+      _bMatrix.compose(
+        new THREE.Vector3(b.x, b.h + b.height + 0.15, b.z),
+        new THREE.Quaternion(),
+        new THREE.Vector3(b.w + 0.2, 0.3, b.d + 0.2)
+      );
+      rMesh.setMatrixAt(i, _bMatrix);
+    }
+    rMesh.instanceMatrix.needsUpdate = true;
+    buildingGroup.add(rMesh);
     scene.add(buildingGroup);
 
     // ====== PEDESTRIANS ======
@@ -2180,6 +2501,7 @@
       // ---- Build merged ribbon geometry for all roads (single draw call) ----
       const roadPositions = [];
       const roadColors = [];
+      const roadUVs = [];
       let triCount = 0;
 
       for (const seg of segments) {
@@ -2206,17 +2528,20 @@
         // Triangle 1: c1, c2, c3
         roadPositions.push(c1x, y1, c1z,  c2x, y1, c2z,  c3x, y2, c3z);
         roadColors.push(r, g, b,  r, g, b,  r, g, b);
+        roadUVs.push(0, 0,  1, 0,  0, len / 8);
         // Triangle 2: c2, c4, c3
         roadPositions.push(c2x, y1, c2z,  c4x, y2, c4z,  c3x, y2, c3z);
         roadColors.push(r, g, b,  r, g, b,  r, g, b);
+        roadUVs.push(1, 0,  1, len / 8,  0, len / 8);
         triCount += 2;
       }
 
       const roadGeo = new THREE.BufferGeometry();
       roadGeo.setAttribute('position', new THREE.Float32BufferAttribute(roadPositions, 3));
       roadGeo.setAttribute('color', new THREE.Float32BufferAttribute(roadColors, 3));
+      roadGeo.setAttribute('uv', new THREE.Float32BufferAttribute(roadUVs, 2));
       roadGeo.computeVertexNormals();
-      const roadMat = new THREE.MeshLambertMaterial({ vertexColors: true, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 });
+      const roadMat = new THREE.MeshStandardMaterial({ vertexColors: true, map: roadTexture, normalMap: roadNormalTexture, roughness: 0.8, metalness: 0.0, envMapIntensity: 0.5, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 });
       const roadMesh = new THREE.Mesh(roadGeo, roadMat);
       roadMesh.renderOrder = 1;
       group.add(roadMesh);
@@ -2972,7 +3297,7 @@
     // ====== CAR FACTORY ======
     function createCar(color) {
       const car = new THREE.Group();
-      const body = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.8, 4.5), new THREE.MeshStandardMaterial({ color, roughness: 0.4, metalness: 0.5 }));
+      const body = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.8, 4.5), new THREE.MeshPhysicalMaterial({ color, roughness: 0.3, metalness: 0.9, clearcoat: 1.0, clearcoatRoughness: 0.1, envMapIntensity: 2.0 }));
       body.position.y = 0.6; body.castShadow = true; car.add(body);
       const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.7, 2.2), new THREE.MeshStandardMaterial({ color: 0x223344, roughness: 0.1, metalness: 0.8, transparent: true, opacity: 0.7 }));
       cabin.position.set(0, 1.35, -0.3); cabin.castShadow = true; car.add(cabin);
@@ -4504,7 +4829,7 @@
       updateLightning(now);
 
       drawRadar();
-      renderer.render(scene, camera);
+      composer.render();
       requestAnimationFrame(animate);
     }
 
@@ -4537,6 +4862,8 @@
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
+      composer.setSize(window.innerWidth, window.innerHeight);
+      updateFXAAResolution();
     });
 
     fetchWeather();
