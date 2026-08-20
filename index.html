@@ -719,8 +719,8 @@
 
     async function submitScore() {
       if (lbSubmitting) return;
-      if (!playerUsername || !playerUsername.trim()) {
-        showToast('\u26A0\uFE0F Set a username first!');
+      if (!window.playerUsername || !window.playerUsername.trim()) {
+        window.showToast('\u26A0\uFE0F Set a username first!');
         return;
       }
       if (typeof score === 'undefined' || score <= 0) {
@@ -731,7 +731,7 @@
       var submitBtn = document.getElementById('lb-submit');
       if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Submitting...'; }
       var body = {
-        username: playerUsername,
+        username: window.playerUsername,
         score: score,
         mode: (typeof vehicleMode !== 'undefined') ? vehicleMode : 'drive',
         duration_seconds: Math.floor((Date.now() - sessionStart) / 1000)
@@ -747,9 +747,9 @@
         await fetch(SUPABASE_URL + '/rest/v1/players', {
           method: 'POST',
           headers: lbHeaders({ 'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates' }),
-          body: JSON.stringify({ username: playerUsername })
+          body: JSON.stringify({ username: window.playerUsername })
         });
-        showToast('\uD83C\uDFC5 Score submitted!');
+        window.showToast('\uD83C\uDFC5 Score submitted!');
         fetchLeaderboard();
       } catch (err) {
         console.warn('Score submit failed:', err);
@@ -762,9 +762,9 @@
 
     // beforeunload \u2014 submit score using fetch keepalive for reliability
     window.addEventListener('beforeunload', function(e) {
-      if (playerUsername && typeof score !== 'undefined' && score > 0) {
+      if (window.playerUsername && typeof score !== 'undefined' && score > 0) {
         var body = JSON.stringify({
-          username: playerUsername,
+          username: window.playerUsername,
           score: score,
           mode: (typeof vehicleMode !== 'undefined') ? vehicleMode : 'drive',
           duration_seconds: Math.floor((Date.now() - sessionStart) / 1000)
@@ -789,7 +789,7 @@
     function startAutoSubmit() {
       if (lbAutoSubmitInterval) clearInterval(lbAutoSubmitInterval);
       lbAutoSubmitInterval = setInterval(function() {
-        if (playerUsername && typeof score !== 'undefined' && score > 0) {
+        if (window.playerUsername && typeof score !== 'undefined' && score > 0) {
           submitScoreQuiet();
         }
       }, 5 * 60 * 1000);
@@ -799,7 +799,7 @@
       if (lbSubmitting) return;
       lbSubmitting = true;
       var body = {
-        username: playerUsername,
+        username: window.playerUsername,
         score: score,
         mode: (typeof vehicleMode !== 'undefined') ? vehicleMode : 'drive',
         duration_seconds: Math.floor((Date.now() - sessionStart) / 1000)
@@ -813,7 +813,7 @@
         await fetch(SUPABASE_URL + '/rest/v1/players', {
           method: 'POST',
           headers: lbHeaders({ 'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates' }),
-          body: JSON.stringify({ username: playerUsername })
+          body: JSON.stringify({ username: window.playerUsername })
         });
         console.log('Auto-submitted score:', score);
       } catch(err) {
@@ -1479,6 +1479,7 @@
       if (toastTimeout) clearTimeout(toastTimeout);
       toastTimeout = setTimeout(() => { toastEl.classList.remove('show'); }, 3000);
     }
+    window.showToast = showToast;
 
     function addPoints(pts, msg) {
       score += pts;
@@ -4957,6 +4958,422 @@
 
     // Start multiplayer after a short delay (let username load)
     setTimeout(mpInit, 1500);
+
+    // ====== BUS ROUTES SYSTEM (T-BUS-ROUTES #7) ======
+    // Real Liberty Bus routes from OSM data + simulated live buses
+    // Data loaded from jersey-bus-data.js (global `jerseyBusData`)
+    const busSystem = (function() {
+      if (typeof jerseyBusData === 'undefined') {
+        console.warn('jersey-bus-data.js not loaded — bus system disabled');
+        return { update: () => {}, group: new THREE.Group(), setVisible: () => {}, visible: true, buses: [], stopMeshes: [] };
+      }
+
+      const group = new THREE.Group();
+      scene.add(group);
+
+      let busVisible = true;
+
+      // Route colors — 5-color palette cycling
+      const ROUTE_COLORS = [0xe74c3c, 0x3498db, 0x2ecc71, 0xf1c40f, 0x9b59b6];
+
+      // --- 1. BUS STOP MARKERS ---
+      // Yellow cylinders (0.5 radius, 2 height) with 'BUS' label
+      // Only render stops within islandMask > 0.1
+      // LOD-style culling: only show stops within 200u of player
+      const stopData = jerseyBusData.stops; // [[x, z, name], ...]
+      const stopMeshes = []; // { mesh, label, x, z, name }
+      const stopGeo = new THREE.CylinderGeometry(0.25, 0.25, 2, 8);
+      const stopMat = new THREE.MeshStandardMaterial({ color: 0xffd700, roughness: 0.6, metalness: 0.3, emissive: 0x444400 });
+
+      for (const s of stopData) {
+        const x = s[0], z = s[1], name = s[2];
+        // Check island mask
+        if (islandMask(x, z) <= 0.1) continue;
+
+        const h = getTerrainHeight(x, z);
+        const mesh = new THREE.Mesh(stopGeo, stopMat);
+        mesh.position.set(x, h + 1, z);
+        mesh.castShadow = true;
+        mesh.visible = false; // start hidden, LOD will show nearby ones
+        group.add(mesh);
+
+        // 'BUS' label — only create sprite, don't show by default (LOD)
+        const label = makeTextLabel('BUS');
+        label.scale.set(4, 1, 1);
+        label.position.set(x, h + 3, z);
+        label.visible = false;
+        group.add(label);
+
+        stopMeshes.push({ mesh, label, x, z, name, baseY: h + 1 });
+      }
+
+      // --- 2. ROUTE LINE RENDERING ---
+      // Use BufferGeometry for all ways, grouped into 5 color groups
+      // Render as thin colored LineBasicMaterial (TubeGeometry for 607 ways is too heavy)
+      // Lines placed 0.1u above terrain
+      const ways = jerseyBusData.ways; // array of [[x,z], [x,z], ...]
+      const routeLineMeshes = [];
+
+      // Group ways into 5 color groups by index
+      const numWays = ways.length;
+      for (let ci = 0; ci < 5; ci++) {
+        const color = ROUTE_COLORS[ci];
+        const points = [];
+        const indices = [];
+
+        // Collect all points and indices for this color group
+        let vertexOffset = 0;
+        const startIdx = Math.floor(ci * numWays / 5);
+        const endIdx = Math.floor((ci + 1) * numWays / 5);
+
+        for (let wi = startIdx; wi < endIdx; wi++) {
+          const way = ways[wi];
+          if (!way || way.length < 2) continue;
+
+          for (let pi = 0; pi < way.length; pi++) {
+            const x = way[pi][0], z = way[pi][1];
+            const h = getTerrainHeight(x, z);
+            points.push(x, h + 0.1, z);
+
+            if (pi > 0) {
+              // Line segment from previous point to this one
+              indices.push(vertexOffset + pi - 1, vertexOffset + pi);
+            }
+          }
+          vertexOffset += way.length;
+        }
+
+        if (points.length === 0) continue;
+
+        const geo = new THREE.BufferGeometry();
+        geo.setAttribute('position', new THREE.Float32BufferAttribute(points, 3));
+        geo.setIndex(indices);
+        const mat = new THREE.LineBasicMaterial({ color: color, transparent: true, opacity: 0.7 });
+        const lineSegments = new THREE.LineSegments(geo, mat);
+        group.add(lineSegments);
+        routeLineMeshes.push(lineSegments);
+      }
+
+      // --- 3. SIMULATED LIVE BUSES ---
+      // Build continuous route paths from ways for buses to travel along
+      // We'll create 5 route paths (one per color group), each a series of connected points
+      const routePaths = []; // array of { points: [Vector3...], length, color }
+      for (let ci = 0; ci < 5; ci++) {
+        const startIdx = Math.floor(ci * numWays / 5);
+        const endIdx = Math.floor((ci + 1) * numWays / 5);
+        const pts = [];
+
+        // Sort ways in this group by proximity to create a more continuous path
+        const groupWays = [];
+        for (let wi = startIdx; wi < endIdx; wi++) {
+          const way = ways[wi];
+          if (!way || way.length < 2) continue;
+          const gameWay = way.map(p => {
+            const h = getTerrainHeight(p[0], p[1]);
+            return new THREE.Vector3(p[0], h + 1.5, p[1]);
+          });
+          groupWays.push(gameWay);
+        }
+
+        if (groupWays.length === 0) continue;
+
+        // Greedy nearest-neighbor chaining of ways
+        const used = new Array(groupWays.length).fill(false);
+        let current = groupWays[0];
+        used[0] = true;
+        pts.push(...current);
+
+        let chained = 1;
+        while (chained < groupWays.length) {
+          let bestIdx = -1, bestDist = Infinity, bestReverse = false;
+          const lastPt = pts[pts.length - 1];
+
+          for (let i = 0; i < groupWays.length; i++) {
+            if (used[i]) continue;
+            const w = groupWays[i];
+            // Try forward: start of way
+            const dFwd = lastPt.distanceToSquared(w[0]);
+            if (dFwd < bestDist) { bestDist = dFwd; bestIdx = i; bestReverse = false; }
+            // Try reverse: end of way
+            const dRev = lastPt.distanceToSquared(w[w.length - 1]);
+            if (dRev < bestDist) { bestDist = dRev; bestIdx = i; bestReverse = true; }
+          }
+
+          if (bestIdx === -1) break;
+          used[bestIdx] = true;
+          const w = groupWays[bestIdx];
+          if (bestReverse) w.reverse();
+          // Skip first point if it's very close to last point (avoid duplicates)
+          if (pts[pts.length - 1].distanceTo(w[0]) < 1) {
+            pts.push(...w.slice(1));
+          } else {
+            pts.push(...w);
+          }
+          chained++;
+        }
+
+        // Calculate total path length
+        let totalLen = 0;
+        for (let i = 0; i < pts.length - 1; i++) {
+          totalLen += pts[i].distanceTo(pts[i + 1]);
+        }
+
+        routePaths.push({ points: pts, length: totalLen, color: ROUTE_COLORS[ci] });
+      }
+
+      // Create bus label helper
+      function createBusLabel(text) {
+        const canvas = document.createElement('canvas');
+        canvas.width = 128; canvas.height = 32;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = 'rgba(10, 26, 63, 0.8)';
+        ctx.fillRect(0, 0, 128, 32);
+        ctx.font = 'bold 16px JetBrains Mono, monospace';
+        ctx.fillStyle = '#ffcc00';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(text, 64, 16);
+        const texture = new THREE.CanvasTexture(canvas);
+        const spriteMat = new THREE.SpriteMaterial({ map: texture, transparent: true, depthTest: false });
+        const sprite = new THREE.Sprite(spriteMat);
+        sprite.scale.set(8, 2, 1);
+        sprite.userData.canvas = canvas;
+        sprite.userData.ctx = ctx;
+        sprite.userData.texture = texture;
+        return sprite;
+      }
+
+      // Create bus mesh: blue box (8x2.5x2.5) with windows and 'LIBERTY BUS' text
+      function createBusMesh(routeNum, color) {
+        const bus = new THREE.Group();
+
+        // Main body
+        const bodyMat = new THREE.MeshStandardMaterial({ color: 0x1a6fc1, roughness: 0.5, metalness: 0.3 });
+        const body = new THREE.Mesh(new THREE.BoxGeometry(8, 2.5, 2.5), bodyMat);
+        body.position.y = 1.25;
+        body.castShadow = true;
+        bus.add(body);
+
+        // Roof (slightly lighter)
+        const roofMat = new THREE.MeshStandardMaterial({ color: 0x2a8fef, roughness: 0.4 });
+        const roof = new THREE.Mesh(new THREE.BoxGeometry(7.5, 0.3, 2.2), roofMat);
+        roof.position.y = 2.65;
+        bus.add(roof);
+
+        // Windows — light blue stripe on both sides
+        const windowMat = new THREE.MeshStandardMaterial({ color: 0x88ccff, roughness: 0.1, metalness: 0.6, emissive: 0x224466, emissiveIntensity: 0.3 });
+        // Left side windows
+        const winL = new THREE.Mesh(new THREE.BoxGeometry(6, 0.9, 0.05), windowMat);
+        winL.position.set(0, 1.8, 1.28);
+        bus.add(winL);
+        // Right side windows
+        const winR = new THREE.Mesh(new THREE.BoxGeometry(6, 0.9, 0.05), windowMat);
+        winR.position.set(0, 1.8, -1.28);
+        bus.add(winR);
+
+        // Front windshield
+        const windshield = new THREE.Mesh(new THREE.BoxGeometry(0.05, 1.0, 2.0), windowMat);
+        windshield.position.set(3.9, 1.8, 0);
+        bus.add(windshield);
+
+        // Rear window
+        const rearWin = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.8, 2.0), windowMat);
+        rearWin.position.set(-3.9, 1.8, 0);
+        bus.add(rearWin);
+
+        // 'LIBERTY BUS' text on side — canvas texture
+        const textCanvas = document.createElement('canvas');
+        textCanvas.width = 256; textCanvas.height = 32;
+        const tctx = textCanvas.getContext('2d');
+        tctx.fillStyle = '#ffcc00';
+        tctx.font = 'bold 18px Arial, sans-serif';
+        tctx.textAlign = 'center';
+        tctx.textBaseline = 'middle';
+        tctx.fillText('LIBERTY BUS', 128, 16);
+        const textTex = new THREE.CanvasTexture(textCanvas);
+        const textMat = new THREE.MeshBasicMaterial({ map: textTex, transparent: true });
+        const textGeoL = new THREE.PlaneGeometry(5, 0.6);
+        const textL = new THREE.Mesh(textGeoL, textMat);
+        textL.position.set(0, 1.0, 1.26);
+        textL.rotation.y = 0;
+        bus.add(textL);
+        const textR = new THREE.Mesh(textGeoL, textMat);
+        textR.position.set(0, 1.0, -1.26);
+        textR.rotation.y = Math.PI;
+        bus.add(textR);
+
+        // Route number on front
+        const numCanvas = document.createElement('canvas');
+        numCanvas.width = 64; numCanvas.height = 32;
+        const nctx = numCanvas.getContext('2d');
+        nctx.fillStyle = '#ffcc00';
+        nctx.font = 'bold 20px Arial, sans-serif';
+        nctx.textAlign = 'center';
+        nctx.textBaseline = 'middle';
+        nctx.fillText(routeNum, 32, 16);
+        const numTex = new THREE.CanvasTexture(numCanvas);
+        const numMat = new THREE.MeshBasicMaterial({ map: numTex, transparent: true });
+        const numMesh = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.75), numMat);
+        numMesh.position.set(4.01, 1.5, 0);
+        numMesh.rotation.y = Math.PI / 2;
+        bus.add(numMesh);
+
+        // Wheels (simple dark cylinders)
+        const wheelMat = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.8 });
+        const wheelGeo = new THREE.CylinderGeometry(0.5, 0.5, 0.3, 8);
+        [[2.5, 1.2], [-2.5, 1.2], [2.5, -1.2], [-2.5, -1.2]].forEach(([wx, wz]) => {
+          const wheel = new THREE.Mesh(wheelGeo, wheelMat);
+          wheel.rotation.x = Math.PI / 2;
+          wheel.position.set(wx, 0.5, wz);
+          bus.add(wheel);
+        });
+
+        return bus;
+      }
+
+      // Create 8-10 buses assigned to different routes
+      const buses = [];
+      const routeRefs = jerseyBusData.routeRefs || ['1', '2', '3', '4', '5', '7', '8', '9', '13', '15'];
+
+      const numBuses = Math.min(10, Math.max(8, routePaths.length));
+      for (let bi = 0; bi < numBuses; bi++) {
+        const routeIdx = bi % routePaths.length;
+        const path = routePaths[routeIdx];
+        if (!path || path.points.length < 2) continue;
+
+        const routeNum = routeRefs[bi % routeRefs.length] || String(bi + 1);
+        const mesh = createBusMesh(routeNum, path.color);
+        group.add(mesh);
+
+        const label = createBusLabel(routeNum);
+        group.add(label);
+
+        // Random starting position along route (0-1)
+        const t0 = Math.random();
+        buses.push({
+          mesh,
+          label,
+          routeIdx,
+          routeNum,
+          t: t0,           // position parameter 0-1
+          speed: 0.00008 + Math.random() * 0.00004, // speed in t-units per ms
+          points: path.points,
+          totalLen: path.length,
+          x: 0, z: 0,      // current x/z for radar
+          pathSegLens: [], // pre-computed segment lengths
+          cumLen: []       // cumulative lengths for parametric lookup
+        });
+
+        // Pre-compute segment lengths for uniform speed
+        const bus = buses[buses.length - 1];
+        let cum = 0;
+        for (let i = 0; i < path.points.length - 1; i++) {
+          const segLen = path.points[i].distanceTo(path.points[i + 1]);
+          bus.pathSegLens.push(segLen);
+          cum += segLen;
+          bus.cumLen.push(cum);
+        }
+      }
+
+      // Get position on path at parameter t (0-1) — returns { pos: Vector3, tangent: Vector3 }
+      function getPosOnPath(bus, t) {
+        const targetDist = t * bus.totalLen;
+        const cum = bus.cumLen;
+        const pts = bus.points;
+
+        // Binary search for segment
+        let lo = 0, hi = cum.length - 1;
+        while (lo < hi) {
+          const mid = (lo + hi) >> 1;
+          if (cum[mid] < targetDist) lo = mid + 1;
+          else hi = mid;
+        }
+
+        const segIdx = Math.max(0, lo - 1);
+        const segStart = segIdx > 0 ? cum[segIdx - 1] : 0;
+        const segEnd = cum[segIdx];
+        const segLen = segEnd - segStart;
+        const localT = segLen > 0 ? (targetDist - segStart) / segLen : 0;
+
+        const p0 = pts[segIdx];
+        const p1 = pts[segIdx + 1] || pts[segIdx];
+        const pos = new THREE.Vector3().lerpVectors(p0, p1, localT);
+
+        // Tangent
+        const tangent = new THREE.Vector3().subVectors(p1, p0).normalize();
+
+        return { pos, tangent, segIdx };
+      }
+
+      // --- UPDATE FUNCTION ---
+      let stopLodTimer = 0;
+      function update(dt) {
+        if (!busVisible) return;
+
+        // Update bus positions
+        for (const bus of buses) {
+          bus.t += bus.speed * dt * 1000; // dt is in seconds, speed is per ms
+          if (bus.t >= 1) bus.t -= 1; // loop back to start
+
+          const { pos, tangent } = getPosOnPath(bus, bus.t);
+          bus.mesh.position.copy(pos);
+
+          // Face direction of travel
+          if (tangent.lengthSq() > 0.001) {
+            const angle = Math.atan2(tangent.x, tangent.z);
+            bus.mesh.rotation.y = angle;
+          }
+
+          // Update label position (floating above bus)
+          bus.label.position.set(pos.x, pos.y + 3, pos.z);
+
+          // Update radar coords
+          bus.x = pos.x;
+          bus.z = pos.z;
+        }
+
+        // LOD culling for bus stops — update every 0.5s
+        stopLodTimer += dt;
+        if (stopLodTimer > 0.5) {
+          stopLodTimer = 0;
+          for (const sm of stopMeshes) {
+            const dx = sm.x - carX, dz = sm.z - carZ;
+            const dist = Math.sqrt(dx*dx + dz*dz);
+            const show = dist < 200;
+            sm.mesh.visible = show;
+            sm.label.visible = show && dist < 80; // labels only when very close
+          }
+        }
+      }
+
+      // --- VISIBILITY TOGGLE ---
+      function setVisible(v) {
+        busVisible = v;
+        group.visible = v;
+        if (!v) {
+          for (const sm of stopMeshes) { sm.mesh.visible = false; sm.label.visible = false; }
+        }
+      }
+
+      return { update, group, setVisible, visible: true, buses, stopMeshes, routePaths };
+    })();
+
+    // Expose globals for radar
+    var buses = busSystem.buses;
+    var busVisible = true;
+    busSystem.group.visible = true;
+
+    function updateBuses(dt) { busSystem.update(dt); }
+
+    // Bus toggle button
+    const busToggleBtn = document.getElementById('bus-toggle');
+    busToggleBtn.classList.add('active'); // start active/visible
+    busToggleBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      busVisible = !busVisible;
+      busSystem.setVisible(busVisible);
+      busToggleBtn.classList.toggle('active', busVisible);
+    });
   </script>
 </body>
 </html>
