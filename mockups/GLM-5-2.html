@@ -3,373 +3,228 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>VibeDrive.je — UI Mockup</title>
+<title>VibeDrive.je — Feature-Rich Controls</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
-  :root{
-    --jersey:#00A86B;
-    --atlantic:#0A1A3F;
-    --sprint:#FFD60A;
-    --rally:#E63946;
-    --ink:#0A1A3F;
-    --paper:#F4F6F8;
-    --glass:rgba(10,26,63,0.55);
-    --glass-light:rgba(255,255,255,0.08);
-    --stroke:rgba(255,255,255,0.18);
-    --shadow:0 10px 30px rgba(0,0,0,0.35);
-  }
-  *{box-sizing:border-box;margin:0;padding:0}
-  html,body{font-family:'Inter',sans-serif;background:#0b1020;color:#fff;-webkit-font-smoothing:antialiased}
-  .mono{font-family:'JetBrains Mono',monospace}
+:root{--jg:#00A86B;--ab:#0A1A3F;--sy:#FFD60A;--rr:#E63946;}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:'Inter',sans-serif;background:#060b18;color:#fff;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:20px}
+h1{font-size:20px;font-weight:800;letter-spacing:-.02em;margin-bottom:4px}
+h1 span{color:var(--jg)}
+.sub{color:#8b9abe;font-size:13px;margin-bottom:16px;text-align:center}
+.toolbar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;justify-content:center}
+.tbtn{padding:8px 16px;border-radius:8px;border:1px solid #2a3a60;background:#111c36;color:#cbd6ee;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.tbtn.active{background:var(--jg);color:#fff;border-color:var(--jg)}
+.frame-row{display:flex;gap:24px;flex-wrap:wrap;justify-content:center;align-items:flex-start}
+.frame-cap{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#6b7c9e;font-weight:700;margin-bottom:8px;text-align:center}
 
-  /* ===== Page layout ===== */
-  .page{padding:32px 24px 80px;max-width:1500px;margin:0 auto}
-  .page-head{margin-bottom:28px}
-  .page-head h1{font-size:28px;font-weight:800;letter-spacing:-0.02em}
-  .page-head h1 span{color:var(--jersey)}
-  .page-head p{color:#9aa6c0;margin-top:6px;font-size:14px}
-  .state-toggle{display:inline-flex;background:#1a2340;border:1px solid #2a3560;border-radius:10px;padding:4px;margin-top:14px}
-  .state-toggle button{background:transparent;border:0;color:#9aa6c0;font-family:inherit;font-weight:600;font-size:13px;padding:8px 16px;border-radius:7px;cursor:pointer;transition:.2s}
-  .state-toggle button.active{background:var(--jersey);color:#fff}
+.device{position:relative;border-radius:20px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.55);background:#000}
+.ipad{width:780px;height:585px}
+.mobile{width:300px;height:610px;border-radius:32px;border:8px solid #151515}
 
-  .frames{display:grid;grid-template-columns:1fr;gap:40px}
-  .frame-wrap{display:flex;flex-direction:column;align-items:center;gap:14px}
-  .frame-label{font-size:12px;letter-spacing:0.18em;text-transform:uppercase;color:#6b7896;font-weight:600}
+.scene{position:absolute;inset:0;background:linear-gradient(180deg,#7cc4e8 0%,#a8dce8 32%,#cfe6c9 55%,#7fb96a 56%,#4f9046 100%)}
+.sun{position:absolute;top:12%;right:16%;width:70px;height:70px;border-radius:50%;background:radial-gradient(circle,#fff8d8,#ffd60a 55%,rgba(255,214,10,0));filter:blur(1px)}
+.road{position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:34%;height:52%;background:linear-gradient(180deg,#444,#2a2a2a);clip-path:polygon(40% 0,60% 0,100% 100%,0 100%)}
+.road::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(180deg,transparent 0 34px,var(--sy) 34px 52px);clip-path:polygon(49% 0,51% 0,60% 100%,40% 100%);opacity:.75}
+.tree{position:absolute;background:#2f6b2f;border-radius:50%;box-shadow:0 8px 18px rgba(0,0,0,.3)}
+.tree::before{content:"";position:absolute;bottom:-14px;left:50%;transform:translateX(-50%);width:5px;height:16px;background:#5a3a1a;border-radius:2px}
+.t1{width:38px;height:38px;left:7%;bottom:22%}
+.t2{width:44px;height:44px;right:7%;bottom:26%}
+.t3{width:28px;height:28px;left:15%;bottom:32%}
 
-  /* ===== Device frames ===== */
-  .device{position:relative;border-radius:22px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,0.5);background:#000}
-  .ipad{width:1024px;height:768px}
-  .mobile{width:375px;height:812px;border-radius:38px;border:10px solid #1a1a1a}
-  .mobile .screen{border-radius:28px;overflow:hidden;width:100%;height:100%;position:relative}
+.hud{position:absolute;inset:0;pointer-events:none}
+.hud *{pointer-events:auto}
+.glass{background:rgba(10,26,63,.62);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.14);border-radius:12px}
 
-  /* ===== Fake 3D background ===== */
-  .scene{position:absolute;inset:0;overflow:hidden}
-  .sky{position:absolute;inset:0;background:linear-gradient(180deg,#7EC8E3 0%,#A8DCE8 35%,#D9E8C5 60%,#8FB996 100%)}
-  .sun{position:absolute;top:14%;right:18%;width:90px;height:90px;border-radius:50%;background:radial-gradient(circle,#fff6d8 0%,#ffe580 60%,rgba(255,229,128,0) 100%);filter:blur(2px)}
-  .cloud{position:absolute;background:#fff;border-radius:50%;opacity:0.85;filter:blur(8px)}
-  .cloud.c1{top:10%;left:12%;width:160px;height:50px}
-  .cloud.c2{top:22%;left:55%;width:200px;height:60px}
-  .cloud.c3{top:8%;left:75%;width:120px;height:40px}
+/* top bar */
+.topbar{position:absolute;top:0;left:0;right:0;display:flex;align-items:center;gap:8px;padding:10px 14px;background:linear-gradient(180deg,rgba(10,26,63,.85),rgba(10,26,63,0))}
+.brand{font-weight:800;font-size:14px;padding:6px 10px;background:rgba(10,26,63,.6);border:1px solid rgba(255,255,255,.12);border-radius:10px;display:flex;align-items:center;gap:6px}
+.brand .dot{width:8px;height:8px;border-radius:50%;background:var(--jg);box-shadow:0 0 8px var(--jg)}
+.chip{display:flex;align-items:center;gap:5px;padding:6px 10px;border-radius:9px;font-size:11px;font-weight:500;background:rgba(10,26,63,.6);border:1px solid rgba(255,255,255,.12);white-space:nowrap}
+.chip .v{font-family:'JetBrains Mono',monospace;font-weight:600;color:#fff}
+.chip.score{background:linear-gradient(135deg,rgba(0,168,107,.8),rgba(0,168,107,.4));border-color:rgba(0,168,107,.6)}
+.chip.score .v{color:var(--sy)}
+.chip.wanted{border-color:rgba(230,57,70,.5)}
+.chip.wanted .v{color:#ffb3b8;letter-spacing:1px}
+.spacer{flex:1}
+.user{display:flex;align-items:center;gap:7px;padding:4px 10px 4px 4px;border-radius:20px;background:rgba(10,26,63,.6);border:1px solid rgba(255,255,255,.12)}
+.user .av{width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,var(--sy),var(--rr));display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:var(--ab)}
+.user .nm{font-size:11px;font-weight:600}
 
-  .ground{position:absolute;bottom:0;left:0;right:0;height:55%;background:
-    linear-gradient(180deg,#5fa86b 0%,#3e8c52 40%,#2d6b3e 100%);
-    clip-path:polygon(0 30%, 20% 22%, 40% 28%, 60% 18%, 80% 25%, 100% 20%, 100% 100%, 0 100%);
-  }
-  .road{position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:300px;height:55%;
-    background:linear-gradient(180deg,#444 0%,#333 100%);
-    clip-path:polygon(35% 0, 65% 0, 90% 100%, 10% 100%);
-  }
-  .road::after{content:"";position:absolute;inset:0;
-    background:repeating-linear-gradient(180deg,transparent 0 40px,var(--sprint) 40px 70px);
-    clip-path:polygon(48% 0, 52% 0, 70% 100%, 30% 100%);
-    opacity:0.9;
-  }
-  .horizon-line{position:absolute;bottom:55%;left:0;right:0;height:1px;background:rgba(255,255,255,0.4)}
+/* right strip */
+.strip{position:absolute;right:12px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:8px}
+.stop{width:46px;height:46px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;cursor:pointer;font-size:18px}
+.stop.on{background:linear-gradient(135deg,var(--jg),#008a57);border-color:var(--jg)}
+.stop .lbl{font-size:7px;letter-spacing:.08em;color:rgba(255,255,255,.6);text-transform:uppercase;font-weight:700}
 
-  /* distant island silhouette */
-  .island{position:absolute;bottom:50%;left:0;right:0;height:60px;
-    background:linear-gradient(180deg,#3a7a4a,#2d6b3e);
-    clip-path:polygon(0 100%, 8% 60%, 18% 70%, 28% 40%, 38% 55%, 48% 30%, 60% 50%, 72% 35%, 82% 55%, 92% 45%, 100% 65%, 100% 100%);
-    opacity:0.7;
-  }
+/* radar */
+.radar{position:absolute;bottom:110px;left:14px;width:110px;height:110px;border-radius:50%;overflow:hidden;background:radial-gradient(circle,#08132e,#040a1c);border:2px solid var(--jg)}
+.radar::before{content:"";position:absolute;inset:0;background:repeating-conic-gradient(rgba(0,168,107,.08) 0 44deg,transparent 44deg 90deg)}
+.radar .sweep{position:absolute;inset:0;background:conic-gradient(transparent 300deg,rgba(0,168,107,.4) 360deg);animation:sw 3s linear infinite}
+@keyframes sw{to{transform:rotate(360deg)}}
+.radar .me{position:absolute;top:50%;left:50%;width:7px;height:7px;margin:-3.5px;border-radius:50%;background:var(--sy);box-shadow:0 0 8px var(--sy)}
 
-  /* ===== HUD layer ===== */
-  .hud{position:absolute;inset:0;font-size:13px;pointer-events:none}
-  .hud > *{pointer-events:auto}
+/* bottom bar */
+.botbar{position:absolute;bottom:0;left:0;right:0;display:flex;align-items:flex-end;justify-content:space-between;padding:12px 14px;gap:10px}
+.bb-group{display:flex;align-items:center;gap:6px;padding:7px;border-radius:16px}
+.mbtn{width:48px;height:48px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;cursor:pointer}
+.mbtn .ico{font-size:20px;line-height:1}
+.mbtn .lbl{font-size:8px;letter-spacing:.06em;color:rgba(255,255,255,.6);font-weight:600}
+.mbtn.active{background:linear-gradient(135deg,var(--sy),#eec500);border-color:var(--sy)}
+.mbtn.active .ico,.mbtn.active .lbl{color:var(--ab)}
+.speedo{display:flex;align-items:baseline;gap:5px;padding:8px 13px}
+.speedo .n{font-family:'JetBrains Mono',monospace;font-size:26px;font-weight:600;color:var(--sy);line-height:1}
+.speedo .u{font-size:10px;color:#8b9abe}
+.pedals{display:flex;gap:7px;align-items:flex-end}
+.brake{width:66px;height:66px;border-radius:16px;background:linear-gradient(135deg,rgba(230,57,70,.85),rgba(230,57,70,.5));border:1px solid rgba(230,57,70,.6);box-shadow:0 6px 18px rgba(230,57,70,.35);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;letter-spacing:.06em;cursor:pointer}
+.hand{width:46px;height:46px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer}
 
-  /* --- Top bar --- */
-  .topbar{position:absolute;top:0;left:0;right:0;display:flex;align-items:center;gap:10px;
-    padding:12px 16px;background:linear-gradient(180deg,rgba(10,26,63,0.85) 0%,rgba(10,26,63,0.4) 70%,rgba(10,26,63,0) 100%);
-  }
-  .brand{display:flex;align-items:center;gap:8px;font-weight:800;font-size:15px;letter-spacing:-0.01em}
-  .brand .dot{width:10px;height:10px;border-radius:50%;background:var(--jersey);box-shadow:0 0 12px var(--jersey)}
-  .brand .je{color:var(--jersey)}
+/* collapsed */
+.collapsed .strip .stop:nth-child(n+3){display:none}
+.collapsed .topbar .chip{display:none}
+.collapsed .topbar .chip.score{display:flex}
+.collapsed .bb-group.cams{opacity:.45}
 
-  .chip{display:inline-flex;align-items:center;gap:6px;background:var(--glass);backdrop-filter:blur(10px);
-    border:1px solid var(--stroke);border-radius:9px;padding:6px 10px;font-size:12px;font-weight:500;white-space:nowrap}
-  .chip .ico{font-size:13px}
-  .chip .val{font-family:'JetBrains Mono',monospace;font-weight:700;color:#fff}
-  .chip .lab{color:#9aa6c0;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;font-weight:600}
-  .chip.score{background:linear-gradient(135deg,rgba(0,168,107,0.85),rgba(0,168,107,0.5));border-color:rgba(0,168,107,0.6)}
-  .chip.score .val{color:var(--sprint)}
-  .chip.wanted{background:linear-gradient(135deg,rgba(230,57,70,0.7),rgba(230,57,70,0.3));border-color:rgba(230,57,70,0.5)}
-  .stars{color:var(--sprint);letter-spacing:1px;font-size:11px}
+/* panels */
+.panel{position:absolute;top:56px;right:64px;width:300px;max-width:78%;background:rgba(8,16,36,.94);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:0;display:none;z-index:40;overflow:hidden}
+.panel.open{display:block;animation:fade .2s ease}
+@keyframes fade{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.p-head{padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:13px}
+.p-head button{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#fff;width:26px;height:26px;border-radius:8px;cursor:pointer}
+.p-body{padding:10px 14px;max-height:300px;overflow-y:auto;font-size:12px}
+.lb{display:flex;align-items:center;gap:9px;padding:7px 4px;border-radius:8px}
+.lb .rk{width:20px;font-family:'JetBrains Mono',monospace;color:#8b9abe;font-weight:600}
+.lb.me{background:rgba(0,168,107,.18)}
+.lb .nm{flex:1;font-weight:500}
+.lb .sc{font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--sy)}
+.lb .av{width:20px;height:20px;border-radius:50%;background:linear-gradient(135deg,#555,#333);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700}
 
-  .spacer{flex:1}
-
-  .user-chip{display:flex;align-items:center;gap:8px;background:var(--glass);backdrop-filter:blur(10px);
-    border:1px solid var(--stroke);border-radius:30px;padding:4px 12px 4px 4px}
-  .avatar{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--sprint),var(--rally));display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--atlantic);font-size:12px}
-  .user-chip .name{font-size:12px;font-weight:600}
-  .user-chip .online{font-size:10px;color:var(--jersey);font-weight:600;display:flex;align-items:center;gap:4px}
-  .user-chip .online::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--jersey);box-shadow:0 0 6px var(--jersey)}
-
-  /* --- Right toggle strip --- */
-  .right-strip{position:absolute;right:14px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:8px}
-  .tbtn{width:52px;height:52px;border-radius:14px;background:var(--glass);backdrop-filter:blur(10px);
-    border:1px solid var(--stroke);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
-    cursor:pointer;transition:.2s;position:relative;color:#fff}
-  .tbtn .ico{font-size:20px;line-height:1}
-  .tbtn .lbl{font-size:8px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;color:#cfd8ec}
-  .tbtn.on{background:linear-gradient(135deg,var(--jersey),#008a57);border-color:rgba(0,168,107,0.7);box-shadow:0 0 18px rgba(0,168,107,0.4)}
-  .tbtn.on .lbl{color:#fff}
-  .tbtn.alert{background:linear-gradient(135deg,rgba(230,57,70,0.85),rgba(230,57,70,0.5));border-color:rgba(230,57,70,0.6)}
-  .tbtn .badge{position:absolute;top:-4px;right:-4px;background:var(--rally);color:#fff;font-size:9px;font-weight:700;border-radius:8px;padding:1px 5px;border:1.5px solid var(--atlantic)}
-
-  /* --- Radar / minimap --- */
-  .radar{position:absolute;bottom:96px;left:16px;width:180px;height:180px;border-radius:16px;
-    background:radial-gradient(circle at center,#0a1a3f 0%,#050a1f 100%);
-    border:2px solid var(--jersey);box-shadow:0 0 25px rgba(0,168,107,0.4),inset 0 0 30px rgba(0,0,0,0.6);
-    overflow:hidden}
-  .radar canvas{width:100%;height:100%;display:block}
-  .radar-label{position:absolute;top:6px;left:10px;font-size:9px;font-weight:700;letter-spacing:0.15em;color:var(--jersey);text-transform:uppercase;z-index:2}
-  .radar-coord{position:absolute;bottom:6px;right:10px;font-size:9px;font-family:'JetBrains Mono',monospace;color:#7aa0c4;z-index:2}
-
-  /* --- Bottom bar --- */
-  .bottombar{position:absolute;bottom:0;left:0;right:0;display:flex;align-items:flex-end;justify-content:space-between;
-    padding:14px 16px 18px;gap:12px}
-  .bb-group{display:flex;align-items:center;gap:8px;background:var(--glass);backdrop-filter:blur(14px);
-    border:1px solid var(--stroke);border-radius:16px;padding:8px}
-  .bb-group .glabel{font-size:9px;font-weight:700;letter-spacing:0.12em;color:#7e8aa8;text-transform:uppercase;padding:0 6px;align-self:center}
-  .mode-btn{width:56px;height:56px;border-radius:12px;background:var(--glass-light);border:1px solid var(--stroke);
-    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;transition:.2s;color:#fff}
-  .mode-btn .ico{font-size:22px}
-  .mode-btn .lbl{font-size:9px;font-weight:600;letter-spacing:0.04em;color:#cfd8ec}
-  .mode-btn.active{background:linear-gradient(135deg,var(--sprint),#f0b500);border-color:var(--sprint);box-shadow:0 0 20px rgba(255,214,10,0.5)}
-  .mode-btn.active .lbl,.mode-btn.active .ico{color:var(--atlantic)}
-
-  .cam-btn{width:44px;height:56px;border-radius:10px;background:var(--glass-light);border:1px solid var(--stroke);
-    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;color:#fff}
-  .cam-btn .ico{font-size:16px}
-  .cam-btn .lbl{font-size:8px;font-weight:600;color:#cfd8ec}
-  .cam-btn.active{background:linear-gradient(135deg,var(--jersey),#008a57);border-color:var(--jersey)}
-  .cam-btn.active .lbl{color:#fff}
-
-  /* Brake / accelerate cluster */
-  .drive-cluster{display:flex;flex-direction:column;gap:8px;align-items:flex-end}
-  .speedo{background:var(--glass);backdrop-filter:blur(14px);border:1px solid var(--stroke);border-radius:14px;
-    padding:8px 14px;display:flex;align-items:baseline;gap:6px}
-  .speedo .num{font-family:'JetBrains Mono',monospace;font-size:28px;font-weight:700;color:var(--sprint);line-height:1}
-  .speedo .unit{font-size:11px;color:#9aa6c0;font-weight:600;letter-spacing:0.08em}
-  .speedo .gear{margin-left:8px;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--jersey);font-weight:700;border-left:1px solid var(--stroke);padding-left:8px}
-
-  .pedals{display:flex;gap:8px;align-items:flex-end}
-  .pedal{border-radius:14px;border:1px solid var(--stroke);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;color:#fff;font-weight:700}
-  .pedal.brake{width:72px;height:72px;background:linear-gradient(135deg,rgba(230,57,70,0.85),rgba(230,57,70,0.5));border-color:rgba(230,57,70,0.6);box-shadow:0 6px 20px rgba(230,57,70,0.3)}
-  .pedal.brake .ico{font-size:26px}
-  .pedal.brake .lbl{font-size:10px;letter-spacing:0.08em}
-  .pedal.hand{width:52px;height:52px;background:var(--glass);backdrop-filter:blur(10px)}
-  .pedal.hand .ico{font-size:20px}
-  .pedal.hand .lbl{font-size:8px;color:#cfd8ec}
-
-  /* Steering hint */
-  .steer-hint{position:absolute;bottom:200px;left:50%;transform:translateX(-50%);font-size:11px;color:rgba(255,255,255,0.6);
-    background:rgba(10,26,63,0.5);backdrop-filter:blur(6px);padding:6px 14px;border-radius:20px;border:1px solid var(--stroke);
-    font-weight:500;letter-spacing:0.04em;display:flex;align-items:center;gap:8px}
-  .steer-hint .arrows{color:var(--sprint);font-weight:700;letter-spacing:0.1em}
-
-  /* Mission timer floating */
-  .mission{position:absolute;top:64px;left:16px;background:linear-gradient(135deg,rgba(10,26,63,0.85),rgba(10,26,63,0.5));
-    backdrop-filter:blur(10px);border:1px solid var(--stroke);border-left:3px solid var(--sprint);border-radius:10px;padding:8px 12px;min-width:170px}
-  .mission .ml{font-size:9px;letter-spacing:0.15em;color:var(--sprint);font-weight:700;text-transform:uppercase}
-  .mission .mt{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:700;color:#fff;margin-top:2px}
-  .mission .md{font-size:10px;color:#9aa6c0;margin-top:2px}
-
-  /* ===== Panels (leaderboard / settings) ===== */
-  .panel{position:absolute;top:60px;right:80px;width:340px;background:rgba(8,18,42,0.92);backdrop-filter:blur(20px);
-    border:1px solid var(--stroke);border-radius:16px;box-shadow:var(--shadow);overflow:hidden;display:none;z-index:10}
-  .panel.open{display:block;animation:slideIn .25s ease}
-  @keyframes slideIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
-  .panel-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--stroke)}
-  .panel-head h3{font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px}
-  .panel-head .close{background:var(--glass-light);border:1px solid var(--stroke);color:#fff;width:26px;height:26px;border-radius:8px;cursor:pointer;font-size:14px}
-  .panel-body{padding:12px 16px;max-height:380px;overflow-y:auto}
-
-  .lb-row{display:flex;align-items:center;gap:10px;padding:8px 4px;border-radius:8px;font-size:12px}
-  .lb-row.me{background:rgba(0,168,107,0.18);border:1px solid rgba(0,168,107,0.4)}
-  .lb-row .rank{width:22px;text-align:center;font-family:'JetBrains Mono',monospace;font-weight:700;color:#9aa6c0}
-  .lb-row .rank.gold{color:var(--sprint)}
-  .lb-row .rank.silver{color:#cfd8ec}
-  .lb-row .rank.bronze{color:#cd7f32}
-  .lb-row .av{width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#555,#333);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff}
-  .lb-row .nm{flex:1;font-weight:500}
-  .lb-row .sc{font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--sprint)}
-
-  .setting-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.06)}
-  .setting-row:last-child{border:0}
-  .setting-row .sn{font-size:12px;font-weight:500}
-  .setting-row .sd{font-size:10px;color:#7e8aa8;margin-top:2px}
-  .toggle{width:38px;height:22px;background:#2a3560;border-radius:12px;position:relative;cursor:pointer;transition:.2s}
-  .toggle.on{background:var(--jersey)}
-  .toggle::after{content:"";position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.2s}
-  .toggle.on::after{left:18px}
-  .slider{width:120px;height:4px;background:#2a3560;border-radius:2px;position:relative}
-  .slider::after{content:"";position:absolute;top:-6px;left:60%;width:16px;height:16px;border-radius:50%;background:var(--sprint);box-shadow:0 0 10px rgba(255,214,10,0.5)}
-  .seg{display:flex;background:#1a2340;border-radius:8px;padding:2px}
-  .seg button{background:transparent;border:0;color:#9aa6c0;font-family:inherit;font-size:10px;font-weight:600;padding:5px 10px;border-radius:6px;cursor:pointer}
-  .seg button.active{background:var(--jersey);color:#fff}
-
-  /* ===== Mobile-specific overrides ===== */
-  .mobile .topbar{padding:8px 10px;gap:6px;flex-wrap:wrap}
-  .mobile .chip{padding:4px 7px;font-size:10px}
-  .mobile .chip .lab{display:none}
-  .mobile .brand{font-size:12px}
-  .mobile .user-chip .name{display:none}
-  .mobile .user-chip{padding:4px}
-  .mobile .right-strip{right:8px;gap:6px}
-  .mobile .tbtn{width:42px;height:42px;border-radius:11px}
-  .mobile .tbtn .ico{font-size:16px}
-  .mobile .tbtn .lbl{display:none}
-  .mobile .radar{width:120px;height:120px;bottom:120px;left:10px}
-  .mobile .mission{top:90px;left:10px;min-width:140px}
-  .mobile .bottombar{padding:10px 8px 12px;gap:6px;flex-wrap:wrap}
-  .mobile .bb-group{padding:6px;gap:5px}
-  .mobile .mode-btn{width:44px;height:48px}
-  .mobile .mode-btn .ico{font-size:18px}
-  .mobile .mode-btn .lbl{font-size:8px}
-  .mobile .cam-btn{width:34px;height:48px}
-  .mobile .glabel{display:none}
-  .mobile .speedo{padding:6px 10px}
-  .mobile .speedo .num{font-size:20px}
-  .mobile .pedal.brake{width:60px;height:60px}
-  .mobile .pedal.brake .ico{font-size:22px}
-  .mobile .pedal.hand{width:44px;height:44px}
-  .mobile .steer-hint{bottom:170px;font-size:10px;padding:5px 10px}
-  .mobile .panel{right:8px;left:8px;width:auto;top:120px}
-  .mobile .bb-group.cams{display:none} /* hide camera group on mobile to save space — accessed via swipe */
-
-  /* Collapsed state — hide secondary elements */
-  .device.collapsed .right-strip .tbtn:nth-child(n+3){display:none}
-  .device.collapsed .mission{display:none}
-  .device.collapsed .steer-hint{display:none}
-  .device.collapsed .chip:nth-child(n+5){display:none}
-  .device.collapsed .bb-group.cams{opacity:0.4}
-  .device.collapsed .radar{transform:scale(0.7);transform-origin:bottom left}
-  .device.collapsed .panel{display:none!important}
-
-  /* Notes */
-  .notes{margin-top:60px;background:#111a30;border:1px solid #1f2a4d;border-radius:14px;padding:24px 28px;max-width:1100px;margin-left:auto;margin-right:auto}
-  .notes h2{font-size:18px;font-weight:700;margin-bottom:14px;color:var(--sprint)}
-  .notes h3{font-size:13px;font-weight:700;color:var(--jersey);margin-top:18px;margin-bottom:6px;letter-spacing:0.04em;text-transform:uppercase}
-  .notes p,.notes li{font-size:13px;line-height:1.6;color:#cfd8ec}
-  .notes ul{padding-left:18px;margin-top:6px}
-  .notes li{margin-bottom:4px}
-  .notes .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:10px}
-  .notes .card{background:#0a1326;border:1px solid #1f2a4d;border-radius:10px;padding:12px 14px}
-  .notes .card .k{font-size:10px;color:#7e8aa8;text-transform:uppercase;letter-spacing:0.1em;font-weight:600}
-  .notes .card .v{font-size:13px;color:#fff;margin-top:4px;font-weight:500}
-
-  @media (max-width:1100px){
-    .ipad{transform:scale(0.85);transform-origin:top center}
-  }
-  @media (max-width:900px){
-    .ipad{transform:scale(0.7);transform-origin:top center;margin-bottom:-200px}
-  }
+/* mobile */
+.mobile .topbar{padding:6px 8px;gap:6px}
+.mobile .chip{font-size:9px;padding:4px 7px}
+.mobile .chip.hidemob{display:none}
+.mobile .user .nm{display:none}
+.mobile .strip{right:8px;gap:6px}
+.mobile .stop{width:40px;height:40px;font-size:16px}
+.mobile .radar{width:80px;height:80px;bottom:140px;left:10px}
+.mobile .mbtn{width:42px;height:42px}
+.mobile .mbtn .ico{font-size:16px}
+.mobile .speedo .n{font-size:19px}
+.mobile .brake{width:56px;height:56px;font-size:9px}
+.mobile .hand{width:40px;height:40px;font-size:15px}
+.mobile .botbar{padding:8px 10px;gap:5px}
 </style>
 </head>
 <body>
+<h1>VibeDrive<span>.je</span> — Feature-Rich Controls</h1>
+<div class="sub">All controls organised · right-edge toggles · bottom bar · toggle collapsed/expanded</div>
 
-<div class="page">
-  <div class="page-head">
-    <h1>VibeDrive<span>.je</span> — Controls UI Mockup</h1>
-    <p>Feature-Rich layout · iPad landscape (1024×768) &amp; mobile (375×812) · Toggle to compare collapsed vs expanded states</p>
-    <div class="state-toggle" id="stateToggle">
-      <button class="active" data-state="expanded">Expanded</button>
-      <button data-state="collapsed">Collapsed</button>
-    </div>
-  </div>
+<div class="toolbar">
+  <button class="tbtn active" data-t="ipad">iPad</button>
+  <button class="tbtn" data-t="mobile">Mobile</button>
+  <button class="tbtn" data-t="expanded">Expanded</button>
+  <button class="tbtn active" data-t="collapsed">Collapsed</button>
+</div>
 
-  <div class="frames">
+<div class="frame-row" id="frames"></div>
 
-    <!-- ============ iPAD ============ -->
-    <div class="frame-wrap">
-      <div class="frame-label">iPad Landscape · 1024 × 768</div>
-      <div class="device ipad" id="ipad">
-        <div class="scene">
-          <div class="sky"></div>
-          <div class="sun"></div>
-          <div class="cloud c1"></div>
-          <div class="cloud c2"></div>
-          <div class="cloud c3"></div>
-          <div class="island"></div>
-          <div class="horizon-line"></div>
-          <div class="ground"></div>
-          <div class="road"></div>
+<script>
+function leaderboard(){
+  return `<div class="panel" id="lbPanel"><div class="p-head">🏆 Leaderboard <button onclick="closePanel('lbPanel')">✕</button></div>
+  <div class="p-body">
+    <div class="lb"><span class="rk">1</span><div class="av">MK</div><span class="nm">MountKai</span><span class="sc">8,420</span></div>
+    <div class="lb"><span class="rk">2</span><div class="av">SR</div><span class="nm">StSaviourSpeed</span><span class="sc">7,180</span></div>
+    <div class="lb"><span class="rk">3</span><div class="av">GH</div><span class="nm">GoreyHornet</span><span class="sc">6,940</span></div>
+    <div class="lb me"><span class="rk">14</span><div class="av">JS</div><span class="nm">JerseyRacer (you)</span><span class="sc">1,250</span></div>
+    <div class="lb"><span class="rk">15</span><div class="av">QM</div><span class="nm">QuennevaisMapper</span><span class="sc">1,180</span></div>
+  </div></div>`;
+}
+function settings(){
+  return `<div class="panel" id="setPanel"><div class="p-head">⚙️ Settings <button onclick="closePanel('setPanel')">✕</button></div>
+  <div class="p-body">
+    <div style="padding:8px 0;display:flex;justify-content:space-between"><span>Auto-accelerate</span><span style="color:var(--jg);font-weight:700">ON</span></div>
+    <div style="padding:8px 0;display:flex;justify-content:space-between"><span>Graphics quality</span><span style="color:var(--sy);font-weight:700">High</span></div>
+    <div style="padding:8px 0;display:flex;justify-content:space-between"><span>HUD density</span><span style="color:var(--sy);font-weight:700">Full</span></div>
+    <div style="padding:8px 0;display:flex;justify-content:space-between"><span>Music / radio</span><span style="color:var(--jg);font-weight:700">ON</span></div>
+  </div></div>`;
+}
+
+function frame(type, state){
+  const cls = type==='ipad'?'ipad':'mobile';
+  const cap = type==='ipad'?'iPad Landscape · 1024×768':'Mobile · 375×812';
+  const cstate = state==='collapsed'?'collapsed':'';
+  return `
+  <div class="frame-wrap">
+    <div class="frame-cap">${cap} — ${state}</div>
+    <div class="device ${cls} ${cstate}">
+      <div class="scene"><div class="sun"></div><div class="tree t1"></div><div class="tree t2"></div><div class="tree t3"></div><div class="road"></div></div>
+      <div class="hud">
+        <div class="topbar">
+          <div class="brand"><span class="dot"></span>VibeDrive<span style="color:var(--jg)">.je</span></div>
+          <div class="chip score">Score <span class="v">1,250</span></div>
+          <div class="chip hidemob">📍 <span class="v">3.4km</span></div>
+          <div class="chip hidemob">☀️ <span class="v">Clear 18°</span></div>
+          <div class="chip hidemob">🎁 <span class="v">7/12</span></div>
+          <div class="chip wanted">⭐ <span class="v">★★☆☆☆</span></div>
+          <div class="spacer"></div>
+          <div class="chip hidemob">👥 <span class="v">247</span></div>
+          <div class="user"><div class="av">JS</div><span class="nm">JerseyRacer</span></div>
         </div>
 
-        <div class="hud">
-          <!-- TOP BAR -->
-          <div class="topbar">
-            <div class="brand"><span class="dot"></span>VibeDrive<span class="je">.je</span></div>
-            <div class="chip score"><span class="lab">Score</span><span class="val mono">1,250</span></div>
-            <div class="chip"><span class="ico">📍</span><span class="lab">Dist</span><span class="val mono">3.4km</span></div>
-            <div class="chip"><span class="ico">☀️</span><span class="lab">Wx</span><span class="val">Clear 18°</span></div>
-            <div class="chip"><span class="ico">🎁</span><span class="lab">Items</span><span class="val mono">7/12</span></div>
-            <div class="chip wanted"><span class="ico">⭐</span><span class="lab">Wanted</span><span class="stars">★★☆☆☆</span></div>
-            <div class="spacer"></div>
-            <div class="chip"><span class="ico">👥</span><span class="lab">Online</span><span class="val mono">247</span></div>
-            <div class="user-chip">
-              <div class="avatar">JS</div>
-              <div>
-                <div class="name">JerseyRacer</div>
-                <div class="online">Online</div>
-              </div>
-            </div>
+        <div class="strip">
+          <div class="stop glass on">🌙<span class="lbl">Night</span></div>
+          <div class="stop glass">🚌<span class="lbl">Bus</span></div>
+          <div class="stop glass">✈️<span class="lbl">Flights</span></div>
+          <div class="stop glass on">📻<span class="lbl">Radio</span></div>
+          <div class="stop glass" onclick="openPanel('lbPanel')">🏆<span class="lbl">Ranks</span></div>
+          <div class="stop glass" onclick="openPanel('setPanel')">⚙️<span class="lbl">Setup</span></div>
+        </div>
+
+        <div class="radar"><div class="sweep"></div><div class="me"></div></div>
+
+        <div class="botbar">
+          <div class="bb-group glass">
+            <div class="mbtn active"><span class="ico">🚗</span><span class="lbl">Drive</span></div>
+            <div class="mbtn"><span class="ico">🚤</span><span class="lbl">Boat</span></div>
+            <div class="mbtn"><span class="ico">✈️</span><span class="lbl">Fly</span></div>
           </div>
-
-          <!-- MISSION TIMER -->
-          <div class="mission">
-            <div class="ml">⏱ Mission · Delivery</div>
-            <div class="mt mono">02:14</div>
-            <div class="md">St. Helier → St. Aubin · 1.2km left</div>
+          <div class="bb-group glass cams">
+            <div class="mbtn"><span class="ico">🎥</span><span class="lbl">Chase</span></div>
+            <div class="mbtn"><span class="ico">🔭</span><span class="lbl">Far</span></div>
+            <div class="mbtn"><span class="ico">🛰</span><span class="lbl">Top</span></div>
+            <div class="mbtn"><span class="ico">🧭</span><span class="lbl">Cockpit</span></div>
           </div>
-
-          <!-- RIGHT TOGGLE STRIP -->
-          <div class="right-strip">
-            <div class="tbtn on" data-tip="Night mode"><span class="ico">🌙</span><span class="lbl">Night</span></div>
-            <div class="tbtn" data-tip="Bus routes"><span class="ico">🚌</span><span class="lbl">Bus</span></div>
-            <div class="tbtn" data-tip="Airport flights"><span class="ico">✈️</span><span class="lbl">Flights</span><span class="badge">3</span></div>
-            <div class="tbtn on" data-tip="Radio"><span class="ico">📻</span><span class="lbl">Radio</span></div>
-            <div class="tbtn" data-tip="Leaderboard" id="lbBtn"><span class="ico">🏆</span><span class="lbl">Ranks</span></div>
-            <div class="tbtn" data-tip="Settings" id="setBtn"><span class="ico">⚙️</span><span class="lbl">Setup</span></div>
+          <div class="speedo glass"><span class="n">45</span><span class="u">km/h</span></div>
+          <div class="pedals">
+            <div class="brake">BRAKE</div>
+            <div class="hand glass">🅿️</div>
           </div>
+        </div>
 
-          <!-- RADAR -->
-          <div class="radar">
-            <div class="radar-label">Jersey · Live</div>
-            <div class="radar-coord mono">49.21°N · 2.12°W</div>
-            <canvas id="radarCanvas" width="180" height="180"></canvas>
-          </div>
+        ${leaderboard()}
+        ${settings()}
+      </div>
+    </div>
+  </div>`;
+}
 
-          <!-- STEER HINT -->
-          <div class="steer-hint"><span class="arrows">◀</span> Drag to steer <span class="arrows">▶</span></div>
-
-          <!-- LEADERBOARD PANEL -->
-          <div class="panel" id="lbPanel">
-            <div class="panel-head">
-              <h3>🏆 Leaderboard</h3>
-              <button class="close" data-close>✕</button>
-            </div>
-            <div class="panel-body">
-              <div class="lb-row"><span class="rank gold">1</span><div class="av" style="background:linear-gradient(135deg,#FFD60A,#E63946)">MK</div><span class="nm">MountKai</span><span class="sc">8,420</span></div>
-              <div class="lb-row"><span class="rank silver">2</span><div class="av" style="background:linear-gradient(135deg,#00A86B,#0A1A3F)">SR</div><span class="nm">StSaviourSpeed</span><span class="sc">7,180</span></div>
-              <div class="lb-row"><span class="rank bronze">3</span><div class="av" style="background:linear-gradient(135deg,#E63946,#FFD60A)">GH</div><span class="nm">GoreyHornet</span><span class="sc">6,940</span></div>
-              <div class="lb-row me"><span class="rank">14</span><div class="av">JS</div><span class="nm">JerseyRacer (you)</span><span class="sc">1,250</span></div>
-              <div class="lb-row"><span class="rank">15</span><div class="av" style="background:#555">QM</div><span class="nm">QuennevaisMapper</span><span class="sc">1,180</span></div>
-              <div class="lb-row"><span class="rank">16</span><div class="av" style="background:#444">BL</div><span class="nm">BouleyBayBoy</span><span class="sc">1,090</span></div>
-            </div>
-          </div>
-
-          <!-- SETTINGS PANEL -->
-          <div class="panel" id="setPanel">
-            <div class="panel-head">
-              <h3>⚙️ Settings</h3>
-              <button class="close" data-close>✕</button>
-            </div>
-            <div class="panel-body">
-              <div class="setting-row"><div><div class="sn">Auto-accelerate</div><div class="sd">Car drives forward automatically</div></div><div class="toggle on"></div></div>
-              <div class="setting-row"><div><div class="sn">Steering sensitivity</div><div class="sd">Drag response on touch screens</div></div><div class="slider"></div></div>
-              <div class="setting-row"><div><div class="sn">Graphics quality</div><div class="sd">Affects framerate on iPad</div></div><div class="seg"><button class="active">High</button><button>Med</button><button>Low</button></div></div>
-              <div class="setting-row"><div><div class="sn">HUD density</div><div class="sd">Show all chips or essentials only</div></div><div class="seg"><button class="active">Full
+let type='ipad', state='collapsed';
+function render(){
+  document.getElementById('frames').innerHTML = frame(type, state);
+  document.querySelectorAll('.tbtn').forEach(b=>{
+    if(b.dataset.t==='ipad'||b.dataset.t==='mobile'){b.classList.toggle('active', b.dataset.t===type);}
+    else{b.classList.toggle('active', b.dataset.t===state);}
+  });
+}
+document.querySelectorAll('.tbtn').forEach(b=>b.addEventListener('click',()=>{
+  const v=b.dataset.t;
+  if(v==='ipad'||v==='mobile'){type=v;}else{state=v;}
+  render();
+}));
+function openPanel(id){document.getElementById(id).classList.add('open');}
+function closePanel(id){document.getElementById(id).classList.remove('open');}
+render();
+</script>
+</body>
+</html>
