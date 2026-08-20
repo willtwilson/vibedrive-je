@@ -119,12 +119,14 @@
     .control-btn.brake:active, .control-btn.brake.pressed { background: rgba(230, 57, 70, 0.6); box-shadow: 0 0 24px rgba(230, 57, 70, 0.6); }
 
     #badge {
-      position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); z-index: 50;
+      position: fixed; top: 12px; left: 50%; transform: translateX(-50%); z-index: 40;
       background: var(--glass); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
       border-radius: 0; padding: 4px 12px; font-size: 10px; color: var(--jersey-green);
       pointer-events: none; border: 1px solid var(--hud-border);
       text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700;
+      transition: opacity 1.2s ease;
     }
+    #badge.hide { opacity: 0; pointer-events: none; }
 
     #radar {
       position: fixed; bottom: 24px; left: 12px; z-index: 50;
@@ -219,7 +221,7 @@
     #steer-hint.show { opacity: 1; }
 
     #collectible-counter {
-      position: fixed; top: 50px; left: 50%; transform: translateX(-50%); z-index: 50;
+      position: fixed; top: 12px; left: 240px; z-index: 50;
       background: var(--glass-deep); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
       border-radius: 0; padding: 4px 14px;
       border: 1px solid rgba(255, 200, 50, 0.3); border-top: 1px solid rgba(255, 200, 50, 0.2);
@@ -621,7 +623,23 @@
     #settings-panel .panel-close:hover { color: var(--rally-red); }
     #lightning-flash { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; opacity: 0; pointer-events: none; z-index: 9999; transition: opacity 0.05s ease; }
     #slippery-warning { display: none; color: #ff9900; font-size: 12px; font-weight: 700; margin-top: 4px; text-shadow: 0 1px 3px rgba(0,0,0,0.7); }
-  </style>
+  
+    /* Mobile density pass — compact HUD on phones (iPhone 13 Pro Max = 428px wide) */
+    @media (max-width: 500px) {
+      #radar { width: 120px; height: 120px; bottom: 16px; left: 8px; }
+      #radar-label { bottom: 140px; left: 8px; font-size: 8px; }
+      #hud .speedo { font-size: 28px; }
+      .mode-btn, .cam-btn { min-width: 92px; min-height: 40px; font-size: 11px; padding: 7px 10px; }
+      #modes { left: 8px; bottom: 16px; }
+      #cam-btns { left: 8px; bottom: 112px; }
+      #menu-btn { width: 42px; height: 42px; top: 8px; right: 8px; font-size: 20px; }
+      #menu-panel { top: 8px; right: 8px; min-width: 200px; }
+      #collectible-counter { left: 150px; top: 8px; font-size: 11px; padding: 3px 10px; }
+      #badge { top: 8px; font-size: 9px; padding: 3px 9px; }
+      #wanted-level { top: 8px; }
+    }
+
+    </style>
 </head>
 <body>
   <div id="loading">⚡ Loading Jersey 3D…</div>
@@ -4650,6 +4668,8 @@
 
     fetchWeather();
     document.getElementById('loading').style.display = 'none';
+    // Fade out the hackathon badge once the game starts
+    setTimeout(() => { const b = document.getElementById('badge'); if (b) b.classList.add('hide'); }, 1500);
 
     // Auto-start first mission on load
     setTimeout(() => { startMission(); }, 2000);
