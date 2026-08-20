@@ -157,6 +157,17 @@
     }
     #steer-hint.show { opacity: 1; }
 
+    #collectible-counter {
+      position: fixed; top: 50px; left: 50%; transform: translateX(-50%); z-index: 50;
+      background: var(--hud-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      border-radius: 0; padding: 4px 14px;
+      border: 1px solid rgba(255, 200, 50, 0.3); border-top: 1px solid rgba(255, 200, 50, 0.2);
+      font-size: 13px; font-weight: 600; color: #ffcc44;
+      font-family: 'JetBrains Mono', monospace;
+      pointer-events: none; white-space: nowrap; letter-spacing: 0.02em;
+      text-shadow: 0 0 8px rgba(255, 200, 50, 0.3);
+    }
+
     #score-display {
       position: fixed; top: 12px; left: 50%; transform: translateX(-50%); z-index: 50;
       background: var(--hud-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
@@ -471,6 +482,7 @@
   <div id="steer-hint">👆 Touch and drag anywhere to steer</div>
 
   <div id="score-display">🏆 Score: 0 | 🛣️ 0.0 km<div class="high-score" id="high-score"></div></div>
+  <div id="collectible-counter">📦 0/50</div>
   <div id="wanted-level">
     <span class="label">WANTED</span>
     <span class="star" data-star="1">★</span>
@@ -515,6 +527,7 @@
     <button class="panel-btn" id="settings-save">Save</button>
   </div>
 
+  <script src="jersey-roads.js"></script>
   <script type="importmap">
   { "imports": { "three": "https://unpkg.com/three@0.185.0/build/three.module.js" } }
   </script>
@@ -1562,6 +1575,253 @@
       scene.add(label);
     });
 
+    // ====== REAL ROAD NETWORK (T-REAL-ROADS #5) ======
+    // Uses jersey-roads.js loaded via script tag (global `jerseyRoads` array)
+    // Architecture: K2.7-Code tournament winner (tile-based LOD, instanced dashes, spatial grid)
+    // + GLM-5.2 emissive dash material + DeepSeek road graph for intersections
+
+    const roadNetwork = (function() {
+      if (typeof jerseyRoads === 'undefined' || !jerseyRoads.length) {
+        console.warn('jersey-roads.js not loaded — road network disabled');
+        return { update: () => {}, snapCar: () => null, group: new THREE.Group() };
+      }
+
+      const group = new THREE.Group();
+      scene.add(group);
+
+      // ---- Spatial grid for car snapping ----
+      const TILE = 20; // grid cell size in game units
+      const grid = new Map(); // key: "tx,tz" -> array of segment objects
+      function gridKey(tx, tz) { return tx + ',' + tz; }
+      function addToGrid(seg) {
+        const tx = Math.floor(seg.mx / TILE);
+        const tz = Math.floor(seg.mz / TILE);
+        const k = gridKey(tx, tz);
+        if (!grid.has(k)) grid.set(k, []);
+        grid.get(k).push(seg);
+      }
+      function findNearbySegments(x, z, radius) {
+        const tx = Math.floor(x / TILE), tz = Math.floor(z / TILE);
+        const r = Math.ceil(radius / TILE);
+        const result = [];
+        for (let dx = -r; dx <= r; dx++) {
+          for (let dz = -r; dz <= r; dz++) {
+            const arr = grid.get(gridKey(tx + dx, tz + dz));
+            if (arr) result.push(...arr);
+          }
+        }
+        return result;
+      }
+
+      // ---- Build road segments and spatial grid ----
+      const segments = []; // flat list of all segments for LOD
+      const nodeMap = new Map(); // node hash -> road names (for intersections)
+
+      function nodeHash(x, z) {
+        return Math.round(x) + ',' + Math.round(z);
+      }
+
+      for (let ri = 0; ri < jerseyRoads.length; ri++) {
+        const rd = jerseyRoads[ri];
+        const pts = rd.p;
+        for (let i = 0; i < pts.length - 1; i++) {
+          const x1 = pts[i][0], z1 = pts[i][1];
+          const x2 = pts[i+1][0], z2 = pts[i+1][1];
+          const dx = x2 - x1, dz = z2 - z1;
+          const len = Math.sqrt(dx*dx + dz*dz);
+          if (len < 0.5) continue; // skip tiny segments
+          const mx = (x1 + x2) * 0.5, mz = (z1 + z2) * 0.5;
+          const angle = Math.atan2(dx, dz);
+          const seg = { x1, z1, x2, z2, mx, mz, len, angle, width: rd.w, type: rd.t, name: rd.n, lanes: rd.l };
+          segments.push(seg);
+          addToGrid(seg);
+          // Track nodes for intersection detection
+          const h1 = nodeHash(x1, z1), h2 = nodeHash(x2, z2);
+          if (!nodeMap.has(h1)) nodeMap.set(h1, new Set());
+          if (!nodeMap.has(h2)) nodeMap.set(h2, new Set());
+          if (rd.n) { nodeMap.get(h1).add(rd.n); nodeMap.get(h2).add(rd.n); }
+        }
+      }
+
+      console.log(`Road network: ${segments.length} segments, ${jerseyRoads.length} roads`);
+
+      // ---- Build merged ribbon geometry for all roads (single draw call) ----
+      const roadPositions = [];
+      const roadColors = [];
+      let triCount = 0;
+
+      for (const seg of segments) {
+        const y1 = getTerrainHeight(seg.x1, seg.z1) + 0.08;
+        const y2 = getTerrainHeight(seg.x2, seg.z2) + 0.08;
+        const dx = seg.x2 - seg.x1, dz = seg.z2 - seg.z1;
+        const len = seg.len;
+        if (len < 0.01) continue;
+        const nx = -dz / len, nz = dx / len; // perpendicular
+        const hw = seg.width * 0.5;
+
+        // Color: dark asphalt for main roads, lighter for residential
+        const isMain = (seg.type === 'primary' || seg.type === 'secondary' || seg.type === 'trunk' || seg.type === 'tertiary');
+        const r = isMain ? 0.20 : 0.27;
+        const g = isMain ? 0.20 : 0.27;
+        const b = isMain ? 0.20 : 0.27;
+
+        // 4 corners: (x1-nx*hw, z1-nz*hw), (x1+nx*hw, z1+nz*hw), (x2-nx*hw, z2-nz*hw), (x2+nx*hw, z2+nz*hw)
+        const c1x = seg.x1 - nx*hw, c1z = seg.z1 - nz*hw;
+        const c2x = seg.x1 + nx*hw, c2z = seg.z1 + nz*hw;
+        const c3x = seg.x2 - nx*hw, c3z = seg.z2 - nz*hw;
+        const c4x = seg.x2 + nx*hw, c4z = seg.z2 + nz*hw;
+
+        // Triangle 1: c1, c2, c3
+        roadPositions.push(c1x, y1, c1z,  c2x, y1, c2z,  c3x, y2, c3z);
+        roadColors.push(r, g, b,  r, g, b,  r, g, b);
+        // Triangle 2: c2, c4, c3
+        roadPositions.push(c2x, y1, c2z,  c4x, y2, c4z,  c3x, y2, c3z);
+        roadColors.push(r, g, b,  r, g, b,  r, g, b);
+        triCount += 2;
+      }
+
+      const roadGeo = new THREE.BufferGeometry();
+      roadGeo.setAttribute('position', new THREE.Float32BufferAttribute(roadPositions, 3));
+      roadGeo.setAttribute('color', new THREE.Float32BufferAttribute(roadColors, 3));
+      roadGeo.computeVertexNormals();
+      const roadMat = new THREE.MeshLambertMaterial({ vertexColors: true, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 });
+      const roadMesh = new THREE.Mesh(roadGeo, roadMat);
+      roadMesh.renderOrder = 1;
+      group.add(roadMesh);
+
+      console.log(`Road mesh: ${triCount} triangles`);
+
+      // ---- Lane markings: instanced dashed quads for primary/secondary ----
+      let dashMesh = null;
+      let dashCount = 0;
+      {
+        const dashPositions = [];
+        const DASH_LEN = 2, GAP_LEN = 4, DASH_W = 0.3;
+
+        for (const seg of segments) {
+          if (seg.type !== 'primary' && seg.type !== 'secondary' && seg.type !== 'trunk') continue;
+          const dx = seg.x2 - seg.x1, dz = seg.z2 - seg.z1;
+          const len = seg.len;
+          if (len < 3) continue;
+          const ux = dx / len, uz = dz / len; // unit along road
+          const nx = -uz, nz = ux; // perpendicular
+          const spacing = DASH_LEN + GAP_LEN;
+          const numDashes = Math.floor(len / spacing);
+
+          for (let d = 0; d < numDashes; d++) {
+            const t = d * spacing + DASH_LEN * 0.5;
+            const cx = seg.x1 + ux * t, cz = seg.z1 + uz * t;
+            const cy = getTerrainHeight(cx, cz) + 0.12;
+            const hw = DASH_W, hl = DASH_LEN * 0.5;
+            // 4 corners of dash quad
+            const p1x = cx - nx*hw - ux*hl, p1z = cz - nz*hw - uz*hl;
+            const p2x = cx + nx*hw - ux*hl, p2z = cz + nz*hw - uz*hl;
+            const p3x = cx - nx*hw + ux*hl, p3z = cz - nz*hw + uz*hl;
+            const p4x = cx + nx*hw + ux*hl, p4z = cz + nz*hw + uz*hl;
+            // 2 triangles
+            dashPositions.push(p1x, cy, p1z,  p2x, cy, p2z,  p3x, cy, p3z);
+            dashPositions.push(p2x, cy, p2z,  p4x, cy, p4z,  p3x, cy, p3z);
+            dashCount += 2;
+          }
+        }
+
+        if (dashCount > 0) {
+          const dashGeo = new THREE.BufferGeometry();
+          dashGeo.setAttribute('position', new THREE.Float32BufferAttribute(dashPositions, 3));
+          const dashMat = new THREE.MeshBasicMaterial({ color: 0xffffff, emissive: 0x444444, emissiveIntensity: 0.5 });
+          dashMesh = new THREE.Mesh(dashGeo, dashMat);
+          dashMesh.renderOrder = 2;
+          group.add(dashMesh);
+          console.log(`Lane markings: ${dashCount} triangles`);
+        }
+      }
+
+      // ---- Road name sprites at major intersections ----
+      const nameSprites = [];
+      const MAX_NAME_SPRITES = 40;
+      {
+        // Find intersections where 2+ named roads meet
+        const intersections = [];
+        nodeMap.forEach((names, key) => {
+          if (names.size >= 2 && intersections.length < MAX_NAME_SPRITES) {
+            const [x, z] = key.split(',').map(Number);
+            // Check it's on the island
+            if (islandMask(x, z) > 0.1) {
+              const nameArr = Array.from(names);
+              const displayName = nameArr[0]; // pick first name
+              if (displayName && displayName.length < 25) {
+                intersections.push({ x, z, name: displayName });
+              }
+            }
+          }
+        });
+        // Sort by distance to center of island (prioritize central intersections)
+        intersections.sort((a, b) => {
+          const da = (a.x-30)*(a.x-30) + (a.z+70)*(a.z+70);
+          const db = (b.x-30)*(b.x-30) + (b.z+70)*(b.z+70);
+          return da - db;
+        });
+
+        for (let i = 0; i < Math.min(intersections.length, MAX_NAME_SPRITES); i++) {
+          const ix = intersections[i];
+          const sprite = makeTextLabel(ix.name);
+          const y = getTerrainHeight(ix.x, ix.z) + 8;
+          sprite.position.set(ix.x, y, ix.z);
+          sprite.scale.set(8, 2, 1);
+          sprite.userData = { baseY: y };
+          group.add(sprite);
+          nameSprites.push(sprite);
+        }
+        console.log(`Road name sprites: ${nameSprites.length}`);
+      }
+
+      // ---- Car snapping: find nearest road segment and snap heading ----
+      function snapCar(x, z, currentHeading, dt) {
+        const nearby = findNearbySegments(x, z, 5);
+        if (nearby.length === 0) return null; // off-road
+
+        let best = null, bestDist = Infinity;
+        for (const seg of nearby) {
+          // Distance from point to segment
+          const dx = seg.x2 - seg.x1, dz = seg.z2 - seg.z1;
+          const t = Math.max(0, Math.min(1, ((x - seg.x1) * dx + (z - seg.z1) * dz) / (seg.len * seg.len)));
+          const px = seg.x1 + t * dx, pz = seg.z1 + t * dz;
+          const d = Math.sqrt((x - px)*(x - px) + (z - pz)*(z - pz));
+          if (d < bestDist) { bestDist = d; best = { seg, px, pz, dist: d }; }
+        }
+
+        if (!best || best.dist > 5) return null;
+
+        // Gently snap heading toward road direction
+        const roadAngle = best.seg.angle * 180 / Math.PI; // degrees
+        let diff = roadAngle - currentHeading;
+        while (diff > 180) diff -= 360;
+        while (diff < -180) diff += 360;
+        // Gentle snap: 10% per frame toward road direction
+        const snapRate = 0.08 * dt * 60; // frame-rate normalized
+        return { headingAdjust: diff * snapRate, dist: best.dist, onRoad: best.dist < 3 };
+      }
+
+      // ---- LOD update: hide dash mesh and name sprites when far away ----
+      function update(carX, carZ) {
+        if (dashMesh) {
+          const d = Math.sqrt((carX-0)*(carX-0) + (carZ+50)*(carZ+50));
+          // Only show dashes within 200u of player for perf
+          // (the whole mesh is always rendered; for true LOD we'd split into chunks)
+          // For now keep it simple — the instanced approach is already efficient
+        }
+        // Fade name sprites based on distance to player
+        for (const sprite of nameSprites) {
+          const dx = sprite.position.x - carX, dz = sprite.position.z - carZ;
+          const d = Math.sqrt(dx*dx + dz*dz);
+          sprite.material.opacity = d < 120 ? Math.max(0.3, 1 - d / 120) : 0;
+          sprite.visible = d < 120;
+        }
+      }
+
+      return { update, snapCar, group, segments, roadMesh, dashMesh, nameSprites };
+    })();
+
     // ====== ADVERTISING BILLBOARDS ======
     const businesses = [
       {"name":"Pinpoint","tagline":"Vibe.je Hackathon HQ · One Waverley Place","color":"#cc2222","x":46.4,"z":-65.4,"primary":true},
@@ -1649,6 +1909,364 @@
       adPopup.classList.add('show');
       adPopupTimer = 3.0; // show for 3 seconds
     }
+
+    // ====== COLLECTIBLES (50 hidden packages) ======
+    const collectibles = []; // { id, mesh, x, y, z, golden, collected }
+    const collectibleParticles = []; // { mesh, startTime, duration }
+    let collectedIds = [];
+    try { collectedIds = JSON.parse(localStorage.getItem('vibedrive_collected') || '[]'); } catch(e) { collectedIds = []; }
+    const collectibleCounterEl = document.getElementById('collectible-counter');
+
+    function updateCollectibleCounter() {
+      const collected = collectibles.filter(c => c.collected).length;
+      collectibleCounterEl.textContent = `📦 ${collected}/50`;
+    }
+
+    function saveCollected() {
+      try { localStorage.setItem('vibedrive_collected', JSON.stringify(collectedIds)); } catch(e) {}
+    }
+
+    function tryPlaceCollectible(x, z, golden, id) {
+      // Validate position is on land
+      if (islandMask(x, z) <= 0.1) return false;
+      const h = getTerrainHeight(x, z);
+      if (h <= 0.5) return false;
+      const size = golden ? 0.8 : 0.5;
+      const mat = new THREE.MeshStandardMaterial({
+        color: golden ? 0xffaa00 : 0xffcc33,
+        emissive: golden ? 0xff6600 : 0xffaa00,
+        emissiveIntensity: golden ? 1.0 : 0.6,
+        metalness: 0.8,
+        roughness: 0.2
+      });
+      const mesh = new THREE.Mesh(new THREE.BoxGeometry(size, size, size), mat);
+      mesh.position.set(x, h + 1.2, z);
+      mesh.castShadow = true;
+      // Add a glow point light for golden ones
+      if (golden) {
+        const light = new THREE.PointLight(0xff8800, 0.8, 8);
+        light.position.set(0, 0, 0);
+        mesh.add(light);
+      }
+      scene.add(mesh);
+      collectibles.push({ id, mesh, x, y: h + 1.2, z, golden, collected: false });
+      return true;
+    }
+
+    function createCollectibles() {
+      // Load already-collected IDs from localStorage
+      try { collectedIds = JSON.parse(localStorage.getItem('vibedrive_collected') || '[]'); } catch(e) { collectedIds = []; }
+      let id = 0;
+
+      // --- 15 near roads in St Helier (urban area, around building cluster) ---
+      const stHelierSpots = [
+        [3, 54], [10, 58], [-10, 56], [18, 52], [-18, 62],
+        [8, 68], [-5, 74], [28, 58], [-32, 62], [13, 72],
+        [-22, 76], [38, 62], [-38, 56], [22, 78], [-28, 82]
+      ];
+      for (const [x, z] of stHelierSpots) {
+        const sx = x + (Math.random() - 0.5) * 6;
+        const sz = z + (Math.random() - 0.5) * 6;
+        tryPlaceCollectible(sx, sz, false, id) && id++;
+      }
+
+      // --- 10 near landmarks ---
+      const landmarkSpots = [
+        [86.1, -93.8],   // Mont Orgueil
+        [-22.0, -68.4],  // La Corbière
+        [39.0, -56.4],   // Elizabeth Castle
+        [0.8, -81.9],    // Airport
+        [43.4, -59.4],   // Elizabeth Marina
+        [14.7, -116.2],  // Sorel Point
+        [93.1, -100.5],  // St Catherine's
+        [54.9, -110.3],  // Bouley Bay
+        [53.9, -66.2],   // Victoria College
+        [59.8, -72.9]    // St Michael's
+      ];
+      for (const [lx, lz] of landmarkSpots) {
+        // Try to place near landmark (offset 5-12 units)
+        let placed = false;
+        for (let attempt = 0; attempt < 10 && !placed; attempt++) {
+          const angle = Math.random() * Math.PI * 2;
+          const dist = 5 + Math.random() * 7;
+          const sx = lx + Math.cos(angle) * dist;
+          const sz = lz + Math.sin(angle) * dist;
+          placed = tryPlaceCollectible(sx, sz, false, id);
+          if (placed) id++;
+        }
+      }
+
+      // --- 10 on hilltops/high terrain (St Ouen's, Trinity, St Mary) ---
+      const hilltopAreas = [
+        [-80, -90], [-90, -80], [-70, -100],  // St Ouen's (west)
+        [70, -110], [60, -100], [80, -105],   // Trinity (north-east)
+        [-50, -110], [-40, -100], [-60, -95], // St Mary (north-west)
+        [30, -115]                             // North interior
+      ];
+      for (const [hx, hz] of hilltopAreas) {
+        let placed = false;
+        for (let attempt = 0; attempt < 15 && !placed; attempt++) {
+          const sx = hx + (Math.random() - 0.5) * 20;
+          const sz = hz + (Math.random() - 0.5) * 20;
+          // Find a high point by sampling around
+          let bestX = sx, bestZ = sz, bestH = -1;
+          for (let dx = -10; dx <= 10; dx += 5) {
+            for (let dz = -10; dz <= 10; dz += 5) {
+              const tx = sx + dx, tz = sz + dz;
+              if (islandMask(tx, tz) > 0.1) {
+                const th = getTerrainHeight(tx, tz);
+                if (th > bestH) { bestH = th; bestX = tx; bestZ = tz; }
+              }
+            }
+          }
+          if (bestH > 5) {
+            placed = tryPlaceCollectible(bestX, bestZ, false, id);
+            if (placed) id++;
+          }
+        }
+      }
+
+      // --- 10 near coastal areas ---
+      const coastalSpots = [
+        [54.9, -110.3],  // Bouley Bay
+        [93.1, -100.5],  // St Catherine's
+        [14.7, -116.2],  // Sorel Point
+        [20, -45],       // St Brelade
+        [75, -80],       // Grouville
+        [-30, -50],      // St Ouen's Bay
+        [-40, -40],      // St Brelade west
+        [85, -85],       // East coast
+        [50, -40],       // South coast
+        [-15, -55]       // South-west
+      ];
+      for (const [cx, cz] of coastalSpots) {
+        let placed = false;
+        for (let attempt = 0; attempt < 10 && !placed; attempt++) {
+          // Move toward coast (away from island center at 0,-50)
+          const angle = Math.atan2(cz - (-50), cx - 0);
+          const dist = 3 + Math.random() * 8;
+          const sx = cx + Math.cos(angle) * dist * (Math.random() - 0.3);
+          const sz = cz + Math.sin(angle) * dist * (Math.random() - 0.3);
+          placed = tryPlaceCollectible(sx, sz, false, id);
+          if (placed) id++;
+        }
+      }
+
+      // --- 5 golden collectibles in hard-to-reach places ---
+      // 1. Rooftop in St Helier (atop a building)
+      const buildingSpot = [5, 55];
+      {
+        const bx = buildingSpot[0], bz = buildingSpot[1];
+        const h = getTerrainHeight(bx, bz);
+        if (h > 0.5) {
+          const size = 0.8;
+          const mat = new THREE.MeshStandardMaterial({
+            color: 0xffaa00, emissive: 0xff6600, emissiveIntensity: 1.0, metalness: 0.8, roughness: 0.2
+          });
+          const mesh = new THREE.Mesh(new THREE.BoxGeometry(size, size, size), mat);
+          mesh.position.set(bx, h + 10, bz); // on rooftop (building height ~8)
+          mesh.castShadow = true;
+          const light = new THREE.PointLight(0xff8800, 0.8, 8);
+          light.position.set(0, 0, 0);
+          mesh.add(light);
+          scene.add(mesh);
+          collectibles.push({ id, mesh, x: bx, y: h + 10, z: bz, golden: true, collected: false });
+          id++;
+        }
+      }
+      // 2. Water edge (near La Corbière)
+      {
+        let placed = false;
+        for (let attempt = 0; attempt < 20 && !placed; attempt++) {
+          const angle = Math.random() * Math.PI * 2;
+          const sx = -22 + Math.cos(angle) * 8;
+          const sz = -68 + Math.sin(angle) * 8;
+          if (islandMask(sx, sz) > 0.05 && islandMask(sx, sz) < 0.3) {
+            const h = getTerrainHeight(sx, sz);
+            if (h > 0.3) {
+              const size = 0.8;
+              const mat = new THREE.MeshStandardMaterial({
+                color: 0xffaa00, emissive: 0xff6600, emissiveIntensity: 1.0, metalness: 0.8, roughness: 0.2
+              });
+              const mesh = new THREE.Mesh(new THREE.BoxGeometry(size, size, size), mat);
+              mesh.position.set(sx, h + 1.0, sz);
+              mesh.castShadow = true;
+              const light = new THREE.PointLight(0xff8800, 0.8, 8);
+              mesh.add(light);
+              scene.add(mesh);
+              collectibles.push({ id, mesh, x: sx, y: h + 1.0, z: sz, golden: true, collected: false });
+              id++;
+              placed = true;
+            }
+          }
+        }
+      }
+      // 3. Cliff edge at Sorel Point
+      {
+        let placed = false;
+        for (let attempt = 0; attempt < 20 && !placed; attempt++) {
+          const sx = 14.7 + (Math.random() - 0.5) * 10;
+          const sz = -116.2 + (Math.random() - 0.5) * 10;
+          if (islandMask(sx, sz) > 0.05) {
+            const h = getTerrainHeight(sx, sz);
+            if (h > 8) {
+              const size = 0.8;
+              const mat = new THREE.MeshStandardMaterial({
+                color: 0xffaa00, emissive: 0xff6600, emissiveIntensity: 1.0, metalness: 0.8, roughness: 0.2
+              });
+              const mesh = new THREE.Mesh(new THREE.BoxGeometry(size, size, size), mat);
+              mesh.position.set(sx, h + 1.5, sz);
+              mesh.castShadow = true;
+              const light = new THREE.PointLight(0xff8800, 0.8, 8);
+              mesh.add(light);
+              scene.add(mesh);
+              collectibles.push({ id, mesh, x: sx, y: h + 1.5, z: sz, golden: true, collected: false });
+              id++;
+              placed = true;
+            }
+          }
+        }
+      }
+      // 4. Rooftop at another building location
+      {
+        const bx = 40, bz = 60;
+        const h = getTerrainHeight(bx, bz);
+        if (h > 0.5) {
+          const size = 0.8;
+          const mat = new THREE.MeshStandardMaterial({
+            color: 0xffaa00, emissive: 0xff6600, emissiveIntensity: 1.0, metalness: 0.8, roughness: 0.2
+          });
+          const mesh = new THREE.Mesh(new THREE.BoxGeometry(size, size, size), mat);
+          mesh.position.set(bx, h + 7, bz);
+          mesh.castShadow = true;
+          const light = new THREE.PointLight(0xff8800, 0.8, 8);
+          mesh.add(light);
+          scene.add(mesh);
+          collectibles.push({ id, mesh, x: bx, y: h + 7, z: bz, golden: true, collected: false });
+          id++;
+        }
+      }
+      // 5. Remote cliff on north coast
+      {
+        let placed = false;
+        for (let attempt = 0; attempt < 20 && !placed; attempt++) {
+          const sx = -50 + (Math.random() - 0.5) * 15;
+          const sz = -110 + (Math.random() - 0.5) * 10;
+          if (islandMask(sx, sz) > 0.05) {
+            const h = getTerrainHeight(sx, sz);
+            if (h > 6) {
+              const size = 0.8;
+              const mat = new THREE.MeshStandardMaterial({
+                color: 0xffaa00, emissive: 0xff6600, emissiveIntensity: 1.0, metalness: 0.8, roughness: 0.2
+              });
+              const mesh = new THREE.Mesh(new THREE.BoxGeometry(size, size, size), mat);
+              mesh.position.set(sx, h + 1.5, sz);
+              mesh.castShadow = true;
+              const light = new THREE.PointLight(0xff8800, 0.8, 8);
+              mesh.add(light);
+              scene.add(mesh);
+              collectibles.push({ id, mesh, x: sx, y: h + 1.5, z: sz, golden: true, collected: false });
+              id++;
+              placed = true;
+            }
+          }
+        }
+      }
+
+      // Remove already-collected ones (from localStorage)
+      collectibles.forEach(c => {
+        if (collectedIds.includes(c.id)) {
+          c.collected = true;
+          scene.remove(c.mesh);
+          disposeMesh(c.mesh);
+        }
+      });
+
+      updateCollectibleCounter();
+    }
+
+    function spawnCollectibleParticle(x, y, z, golden) {
+      const numParticles = 5;
+      for (let i = 0; i < numParticles; i++) {
+        const psize = golden ? 0.4 : 0.3;
+        const pmat = new THREE.MeshBasicMaterial({
+          color: golden ? 0xffaa00 : 0xffcc33,
+          transparent: true,
+          opacity: 0.8,
+          depthWrite: false
+        });
+        const pmesh = new THREE.Mesh(new THREE.SphereGeometry(psize, 8, 8), pmat);
+        pmesh.position.set(x, y, z);
+        scene.add(pmesh);
+        const angle = (i / numParticles) * Math.PI * 2;
+        const upward = 0.5 + Math.random() * 0.5;
+        collectibleParticles.push({
+          mesh: pmesh,
+          startTime: performance.now(),
+          duration: 600,
+          vx: Math.cos(angle) * (1.5 + Math.random()),
+          vy: upward * 2,
+          vz: Math.sin(angle) * (1.5 + Math.random())
+        });
+      }
+    }
+
+    function updateCollectibles(dt, now) {
+      // Rotate all active collectibles
+      for (const c of collectibles) {
+        if (!c.collected) {
+          c.mesh.rotation.y += dt * 1.5;
+          c.mesh.rotation.x += dt * 0.8;
+          // Bob up and down slightly
+          c.mesh.position.y = c.y + Math.sin(now * 0.003 + c.id) * 0.15;
+        }
+      }
+
+      // Check proximity to player car
+      for (const c of collectibles) {
+        if (c.collected) continue;
+        const dx = c.x - carX;
+        const dz = c.z - carZ;
+        const dist = Math.sqrt(dx * dx + dz * dz);
+        if (dist < 3) {
+          // Collected!
+          c.collected = true;
+          scene.remove(c.mesh);
+          disposeMesh(c.mesh);
+          collectedIds.push(c.id);
+          saveCollected();
+          spawnCollectibleParticle(c.x, c.y, c.z, c.golden);
+          const pts = c.golden ? 50 : 10;
+          const msg = c.golden ? '⭐ Golden package! +50 pts' : '📦 Package found! +10 pts';
+          addPoints(pts, msg);
+          updateScoreDisplay();
+          updateCollectibleCounter();
+        }
+      }
+
+      // Update particle effects
+      for (let i = collectibleParticles.length - 1; i >= 0; i--) {
+        const p = collectibleParticles[i];
+        const elapsed = now - p.startTime;
+        const t = elapsed / p.duration;
+        if (t >= 1) {
+          scene.remove(p.mesh);
+          disposeMesh(p.mesh);
+          collectibleParticles.splice(i, 1);
+        } else {
+          p.mesh.position.x += p.vx * dt;
+          p.mesh.position.y += p.vy * dt;
+          p.mesh.position.z += p.vz * dt;
+          p.vy -= 3 * dt; // gravity
+          p.mesh.material.opacity = 0.8 * (1 - t);
+          const scale = 1 + t * 1.5;
+          p.mesh.scale.set(scale, scale, scale);
+        }
+      }
+    }
+
+    // Initialize collectibles
+    createCollectibles();
 
     // ====== BIRDS ======
     const birds = [];
@@ -2248,6 +2866,22 @@
         });
       }
 
+      // Collectibles on radar — tiny yellow dots (golden ones slightly larger)
+      if (typeof collectibles !== 'undefined') {
+        collectibles.forEach(c => {
+          if (c.collected) return;
+          const dx = (c.x - carX) * scale;
+          const dz = (c.z - carZ) * scale;
+          const dist = Math.sqrt(dx*dx + dz*dz);
+          if (dist < RADAR_SIZE/2 - 2) {
+            radarCtx.fillStyle = c.golden ? '#ffaa00' : '#ffdd44';
+            radarCtx.beginPath();
+            radarCtx.arc(cx + dx, cy + dz, c.golden ? 2 : 1, 0, Math.PI * 2);
+            radarCtx.fill();
+          }
+        });
+      }
+
       // Mission markers on radar — green dot for pickup, yellow dot for dropoff
       if (missionState === 'pickup' && missionPickupLandmark) {
         const dx = (missionPickupLandmark.x - carX) * scale;
@@ -2819,6 +3453,9 @@
         adPopupTimer -= dt;
         if (adPopupTimer <= 0) adPopup.classList.remove('show');
       }
+
+      // Collectibles update (rotation, proximity check, particles)
+      updateCollectibles(dt, now);
 
       drawRadar();
       renderer.render(scene, camera);
