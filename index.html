@@ -230,7 +230,9 @@
     let skyTransitionFrom = new THREE.Color(skyColors.day);
     let skyTransitionStart = 0;
     let skyTransitionActive = false;
+    let forceNight = false; // declared here to avoid TDZ — used in applySkyAndSun()
     const SKY_TRANSITION_MS = 1000;
+
     function applySkyAndSun() {
       const tod = forceNight ? 'night' : getTimeOfDay();
       const skyHex = skyColors[tod];
@@ -1027,7 +1029,6 @@
     });
 
     // ====== DAY/NIGHT TOGGLE ======
-    let forceNight = false;
     const nightToggle = document.getElementById('night-toggle');
     nightToggle.addEventListener('click', (e) => {
       e.preventDefault();
