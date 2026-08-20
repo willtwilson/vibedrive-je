@@ -12,7 +12,9 @@
       --atlantic-blue: #0A1A3F;
       --sprint-yellow: #FFD60A;
       --rally-red: #E63946;
-      --hud-bg: rgba(10, 26, 63, 0.82);
+      --hud-bg: rgba(10, 26, 63, 0.6);
+      --glass: rgba(10, 26, 63, 0.55);
+      --glass-deep: rgba(10, 26, 63, 0.62);
       --hud-border: rgba(0, 168, 107, 0.25);
       --hud-accent: rgba(0, 168, 107, 0.6);
       --text-primary: #F0F4FF;
@@ -25,7 +27,7 @@
 
     #hud {
       position: fixed; top: 12px; left: 12px; z-index: 50;
-      background: var(--hud-bg); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+      background: var(--glass-deep); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
       border-radius: 0; padding: 14px 18px; min-width: 210px;
       border: 1px solid var(--hud-border); border-left: 3px solid var(--jersey-green);
       font-size: 13px; pointer-events: none; box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
@@ -43,8 +45,13 @@
     }
     #hud .weather-row #weather-desc { font-size: 11px; color: var(--text-secondary); }
     #hud .speedo {
-      font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 700;
-      color: var(--sprint-yellow); letter-spacing: 0.02em; margin-top: 4px;
+      font-family: 'JetBrains Mono', monospace; font-size: 44px; line-height: 1;
+      font-weight: 700; color: var(--sprint-yellow); letter-spacing: -0.02em; margin-top: 6px;
+      text-shadow: 0 0 18px rgba(255, 214, 10, 0.35);
+    }
+    #hud .speedo .unit {
+      font-size: 16px; font-weight: 500; color: var(--text-secondary); letter-spacing: 0.02em;
+      margin-left: 2px; text-shadow: none;
     }
     #hud .loc {
       font-family: 'JetBrains Mono', monospace; font-size: 10px;
@@ -62,8 +69,8 @@
       margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(0, 168, 107, 0.15);
     }
     #hud .speed-bar-container {
-      width: 100%; height: 4px; background: rgba(0, 168, 107, 0.1);
-      margin-top: 6px; position: relative; overflow: hidden;
+      width: 100%; height: 6px; background: rgba(0, 168, 107, 0.12);
+      margin-top: 8px; position: relative; overflow: hidden;
     }
     #hud .speed-bar {
       height: 100%;
@@ -71,21 +78,22 @@
       width: 0%; transition: width 0.15s linear;
     }
 
-    #modes { position: fixed; top: 12px; right: 12px; z-index: 50; display: flex; gap: 0; pointer-events: auto; }
+    #modes { position: fixed; bottom: 24px; left: 198px; z-index: 50; display: flex; flex-direction: column; gap: 8px; pointer-events: auto; }
     .mode-btn {
-      padding: 9px 14px; border-radius: 0; border: 1px solid var(--hud-border); border-right: none;
-      background: var(--hud-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-      color: var(--text-secondary); font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 700;
+      padding: 10px 16px; border-radius: 0; border: 1px solid var(--hud-border);
+      background: var(--glass); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 700;
       text-transform: uppercase; letter-spacing: 0.04em;
       cursor: pointer; user-select: none; -webkit-user-select: none; touch-action: none; transition: all 0.15s;
+      min-width: 120px; min-height: 44px; display: flex; align-items: center; gap: 6px; justify-content: center;
     }
-    .mode-btn:last-child { border-right: 1px solid var(--hud-border); }
     .mode-btn.active {
       background: var(--jersey-green); border-color: var(--jersey-green);
       color: var(--atlantic-blue); font-weight: 900;
       box-shadow: 0 0 16px rgba(0, 168, 107, 0.4);
     }
     .mode-btn.disabled { opacity: 0.3; }
+    .mode-btn .chev { opacity: 0.6; font-size: 10px; }
 
     #controls {
       position: fixed; bottom: 0; left: 0; width: 100%; z-index: 50;
@@ -94,7 +102,7 @@
     .control-zone { pointer-events: auto; display: flex; align-items: flex-end; gap: 10px; }
     .control-btn {
       width: 68px; height: 68px; border-radius: 50%; border: 2px solid rgba(0, 168, 107, 0.3);
-      background: var(--hud-bg); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      background: var(--glass); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
       color: var(--text-primary); font-size: 26px; display: flex; align-items: center; justify-content: center;
       cursor: pointer; user-select: none; -webkit-user-select: none; touch-action: none;
       transition: transform 0.1s, background 0.1s, border-color 0.1s; box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
@@ -102,47 +110,100 @@
     .control-btn:active, .control-btn.pressed { transform: scale(0.9); border-color: rgba(0, 168, 107, 0.8); box-shadow: 0 0 16px rgba(0, 168, 107, 0.3); }
     .control-btn.accel { background: rgba(0, 168, 107, 0.35); border-color: rgba(0, 168, 107, 0.5); color: var(--jersey-green); }
     .control-btn.accel:active, .control-btn.accel.pressed { background: rgba(0, 168, 107, 0.6); box-shadow: 0 0 20px rgba(0, 168, 107, 0.5); }
-    .control-btn.brake { background: rgba(230, 57, 70, 0.35); border-color: rgba(230, 57, 70, 0.5); color: var(--rally-red); }
-    .control-btn.brake:active, .control-btn.brake.pressed { background: rgba(230, 57, 70, 0.6); box-shadow: 0 0 20px rgba(230, 57, 70, 0.5); }
+    .control-btn.brake {
+      width: 92px; height: 92px; font-size: 34px;
+      background: rgba(230, 57, 70, 0.35); border: 2px solid rgba(230, 57, 70, 0.55); color: var(--rally-red);
+      backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      box-shadow: 0 4px 20px rgba(230, 57, 70, 0.25);
+    }
+    .control-btn.brake:active, .control-btn.brake.pressed { background: rgba(230, 57, 70, 0.6); box-shadow: 0 0 24px rgba(230, 57, 70, 0.6); }
 
     #badge {
-      position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); z-index: 50;
-      background: var(--hud-bg); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+      position: fixed; top: 12px; left: 50%; transform: translateX(-50%); z-index: 40;
+      background: var(--glass); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
       border-radius: 0; padding: 4px 12px; font-size: 10px; color: var(--jersey-green);
       pointer-events: none; border: 1px solid var(--hud-border);
       text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700;
+      transition: opacity 1.2s ease;
     }
+    #badge.hide { opacity: 0; pointer-events: none; }
 
     #radar {
       position: fixed; bottom: 24px; left: 12px; z-index: 50;
-      width: 160px; height: 160px; border-radius: 0;
-      background: rgba(10, 26, 63, 0.85); border: 2px solid var(--jersey-green); border-top: 3px solid var(--jersey-green);
-      overflow: hidden; box-shadow: 0 0 20px rgba(0, 168, 107, 0.2); pointer-events: none;
+      width: 172px; height: 172px; border-radius: 0;
+      background: var(--glass-deep); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      border: 2px solid var(--jersey-green); border-top: 3px solid var(--jersey-green);
+      box-shadow: 0 0 20px rgba(0, 168, 107, 0.35), 0 4px 20px rgba(0, 0, 0, 0.35);
+      overflow: hidden; pointer-events: none;
     }
     #radar canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
     #radar-label {
-      position: fixed; bottom: 192px; left: 12px; z-index: 50;
+      position: fixed; bottom: 200px; left: 12px; z-index: 50;
       font-family: 'Inter', sans-serif; font-size: 9px; font-weight: 800;
       color: var(--jersey-green); text-transform: uppercase; letter-spacing: 0.12em;
-      pointer-events: none; background: var(--hud-bg); padding: 3px 10px;
+      pointer-events: none; background: var(--glass); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      padding: 3px 10px;
       border: 1px solid var(--hud-border); border-bottom: none;
     }
 
     #cam-btns {
-      position: fixed; top: 70px; right: 12px; z-index: 50; display: flex; flex-direction: column; gap: 6px; pointer-events: auto;
+      position: fixed; bottom: 118px; left: 198px; z-index: 50; display: flex; flex-direction: column; gap: 8px; pointer-events: auto;
     }
     .cam-btn {
-      padding: 6px 10px; border-radius: 0; border: 1px solid var(--hud-border);
-      background: var(--hud-bg); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-      color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600;
+      padding: 10px 16px; border-radius: 0; border: 1px solid var(--hud-border);
+      background: var(--glass); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 700;
       text-transform: uppercase; letter-spacing: 0.03em;
       cursor: pointer; user-select: none; touch-action: none;
+      min-width: 120px; min-height: 44px; display: flex; align-items: center; gap: 6px; justify-content: center;
     }
     .cam-btn.active { background: rgba(0, 168, 107, 0.35); border-color: var(--jersey-green); color: var(--jersey-green); }
+    .cam-btn .chev { opacity: 0.6; font-size: 10px; }
+
+    /* ====== SLIDE-OUT ☰ MENU ====== */
+    #menu-btn {
+      position: fixed; top: 12px; right: 12px; z-index: 70;
+      width: 48px; height: 48px; border-radius: 0;
+      border: 1px solid var(--hud-border); border-left: 3px solid var(--jersey-green);
+      background: var(--glass-deep); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      color: var(--text-primary); font-size: 22px; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; user-select: none; touch-action: none; transition: all 0.15s;
+      pointer-events: auto;
+    }
+    #menu-btn:hover { border-color: var(--jersey-green); }
+    #menu-btn.active { background: var(--jersey-green); color: var(--atlantic-blue); }
+
+    #menu-panel {
+      position: fixed; top: 12px; right: 12px; z-index: 69;
+      background: var(--glass-deep); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--hud-border); border-left: 3px solid var(--jersey-green);
+      padding: 8px 0; min-width: 220px; display: none; pointer-events: auto;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    }
+    #menu-panel.show { display: block; }
+    .menu-item {
+      display: flex; align-items: center; gap: 12px; width: 100%;
+      padding: 13px 18px; background: none; border: none; cursor: pointer;
+      color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600;
+      text-align: left; letter-spacing: 0.02em; transition: background 0.12s;
+      min-height: 44px; user-select: none; -webkit-user-select: none; touch-action: none;
+    }
+    .menu-item:hover, .menu-item:active { background: rgba(0, 168, 107, 0.15); }
+    .menu-item .mi-icon { width: 24px; text-align: center; font-size: 18px; }
+    .menu-item .mi-label { flex: 1; }
+    .menu-item .mi-state {
+      font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em;
+      color: var(--text-muted);
+    }
+    .menu-item.on .mi-state { color: var(--jersey-green); }
+    .menu-item.night-on .mi-state { color: var(--sprint-yellow); }
+    .menu-sep { height: 1px; background: rgba(0, 168, 107, 0.15); margin: 6px 0; }
 
     #loading {
       position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); z-index: 200;
-      background: var(--hud-bg); padding: 24px 36px; border-radius: 0;
+      background: var(--glass-deep); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      padding: 24px 36px; border-radius: 0;
       border: 1px solid var(--hud-border); border-left: 3px solid var(--jersey-green);
       text-align: center; font-size: 16px; font-family: 'Inter', sans-serif; font-weight: 700;
       text-transform: uppercase; letter-spacing: 0.04em; color: var(--sprint-yellow);
@@ -150,7 +211,8 @@
 
     #steer-hint {
       position: fixed; top: 50%; left: 50%; transform: translate(-50%, 120px); z-index: 50;
-      background: var(--hud-bg); padding: 6px 14px; border-radius: 0;
+      background: var(--glass); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      padding: 6px 14px; border-radius: 0;
       border: 1px solid var(--hud-border);
       font-size: 11px; font-family: 'Inter', sans-serif; font-weight: 600;
       color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.04em;
@@ -159,8 +221,8 @@
     #steer-hint.show { opacity: 1; }
 
     #collectible-counter {
-      position: fixed; top: 50px; left: 50%; transform: translateX(-50%); z-index: 50;
-      background: var(--hud-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      position: fixed; top: 12px; left: 240px; z-index: 50;
+      background: var(--glass-deep); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
       border-radius: 0; padding: 4px 14px;
       border: 1px solid rgba(255, 200, 50, 0.3); border-top: 1px solid rgba(255, 200, 50, 0.2);
       font-size: 13px; font-weight: 600; color: #ffcc44;
@@ -169,24 +231,9 @@
       text-shadow: 0 0 8px rgba(255, 200, 50, 0.3);
     }
 
-    #score-display {
-      position: fixed; top: 12px; left: 50%; transform: translateX(-50%); z-index: 50;
-      background: var(--hud-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-      border-radius: 0; padding: 8px 18px;
-      border: 1px solid rgba(255, 214, 10, 0.3); border-top: 2px solid var(--sprint-yellow);
-      font-size: 16px; font-weight: 700; color: var(--sprint-yellow);
-      font-family: 'JetBrains Mono', monospace;
-      pointer-events: none; white-space: nowrap; letter-spacing: 0.02em;
-      text-shadow: 0 0 12px rgba(255, 214, 10, 0.4); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-    }
-    #score-display .high-score {
-      font-size: 11px; color: var(--text-muted); font-weight: 400; margin-top: 2px; text-align: center;
-      text-transform: uppercase; letter-spacing: 0.06em; text-shadow: none;
-    }
-
     #toast {
       position: fixed; top: 60px; left: 50%; transform: translateX(-50%) translateY(-20px); z-index: 55;
-      background: var(--hud-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      background: var(--glass-deep); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
       border-radius: 0; padding: 10px 24px;
       border: 1px solid rgba(255, 214, 10, 0.4); border-left: 3px solid var(--sprint-yellow);
       font-size: 15px; font-weight: 700; color: var(--sprint-yellow);
@@ -198,7 +245,7 @@
 
     #ad-popup {
       position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%) translateY(20px);
-      z-index: 60; background: var(--hud-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      z-index: 60; background: var(--glass-deep); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
       border-radius: 0; padding: 12px 20px; text-align: center;
       border: 1px solid var(--hud-border); pointer-events: none;
       opacity: 0; transition: opacity 0.3s, transform 0.3s; max-width: 320px;
@@ -211,7 +258,7 @@
     #wanted-level {
       position: fixed; top: 50px; left: 50%; transform: translateX(-50%); z-index: 50;
       display: none; gap: 4px; padding: 6px 14px;
-      background: var(--hud-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      background: var(--glass-deep); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
       border-radius: 0; border: 1px solid rgba(230, 57, 70, 0.4); border-top: 2px solid var(--rally-red);
       pointer-events: none; align-items: center;
     }
@@ -231,7 +278,7 @@
 
     #mission-display {
       position: fixed; top: 60px; left: 12px; z-index: 50;
-      background: var(--hud-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      background: var(--glass-deep); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
       border-radius: 0; padding: 10px 14px;
       border: 1px solid var(--hud-border); border-left: 3px solid var(--jersey-green);
       font-size: 13px; color: var(--jersey-green); pointer-events: none;
@@ -253,8 +300,8 @@
       position: fixed; top: 12px; right: 380px; z-index: 50;
       width: 36px; height: 36px; border-radius: 0;
       border: 1px solid var(--hud-border);
-      background: var(--hud-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-      color: var(--text-primary); font-size: 18px; display: flex; align-items: center; justify-content: center;
+      background: var(--glass); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      color: var(--text-primary); font-size: 18px; display: none; align-items: center; justify-content: center;
       cursor: pointer; user-select: none; touch-action: none; transition: all 0.15s;
       pointer-events: auto;
     }
@@ -266,8 +313,8 @@
       position: fixed; top: 12px; right: 424px; z-index: 50;
       width: 36px; height: 36px; border-radius: 0;
       border: 1px solid var(--hud-border);
-      background: var(--hud-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-      color: var(--text-primary); font-size: 18px; display: flex; align-items: center; justify-content: center;
+      background: var(--glass); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      color: var(--text-primary); font-size: 18px; display: none; align-items: center; justify-content: center;
       cursor: pointer; user-select: none; touch-action: none; transition: all 0.15s;
       pointer-events: auto;
     }
@@ -279,8 +326,8 @@
       position: fixed; top: 12px; right: 336px; z-index: 50;
       width: 36px; height: 36px; border-radius: 0;
       border: 1px solid var(--hud-border);
-      background: var(--hud-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-      color: var(--text-primary); font-size: 17px; display: flex; align-items: center; justify-content: center;
+      background: var(--glass); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      color: var(--text-primary); font-size: 17px; display: none; align-items: center; justify-content: center;
       cursor: pointer; user-select: none; touch-action: none; transition: all 0.15s;
       pointer-events: auto;
     }
@@ -289,8 +336,8 @@
     #radio-toggle.unavailable { opacity: 0.4; cursor: not-allowed; }
 
     #radio-panel {
-      position: fixed; top: 54px; right: 336px; z-index: 50;
-      background: var(--hud-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      position: fixed; top: 68px; right: 12px; z-index: 70;
+      background: var(--glass-deep); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
       border: 1px solid var(--hud-border); border-left: 3px solid #ab47bc;
       padding: 10px 14px; display: none; flex-direction: column; gap: 8px;
       min-width: 200px; pointer-events: auto;
@@ -322,8 +369,9 @@
     }
 
     #airport-panel {
-      position: fixed; top: 56px; right: 12px; z-index: 49;
-      background: var(--atlantic-blue); border: 1px solid var(--hud-border);
+      position: fixed; top: 68px; right: 12px; z-index: 69;
+      background: var(--glass-deep); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--hud-border);
       border-top: 2px solid var(--jersey-green);
       width: 340px; max-height: 500px; overflow-y: auto;
       font-family: 'Inter', sans-serif; color: var(--text-primary);
@@ -436,9 +484,9 @@
       position: fixed; top: 12px; right: 300px; z-index: 50;
       width: 36px; height: 36px; border-radius: 0;
       border: 1px solid var(--hud-border); border-top: 2px solid var(--jersey-green);
-      background: var(--hud-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      background: var(--glass); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
       color: var(--sprint-yellow); font-size: 18px; cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
+      display: none; align-items: center; justify-content: center;
       transition: all 0.15s; pointer-events: auto;
     }
     #leaderboard-btn:hover { box-shadow: 0 0 12px rgba(0, 168, 107, 0.3); border-color: var(--jersey-green); }
@@ -446,8 +494,9 @@
     #leaderboard-btn.active { background: rgba(0, 168, 107, 0.35); border-color: var(--jersey-green); }
 
     #leaderboard-modal {
-      position: fixed; top: 56px; right: 12px; z-index: 55;
-      background: var(--atlantic-blue); border: 2px solid var(--jersey-green);
+      position: fixed; top: 68px; right: 12px; z-index: 69;
+      background: var(--glass-deep); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border: 2px solid var(--jersey-green);
       border-radius: 0; padding: 0; width: 420px; max-height: 600px; overflow-y: auto;
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
       display: none; pointer-events: auto;
@@ -527,17 +576,18 @@
       position: fixed; top: 12px; right: 340px; z-index: 50;
       width: 36px; height: 36px; border-radius: 0;
       border: 1px solid var(--hud-border); border-top: 2px solid var(--jersey-green);
-      background: var(--hud-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      background: var(--glass); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
       color: var(--jersey-green); font-size: 18px; cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
+      display: none; align-items: center; justify-content: center;
       transition: all 0.15s; pointer-events: auto;
     }
     #settings-btn:hover { box-shadow: 0 0 12px rgba(0, 168, 107, 0.3); border-color: var(--jersey-green); }
     #settings-btn:active { transform: scale(0.92); }
 
     #settings-panel {
-      position: fixed; top: 56px; right: 12px; z-index: 55;
-      background: var(--atlantic-blue); border: 2px solid var(--jersey-green);
+      position: fixed; top: 68px; right: 12px; z-index: 69;
+      background: var(--glass-deep); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border: 2px solid var(--jersey-green);
       border-radius: 0; padding: 20px 24px; text-align: center; width: 300px;
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
       display: none; pointer-events: auto;
@@ -573,32 +623,61 @@
     #settings-panel .panel-close:hover { color: var(--rally-red); }
     #lightning-flash { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; opacity: 0; pointer-events: none; z-index: 9999; transition: opacity 0.05s ease; }
     #slippery-warning { display: none; color: #ff9900; font-size: 12px; font-weight: 700; margin-top: 4px; text-shadow: 0 1px 3px rgba(0,0,0,0.7); }
-  </style>
+  
+    /* Mobile density pass — compact HUD on phones (iPhone 13 Pro Max = 428px wide) */
+    @media (max-width: 500px) {
+      #radar { width: 120px; height: 120px; bottom: 16px; left: 8px; }
+      #radar-label { bottom: 140px; left: 8px; font-size: 8px; }
+      #hud .speedo { font-size: 28px; }
+      .mode-btn, .cam-btn { min-width: 92px; min-height: 40px; font-size: 11px; padding: 7px 10px; }
+      #modes { left: 8px; bottom: 16px; }
+      #cam-btns { left: 8px; bottom: 112px; }
+      #menu-btn { width: 42px; height: 42px; top: 8px; right: 8px; font-size: 20px; }
+      #menu-panel { top: 8px; right: 8px; min-width: 200px; }
+      #collectible-counter { left: 150px; top: 8px; font-size: 11px; padding: 3px 10px; }
+      #badge { top: 8px; font-size: 9px; padding: 3px 9px; }
+      #wanted-level { top: 8px; }
+    }
+
+    </style>
 </head>
 <body>
   <div id="loading">⚡ Loading Jersey 3D…</div>
   <div id="lightning-flash"></div>
 
   <div id="hud">
-    <h1>⚡ Vibe Drive Jersey 3D</h1>
-    <div class="weather-row">
+    <div class="speedo" id="speed"><span id="speed-val">0</span><span class="unit">km/h</span></div>
+    <div class="speed-bar-container"><div class="speed-bar" id="speed-bar"></div></div>
+    <div class="hud-score-row" style="display:flex;align-items:baseline;gap:10px;margin-top:8px;">
+      <span id="hud-score" style="font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:700;color:var(--sprint-yellow);letter-spacing:0.02em;">🏆 Score: 0</span>
+      <span id="hud-km" style="font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:500;color:var(--text-secondary);">🛣️ 0.0 km</span>
+    </div>
+    <div class="high-score" id="high-score" style="font-size:10px;color:var(--text-muted);font-weight:400;margin-top:2px;text-transform:uppercase;letter-spacing:0.06em;">Best: 0</div>
+    <div class="loc" id="loc" style="margin-top:6px;">Jersey, Channel Islands</div>
+    <div class="weather-row" style="margin-top:6px;">
       <span id="weather-icon">🌤️</span>
       <span class="temp" id="temp">—°</span>
       <span id="weather-desc">Loading…</span>
     </div>
-    <div class="speedo" id="speed">Speed: 0 km/h</div>
-    <div class="speed-bar-container"><div class="speed-bar" id="speed-bar"></div></div>
-    <div class="loc" id="loc">Jersey, Channel Islands</div>
     <div id="slippery-warning">⚠ Slippery Roads</div>
     <div class="players" id="players">👥 1 online</div>
     <div class="mode-name" id="mode-name">🚗 Drive Mode</div>
     <div id="hud-username" style="font-family:'Inter',sans-serif;font-size:12px;font-weight:700;color:var(--jersey-green);margin-top:6px;padding-top:6px;border-top:1px solid rgba(0,168,107,0.15);">👤 —</div>
   </div>
 
-  <div id="modes">
-    <button class="mode-btn active" data-mode="drive">🚗 Drive</button>
-    <button class="mode-btn" data-mode="boat">🚤 Boat</button>
-    <button class="mode-btn" data-mode="fly">✈️ Fly</button>
+  <div id="controls">
+    <div class="control-zone" style="flex-direction:column;align-items:flex-start;gap:10px;">
+      <div id="modes">
+        <button class="mode-btn active" id="mode-cycle" data-mode="drive">🚗 Drive <span class="chev">↻</span></button>
+      </div>
+      <div id="cam-btns">
+        <button class="cam-btn active" id="cam-cycle" data-cam="chase">🎥 Chase <span class="chev">↻</span></button>
+      </div>
+    </div>
+    <div class="control-zone">
+      <div class="control-btn brake" id="btn-brake">🛑</div>
+      <div class="control-btn accel" id="btn-gas">⬆</div>
+    </div>
   </div>
 
   <button id="bus-toggle" title="Bus Routes">🚌</button>
@@ -622,32 +701,23 @@
 
   <div id="live-aircraft-indicator"><span class="pulse"></span>✈️ Live</div>
 
-  <div id="cam-btns">
-    <button class="cam-btn active" data-cam="chase">Chase</button>
-    <button class="cam-btn" data-cam="far">Far</button>
-    <button class="cam-btn" data-cam="top">Top</button>
-    <button class="cam-btn" data-cam="cockpit">Cockpit</button>
-    <button class="cam-btn" id="night-toggle">🌙 Night</button>
-  </div>
-
-  <div id="controls">
-    <div class="control-zone">
-      <div class="control-btn" id="btn-left">◀</div>
-      <div class="control-btn" id="btn-right">▶</div>
-    </div>
-    <div class="control-zone">
-      <div class="control-btn brake" id="btn-brake">⬇</div>
-      <div class="control-btn accel" id="btn-gas">⬆</div>
-    </div>
-  </div>
-
   <div id="radar-label">📡 RADAR</div>
   <div id="radar"><canvas id="radar-canvas" width="180" height="180"></canvas></div>
+
+  <button id="menu-btn" title="Menu">☰</button>
+  <div id="menu-panel">
+    <button class="menu-item night-on" id="menu-night"><span class="mi-icon">🌙</span><span class="mi-label">Night</span><span class="mi-state" id="mi-night-state">Off</span></button>
+    <button class="menu-item on" id="menu-bus"><span class="mi-icon">🚌</span><span class="mi-label">Bus Routes</span><span class="mi-state" id="mi-bus-state">On</span></button>
+    <button class="menu-item" id="menu-airport"><span class="mi-icon">✈️</span><span class="mi-label">Airport Board</span><span class="mi-state" id="mi-airport-state">Off</span></button>
+    <button class="menu-item" id="menu-radio"><span class="mi-icon">📻</span><span class="mi-label">Radio</span><span class="mi-state" id="mi-radio-state">Off</span></button>
+    <div class="menu-sep"></div>
+    <button class="menu-item" id="menu-leaderboard"><span class="mi-icon">🏆</span><span class="mi-label">Leaderboard</span><span class="mi-state">›</span></button>
+    <button class="menu-item" id="menu-settings"><span class="mi-icon">⚙️</span><span class="mi-label">Settings</span><span class="mi-state">›</span></button>
+  </div>
 
   <div id="badge">vibe.je hackathon · 3D terrain · real weather</div>
   <div id="steer-hint">👆 Touch and drag anywhere to steer</div>
 
-  <div id="score-display">🏆 Score: 0 | 🛣️ 0.0 km<div class="high-score" id="high-score"></div></div>
   <div id="collectible-counter">📦 0/50</div>
   <div id="wanted-level">
     <span class="label">WANTED</span>
@@ -1065,6 +1135,9 @@
     scene.fog = new THREE.FogExp2(0x87CEEB, 0.0008);
     const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.5, 3000);
     camera.position.set(0, 50, 100);
+
+    // Declared early — referenced by applySkyAndSun() headlight toggles before the car is created below
+    let carGroup = null;
 
     // ====== DEVICE TIER DETECTION ======
     function detectDeviceTier() {
@@ -1996,8 +2069,6 @@
 
       updateMissionHUD();
     }
-    const scoreDisplay = document.getElementById('score-display');
-    const highScoreEl = document.getElementById('high-score');
     const toastEl = document.getElementById('toast');
     let toastTimeout = null;
 
@@ -2020,8 +2091,12 @@
 
     function updateScoreDisplay() {
       const km = (totalDistance / 1000).toFixed(1);
-      scoreDisplay.childNodes[0].textContent = `🏆 Score: ${score} | 🛣️ ${km} km`;
-      highScoreEl.textContent = `Best: ${highScore}`;
+      const hudScoreEl = document.getElementById('hud-score');
+      const hudKmEl = document.getElementById('hud-km');
+      const highScoreEl = document.getElementById('high-score');
+      if (hudScoreEl) hudScoreEl.textContent = `🏆 Score: ${score}`;
+      if (hudKmEl) hudKmEl.textContent = `🛣️ ${km} km`;
+      if (highScoreEl) highScoreEl.textContent = `Best: ${highScore}`;
     }
 
     updateScoreDisplay();
@@ -3405,7 +3480,7 @@
       addBuoy(90, -20),   // Gorey
     ];
 
-    let carGroup = createCar(0xcc2222);
+    carGroup = createCar(0xcc2222);
     scene.add(carGroup);
     // Keep a reference to the original car for mode restoration
     const originalCar = carGroup;
@@ -3794,8 +3869,12 @@
       return target.closest('#hud') || target.closest('#modes') || target.closest('#controls') ||
              target.closest('#cam-btns') || target.closest('#radar') || target.closest('#radar-label') ||
              target.closest('#badge') || target.closest('#steer-hint') || target.closest('#loading') ||
-             target.closest('#ad-popup') || target.closest('#score-display') || target.closest('#toast') ||
-             target.closest('#night-toggle') || target.closest('#airport-toggle') || target.closest('#airport-panel') || target.closest('#bus-toggle') || target.closest('#radio-toggle') || target.closest('#radio-panel');
+             target.closest('#ad-popup') || target.closest('#toast') ||
+             target.closest('#collectible-counter') || target.closest('#wanted-level') || target.closest('#mission-display') ||
+             target.closest('#menu-btn') || target.closest('#menu-panel') || target.closest('#night-toggle') ||
+             target.closest('#airport-toggle') || target.closest('#airport-panel') || target.closest('#bus-toggle') ||
+             target.closest('#radio-toggle') || target.closest('#radio-panel') ||
+             target.closest('#leaderboard-modal') || target.closest('#settings-panel') || target.closest('#username-modal');
     }
 
     document.addEventListener('pointerdown', (e) => {
@@ -3822,107 +3901,132 @@
     document.addEventListener('touchmove', (e) => { e.preventDefault(); }, { passive: false });
     document.addEventListener('gesturestart', (e) => { e.preventDefault(); });
 
-    // Mode switching
-    document.querySelectorAll('.mode-btn[data-mode]').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.preventDefault();
-        const mode = btn.dataset.mode;
-        if (btn.classList.contains('disabled')) return;
-        // Switch vehicle
-        if (mode === 'fly') {
-          vehicleMode = 'fly';
-          // Replace car with plane — use plane mesh directly
-          scene.remove(carGroup);
-          if (wakeTrailLine) { scene.remove(wakeTrailLine); wakeTrailLine = null; }
-          carGroup = createPlane(0xcc2222);
-          const terrainH = getTerrainHeight(carX, carZ);
-          carGroup.position.set(carX, terrainH + 5, carZ);
-          scene.add(carGroup);
-          updateUsernameSprite();
-          // Smooth takeoff: start at terrain+5, rise to 50 over 2 seconds
-          planeAlt = terrainH + 5;
-          planeTakeoffTarget = 50;
-          planeTakeoffStart = planeAlt;
-          planeTakeoffT = 0;
-          carSpeed = 50; // Cessna — start moving immediately!
-          camMode = 'chase'; // ensure chase view behind the plane
-          document.querySelectorAll('.cam-btn[data-cam]').forEach(b => b.classList.toggle('active', b.dataset.cam === 'chase'));
-          // Add shadow plane (flat dark circle on ground)
-          if (!planeShadow) {
-            const shadowGeo = new THREE.CircleGeometry(3, 16);
-            const shadowMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.35, depthWrite: false });
-            planeShadow = new THREE.Mesh(shadowGeo, shadowMat);
-            planeShadow.rotation.x = -Math.PI / 2;
-            scene.add(planeShadow);
-          }
-          planeShadow.visible = true;
-          document.getElementById('mode-name').textContent = '✈️ Fly Mode';
-          document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
-          btn.classList.add('active');
-        } else if (mode === 'boat') {
-          vehicleMode = 'boat';
-          // Replace car with boat — use boat mesh directly, not copy
-          scene.remove(carGroup);
-          carGroup = createBoat(0xcc2222);
-          // Start boat at nearest water point
-          const startH = getTerrainHeight(carX, carZ);
-          if (startH > tideLevel) {
-            // We're on land — move to nearby water
-            carX = 0; carZ = 80; // St Helier bay area
-          }
-          carGroup.position.set(carX, tideLevel + 1, carZ);
-          scene.add(carGroup);
-          updateUsernameSprite();
-          // Initialize wake trail line
-          if (wakeTrailLine) scene.remove(wakeTrailLine);
-          wakeTrailPoints = [];
-          const wakeTrailGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(carX, tideLevel + 0.2, carZ)]);
-          const wakeTrailMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.8, linewidth: 2 });
-          wakeTrailLine = new THREE.Line(wakeTrailGeo, wakeTrailMat);
-          scene.add(wakeTrailLine);
-          document.getElementById('mode-name').textContent = '🚤 Boat Mode';
-          if (planeShadow) planeShadow.visible = false;
-          document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
-          btn.classList.add('active');
-        } else if (mode === 'drive') {
-          vehicleMode = 'drive';
-          planeAlt = 0;
-          // Restore original car — create fresh car mesh
-          scene.remove(carGroup);
-          if (wakeTrailLine) { scene.remove(wakeTrailLine); wakeTrailLine = null; }
-          carGroup = createCar(0xcc2222);
-          const th = getTerrainHeight(carX, carZ);
-          carGroup.position.set(carX, Math.max(th + 0.5, 0), carZ);
-          scene.add(carGroup);
-          updateUsernameSprite();
-          document.getElementById('mode-name').textContent = '🚗 Drive Mode';
-          if (planeShadow) planeShadow.visible = false;
-          document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
-          btn.classList.add('active');
+    // Mode switching (cycling button)
+    const MODES = [
+      { value: 'drive', label: '🚗 Drive' },
+      { value: 'boat', label: '🚤 Boat' },
+      { value: 'fly', label: '✈️ Fly' },
+    ];
+    const modeCycleBtn = document.getElementById('mode-cycle');
+
+    function applyMode(mode) {
+      // Switch vehicle
+      if (mode === 'fly') {
+        vehicleMode = 'fly';
+        // Replace car with plane — use plane mesh directly
+        scene.remove(carGroup);
+        if (wakeTrailLine) { scene.remove(wakeTrailLine); wakeTrailLine = null; }
+        carGroup = createPlane(0xcc2222);
+        const terrainH = getTerrainHeight(carX, carZ);
+        carGroup.position.set(carX, terrainH + 5, carZ);
+        scene.add(carGroup);
+        updateUsernameSprite();
+        // Smooth takeoff: start at terrain+5, rise to 50 over 2 seconds
+        planeAlt = terrainH + 5;
+        planeTakeoffTarget = 50;
+        planeTakeoffStart = planeAlt;
+        planeTakeoffT = 0;
+        carSpeed = 50; // Cessna — start moving immediately!
+        camMode = 'chase'; // ensure chase view behind the plane
+        updateCamLabel();
+        // Add shadow plane (flat dark circle on ground)
+        if (!planeShadow) {
+          const shadowGeo = new THREE.CircleGeometry(3, 16);
+          const shadowMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.35, depthWrite: false });
+          planeShadow = new THREE.Mesh(shadowGeo, shadowMat);
+          planeShadow.rotation.x = -Math.PI / 2;
+          scene.add(planeShadow);
         }
-      });
-    });
+        planeShadow.visible = true;
+        document.getElementById('mode-name').textContent = '✈️ Fly Mode';
+      } else if (mode === 'boat') {
+        vehicleMode = 'boat';
+        // Replace car with boat — use boat mesh directly, not copy
+        scene.remove(carGroup);
+        carGroup = createBoat(0xcc2222);
+        // Current tide level (mirrors the animation loop: oscillates between -5 and -1)
+        const tideLevel = -3 + Math.sin(performance.now() * 0.0005) * 2;
+        // Start boat at nearest water point
+        const startH = getTerrainHeight(carX, carZ);
+        if (startH > tideLevel) {
+          // We're on land — move to nearby water
+          carX = 0; carZ = 80; // St Helier bay area
+        }
+        carGroup.position.set(carX, tideLevel + 1, carZ);
+        scene.add(carGroup);
+        updateUsernameSprite();
+        // Initialize wake trail line
+        if (wakeTrailLine) scene.remove(wakeTrailLine);
+        wakeTrailPoints = [];
+        const wakeTrailGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(carX, tideLevel + 0.2, carZ)]);
+        const wakeTrailMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.8, linewidth: 2 });
+        wakeTrailLine = new THREE.Line(wakeTrailGeo, wakeTrailMat);
+        scene.add(wakeTrailLine);
+        document.getElementById('mode-name').textContent = '🚤 Boat Mode';
+        if (planeShadow) planeShadow.visible = false;
+      } else { // drive
+        vehicleMode = 'drive';
+        planeAlt = 0;
+        // Restore original car — create fresh car mesh
+        scene.remove(carGroup);
+        if (wakeTrailLine) { scene.remove(wakeTrailLine); wakeTrailLine = null; }
+        carGroup = createCar(0xcc2222);
+        const th = getTerrainHeight(carX, carZ);
+        carGroup.position.set(carX, Math.max(th + 0.5, 0), carZ);
+        scene.add(carGroup);
+        updateUsernameSprite();
+        document.getElementById('mode-name').textContent = '🚗 Drive Mode';
+        if (planeShadow) planeShadow.visible = false;
+      }
+      // Update the cycling button label
+      if (modeCycleBtn) {
+        modeCycleBtn.dataset.mode = mode;
+        const m = MODES.find(x => x.value === mode);
+        modeCycleBtn.innerHTML = (m ? m.label : mode) + ' <span class="chev">↻</span>';
+      }
+    }
 
-    // Camera modes
-    let camMode = 'chase';
-    document.querySelectorAll('.cam-btn[data-cam]').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.preventDefault();
-        camMode = btn.dataset.cam;
-        document.querySelectorAll('.cam-btn[data-cam]').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-      });
-    });
-
-    // ====== DAY/NIGHT TOGGLE ======
-    const nightToggle = document.getElementById('night-toggle');
-    nightToggle.addEventListener('click', (e) => {
+    modeCycleBtn.addEventListener('click', (e) => {
       e.preventDefault();
-      forceNight = !forceNight;
-      nightToggle.textContent = forceNight ? '☀️ Day' : '🌙 Night';
-      nightToggle.classList.toggle('active', forceNight);
-      applySkyAndSun();
+      const idx = MODES.findIndex(m => m.value === (modeCycleBtn.dataset.mode || 'drive'));
+      applyMode(MODES[(idx + 1) % MODES.length].value);
     });
+
+    // Camera modes (cycling button)
+    let camMode = 'chase';
+    const CAMS = [
+      { value: 'chase', label: '🎥 Chase' },
+      { value: 'far', label: '🎥 Far' },
+      { value: 'top', label: '🎥 Top' },
+      { value: 'cockpit', label: '🎥 Cockpit' },
+    ];
+    const camCycleBtn = document.getElementById('cam-cycle');
+
+    function updateCamLabel() {
+      if (!camCycleBtn) return;
+      camCycleBtn.dataset.cam = camMode;
+      const c = CAMS.find(x => x.value === camMode) || CAMS[0];
+      camCycleBtn.innerHTML = c.label + ' <span class="chev">↻</span>';
+    }
+
+    camCycleBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const idx = CAMS.findIndex(c => c.value === camMode);
+      camMode = CAMS[(idx + 1) % CAMS.length].value;
+      updateCamLabel();
+    });
+
+    // ====== DAY/NIGHT TOGGLE (now in menu) ======
+    function toggleNight() {
+      forceNight = !forceNight;
+      const menuNight = document.getElementById('menu-night');
+      const miState = document.getElementById('mi-night-state');
+      if (menuNight) menuNight.classList.toggle('night-on', forceNight);
+      if (miState) miState.textContent = forceNight ? 'On' : 'Off';
+      applySkyAndSun();
+    }
+    const nightToggle = document.getElementById('night-toggle');
+    if (nightToggle) nightToggle.addEventListener('click', (e) => { e.preventDefault(); toggleNight(); });
 
     // ====== RADAR (zoomed out to show whole island) ======
     const radarCanvas = document.getElementById('radar-canvas');
@@ -4782,7 +4886,8 @@
       }
 
       // HUD
-      document.getElementById('speed').textContent = `Speed: ${Math.round(Math.abs(carSpeed))} km/h`;
+      const speedValEl = document.getElementById('speed-val');
+      if (speedValEl) speedValEl.textContent = Math.round(Math.abs(carSpeed));
       const sb = document.getElementById('speed-bar'); if (sb) sb.style.width = Math.min(100, Math.abs(carSpeed) / 80 * 100) + '%';
       if (vehicleMode === 'fly') {
         document.getElementById('loc').textContent = `Alt: ${Math.round(planeAlt)}m · Jersey CI`;
@@ -4868,6 +4973,8 @@
 
     fetchWeather();
     document.getElementById('loading').style.display = 'none';
+    // Fade out the hackathon badge once the game starts
+    setTimeout(() => { const b = document.getElementById('badge'); if (b) b.classList.add('hide'); }, 1500);
 
     // Auto-start first mission on load
     setTimeout(() => { startMission(); }, 2000);
@@ -6398,6 +6505,103 @@
         radioBtn.title = 'Radio unavailable (Web Audio not supported)';
       }
     })();
+
+    // ====== SLIDE-OUT ☰ MENU ======
+    const menuBtn = document.getElementById('menu-btn');
+    const menuPanel = document.getElementById('menu-panel');
+    let menuOpen = false;
+
+    function setMenuOpen(open) {
+      menuOpen = open;
+      menuBtn.classList.toggle('active', open);
+      menuBtn.textContent = open ? '✕' : '☰';
+      menuPanel.classList.toggle('show', open);
+      if (open && typeof syncMenuStates === 'function') syncMenuStates();
+    }
+    menuBtn.addEventListener('click', (e) => {
+      e.preventDefault(); e.stopPropagation();
+      setMenuOpen(!menuOpen);
+    });
+
+    function syncMenuStates() {
+      const busState = document.getElementById('mi-bus-state');
+      const airportState = document.getElementById('mi-airport-state');
+      const radioState = document.getElementById('mi-radio-state');
+      const nightState = document.getElementById('mi-night-state');
+      if (busState) {
+        busState.textContent = (typeof busVisible !== 'undefined' && busVisible) ? 'On' : 'Off';
+        document.getElementById('menu-bus').classList.toggle('on', (typeof busVisible !== 'undefined' && busVisible));
+      }
+      if (airportState) {
+        airportState.textContent = (typeof airportPanelOpen !== 'undefined' && airportPanelOpen) ? 'On' : 'Off';
+        document.getElementById('menu-airport').classList.toggle('on', (typeof airportPanelOpen !== 'undefined' && airportPanelOpen));
+      }
+      if (radioState) {
+        const rb = document.getElementById('radio-toggle');
+        const on = rb && rb.classList.contains('active');
+        radioState.textContent = on ? 'On' : 'Off';
+        document.getElementById('menu-radio').classList.toggle('on', on);
+      }
+      if (nightState) nightState.textContent = forceNight ? 'On' : 'Off';
+    }
+
+    document.getElementById('menu-night').addEventListener('click', (e) => {
+      e.preventDefault(); e.stopPropagation();
+      toggleNight();
+      syncMenuStates();
+      setMenuOpen(false);
+    });
+
+    document.getElementById('menu-bus').addEventListener('click', (e) => {
+      e.preventDefault(); e.stopPropagation();
+      const btn = document.getElementById('bus-toggle');
+      if (btn) btn.click();
+      syncMenuStates();
+      setMenuOpen(false);
+    });
+
+    document.getElementById('menu-airport').addEventListener('click', (e) => {
+      e.preventDefault(); e.stopPropagation();
+      const btn = document.getElementById('airport-toggle');
+      if (btn) btn.click();
+      syncMenuStates();
+      setMenuOpen(false);
+    });
+
+    document.getElementById('menu-radio').addEventListener('click', (e) => {
+      e.preventDefault(); e.stopPropagation();
+      const btn = document.getElementById('radio-toggle');
+      if (btn) btn.click();
+      document.getElementById('radio-panel').classList.toggle('show', true);
+      syncMenuStates();
+      setMenuOpen(false);
+    });
+
+    document.getElementById('menu-leaderboard').addEventListener('click', (e) => {
+      e.preventDefault(); e.stopPropagation();
+      const btn = document.getElementById('leaderboard-btn');
+      if (btn) btn.click();
+      setMenuOpen(false);
+    });
+
+    document.getElementById('menu-settings').addEventListener('click', (e) => {
+      e.preventDefault(); e.stopPropagation();
+      const btn = document.getElementById('settings-btn');
+      if (btn) btn.click();
+      setMenuOpen(false);
+    });
+
+    // Close menu when tapping elsewhere
+    document.addEventListener('pointerdown', (e) => {
+      if (menuOpen) {
+        const ui = e.target.closest('#menu-btn') || e.target.closest('#menu-panel');
+        if (!ui) setMenuOpen(false);
+      }
+    }, { passive: true });
+
+    // Init camera label
+    updateCamLabel();
+    syncMenuStates();
   </script>
 </body>
 </html>
