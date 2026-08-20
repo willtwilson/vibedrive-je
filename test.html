@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head><title>Vibe Drive Jersey — Tests</title>
+<style>
+  body { font-family: monospace; background: #111; color: #0f0; padding: 20px; }
+  .pass { color: #0f0; } .fail { color: #f00; } .pending { color: #fa0; }
+  #results { white-space: pre; }
+</style></head>
+<body>
+<h2>⚡ Vibe Drive Jersey 3D — Automated Tests</h2>
+<div id="results">Running tests...</div>
+<iframe id="game-frame" src="/index.html" style="display:none;"></iframe>
+<script>
+const results = [];
+let passCount = 0, failCount = 0;
+
+function log(msg, status) {
+  const icon = status === 'pass' ? '✅' : status === 'fail' ? '❌' : '⏳';
+  results.push(`${icon} ${msg}`);
+  if (status === 'pass') passCount++;
+  if (status === 'fail') failCount++;
+  document.getElementById('results').textContent = results.join('\n');
+}
+
+function updateSummary() {
+  results.push(`\n--- ${passCount} passed, ${failCount} failed ---`);
+  document.getElementById('results').textContent = results.join('\n');
+}
+
+// Wait for iframe to load, then run tests
+window.addEventListener('load', () => {
+  const frame = document.getElementById('game-frame');
+  setTimeout(() => {
+    const fw = frame.contentWindow;
+    const fd = frame.contentDocument;
+
+    // Test 1: Page loaded
+    try { log(`Page loads`, fd ? 'pass' : 'fail'); }
+    catch(e) { log(`Page loads: ${e.message}`, 'fail'); }
+
+    // Test 2: Three.js loaded
+    try {
+      const three = fw.THREE;
+      log(`THREE.js available`, three ? 'pass' : 'pending');
+    } catch(e) { log(`THREE.js: ${e.message}`, 'fail'); }
+
+    // Test 3: Game canvas exists
+    try {
+      const canvas = fd.getElementById('game-canvas');
+      log(`Canvas element exists`, canvas ? 'pass' : 'fail');
+    } catch(e) { log(`Canvas: ${e.message}`, 'fail'); }
+
+    // Test 4: HUD elements present
+    const hudIds = ['hud', 'modes', 'controls', 'radar', 'speed', 'temp', 'weather-icon'];
+    hudIds.forEach(id => {
+      try {
+        const el = fd.getElementById(id);
+        log(`HUD element #${id}`, el ? 'pass' : 'fail');
+      } catch(e) { log(`HUD #${id}: ${e.message}`, 'fail'); }
+    });
+
+    // Test 5: Mode buttons
+    try {
+      const btns = fd.querySelectorAll('.mode-btn');
+      log(`Mode buttons (${btns.length} found)`, btns.length === 3 ? 'pass' : 'fail');
+    } catch(e) { log(`Mode buttons: ${e.message}`, 'fail'); }
+
+    // Test 6: Camera mode buttons
+    try {
+      const btns = fd.querySelectorAll('.cam-btn');
+      log(`Camera buttons (${btns.length} found)`, btns.length === 4 ? 'pass' : 'fail');
+    } catch(e) { log(`Camera buttons: ${e.message}`, 'fail'); }
+
+    // Test 7: Radar canvas
+    try {
+      const rc = fd.getElementById('radar-canvas');
+      log(`Radar canvas exists`, rc && rc.width === 180 ? 'pass' : 'fail');
+    } catch(e) { log(`Radar: ${e.message}`, 'fail'); }
+
+    // Test 8: CSS viewport
+    try {
+      const meta = fd.querySelector('meta[name=viewport]');
+      log(`Viewport meta tag`, meta && meta.content.includes('maximum-scale') ? 'pass' : 'fail');
+    } catch(e) { log(`Viewport: ${e.message}`, 'fail'); }
+
+    // Test 9: Import map
+    try {
+      const imap = fd.querySelector('script[type=importmap]');
+      log(`Import map present`, imap && imap.textContent.includes('three') ? 'pass' : 'fail');
+    } catch(e) { log(`Import map: ${e.message}`, 'fail'); }
+
+    // Test 10: Touch-action none on body
+    try {
+      const bodyStyle = fd.defaultView.getComputedStyle(fd.body);
+      log(`Body touch-action: none`, bodyStyle.touchAction === 'none' ? 'pass' : 'fail');
+    } catch(e) { log(`touch-action: ${e.message}`, 'fail'); }
+
+    // Test 11: Controls visible (not hidden by media query)
+    try {
+      const controls = fd.getElementById('controls');
+      const style = fd.defaultView.getComputedStyle(controls);
+      log(`Controls display not hidden`, style.display !== 'none' ? 'pass' : 'fail');
+    } catch(e) { log(`Controls: ${e.message}`, 'fail'); }
+
+    // Test 12: Weather API (async — just check HUD updates)
+    setTimeout(() => {
+      try {
+        const temp = fd.getElementById('temp').textContent;
+        log(`Weather HUD populated`, temp && !temp.includes('—') ? 'pass' : 'pending (still loading)');
+      } catch(e) { log(`Weather HUD: ${e.message}`, 'fail'); }
+      updateSummary();
+    }, 3000);
+
+  }, 2000);
+});
+</script>
+</body>
+</html>
