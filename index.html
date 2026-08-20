@@ -423,9 +423,13 @@
     let totalDistance = 0; // in game units (meters)
     let highScore = parseInt(localStorage.getItem('vibeDriveHighScore') || '0', 10);
     const landmarks = [
-      { name: '🏰 Mont Orgueil Castle', x: 95, z: -25, awarded: false },
-      { name: '🗼 La Corbière Lighthouse', x: -120, z: 85, awarded: false },
-      { name: '🏰 Elizabeth Castle', x: 15, z: 90, awarded: false },
+      { name: '🏰 Mont Orgueil Castle', x: 86.1, z: -93.8, awarded: false },
+      { name: '🗼 La Corbière Lighthouse', x: -22.0, z: -68.4, awarded: false },
+      { name: '🏰 Elizabeth Castle', x: 39.0, z: -56.4, awarded: false },
+      { name: '✈️ Jersey Airport', x: 0.8, z: -81.9, awarded: false },
+      { name: '⛰️ Sorel Point', x: 14.7, z: -116.2, awarded: false },
+      { name: '🌊 St Catherine\'s Breakwater', x: 93.1, z: -100.5, awarded: false },
+      { name: '⚓ Bouley Bay Pier', x: 54.9, z: -110.3, awarded: false },
     ];
     let speedTimer = 0; // seconds above 60 km/h
     let speedBonusAwarded = false;
@@ -472,7 +476,7 @@
       castle.position.set(x, h, z);
       scene.add(castle);
     }
-    addCastle(95, -25); // Mont Orgueil near Gorey
+    addCastle(86.1, -93.8); // Mont Orgueil near Gorey
 
     // La Corbière Lighthouse (south-west point)
     function addLighthouse(x, z) {
@@ -487,7 +491,7 @@
       lh.position.set(x, Math.max(getTerrainHeight(x, z), 0) + 0.5, z);
       scene.add(lh);
     }
-    addLighthouse(-120, 85); // La Corbière
+    addLighthouse(-22.0, -68.4); // La Corbière
 
     // Elizabeth Castle (St Helier bay)
     function addElizabethCastle(x, z) {
@@ -500,20 +504,124 @@
       castle.position.set(x, h, z);
       scene.add(castle);
     }
-    addElizabethCastle(15, 90); // Elizabeth Castle in the bay
+    addElizabethCastle(39.0, -56.4); // Elizabeth Castle in the bay
+
+    // ====== NEW LANDMARKS ======
+
+    // Jersey Airport runway (St Peter)
+    function addAirportRunway(x, z) {
+      const runway = new THREE.Mesh(new THREE.BoxGeometry(2, 0.1, 40), new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.8 }));
+      runway.position.set(x, Math.max(getTerrainHeight(x, z), 0.1) + 0.05, z);
+      runway.castShadow = true;
+      scene.add(runway);
+      // runway markings (white dashes)
+      for (let i = -15; i <= 15; i += 5) {
+        const mark = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.12, 2), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.6 }));
+        mark.position.set(x, Math.max(getTerrainHeight(x, z), 0.1) + 0.08, z + i);
+        scene.add(mark);
+      }
+    }
+    addAirportRunway(0.8, -81.9);
+
+    // Sorel Point cliffs (north coast - rocky outcrop)
+    function addSorelPoint(x, z) {
+      const group = new THREE.Group();
+      const rockMat = new THREE.MeshStandardMaterial({ color: 0x55504a, roughness: 0.95 });
+      for (let i = 0; i < 8; i++) {
+        const sz = 1.5 + Math.random() * 2;
+        const rock = new THREE.Mesh(new THREE.BoxGeometry(sz, sz * (0.8 + Math.random() * 0.6), sz), rockMat);
+        rock.position.set((Math.random() - 0.5) * 8, Math.random() * 3, (Math.random() - 0.5) * 8);
+        rock.rotation.set(Math.random() * 0.3, Math.random() * Math.PI, Math.random() * 0.3);
+        rock.castShadow = true;
+        group.add(rock);
+      }
+      group.position.set(x, Math.max(getTerrainHeight(x, z), 0), z);
+      scene.add(group);
+    }
+    addSorelPoint(14.7, -116.2);
+
+    // St Catherine's Breakwater (long thin wall extending into sea)
+    function addBreakwater(x, z) {
+      const wall = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 30), new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.9 }));
+      wall.position.set(x, 1, z);
+      wall.castShadow = true;
+      scene.add(wall);
+      // cap stones
+      const cap = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.3, 30), new THREE.MeshStandardMaterial({ color: 0xaaaaaa, roughness: 0.7 }));
+      cap.position.set(x, 2.2, z);
+      scene.add(cap);
+    }
+    addBreakwater(93.1, -100.5);
+
+    // Bouley Bay pier (small wooden pier)
+    function addPier(x, z) {
+      const deck = new THREE.Mesh(new THREE.BoxGeometry(1, 0.5, 8), new THREE.MeshStandardMaterial({ color: 0x8B4513, roughness: 0.8 }));
+      deck.position.set(x, 0.5, z);
+      deck.castShadow = true;
+      scene.add(deck);
+      // support posts
+      const postMat = new THREE.MeshStandardMaterial({ color: 0x6B3410, roughness: 0.9 });
+      for (let i = -3; i <= 3; i += 2) {
+        const post = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 1.5, 6), postMat);
+        post.position.set(x, 0, z + i);
+        scene.add(post);
+      }
+    }
+    addPier(54.9, -110.3);
+
+    // ====== PARISH LABELS ======
+    function makeTextLabel(text) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 256;
+      canvas.height = 64;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+      ctx.fillRect(0, 0, 256, 64);
+      ctx.font = 'bold 28px sans-serif';
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, 128, 32);
+      const texture = new THREE.CanvasTexture(canvas);
+      const spriteMat = new THREE.SpriteMaterial({ map: texture, transparent: true, opacity: 0.8 });
+      const sprite = new THREE.Sprite(spriteMat);
+      sprite.scale.set(12, 3, 1);
+      return sprite;
+    }
+
+    const parishes = [
+      { name: 'St Helier', x: 45.9, z: -66.9 },
+      { name: 'St Saviour', x: 57.3, z: -79.6 },
+      { name: 'St Clement', x: 55.9, z: -72.1 },
+      { name: 'Grouville', x: 78.2, z: -89.3 },
+      { name: 'St Martin', x: 60.8, z: -90.8 },
+      { name: 'Trinity', x: 50.9, z: -95.3 },
+      { name: 'St John', x: 44.9, z: -103.5 },
+      { name: 'St Mary', x: 28.6, z: -105.8 },
+      { name: 'St Ouen', x: 11.7, z: -95.3 },
+      { name: 'St Peter', x: 0.8, z: -83.3 },
+      { name: 'St Brelade', x: 0.3, z: -69.9 },
+      { name: 'St Lawrence', x: 37.0, z: -83.3 },
+    ];
+
+    parishes.forEach(p => {
+      const label = makeTextLabel(p.name);
+      label.position.set(p.x, 20, p.z);
+      scene.add(label);
+    });
 
     // ====== ADVERTISING BILLBOARDS ======
     const businesses = [
-      {"name":"Pinpoint","tagline":"Vibe.je Hackathon HQ · One Waverley Place","color":"#cc2222","x":5,"z":45,"primary":true},
-      {"name":"food.je","tagline":"Order Takeaway Online in Jersey","color":"#ff6600","x":-5,"z":55},
-      {"name":"Bohemia","tagline":"Fine Dining · St Helier","color":"#1a1a2e","x":10,"z":58},
-      {"name":"Jersey Dairy","tagline":"Fresh from the Herd","color":"#0066cc","x":-30,"z":60},
-      {"name":"Jersey Royal","tagline":"Jersey's Finest Spuds","color":"#22aa44","x":40,"z":50},
-      {"name":"LibertyBus","tagline":"Get Around Jersey","color":"#ffcc00","x":-10,"z":65},
-      {"name":"Ports of Jersey","tagline":"Gateway to the Channel Islands","color":"#1a3a6a","x":20,"z":70},
-      {"name":"Jersey Telecom","tagline":"Connect with JT","color":"#6633cc","x":-40,"z":55},
-      {"name":"Tekex.je","tagline":"Tech Innovation Jersey","color":"#008888","x":0,"z":40},
-      {"name":"vibe.je","tagline":"Good Vibes Only","color":"#00ccff","x":0,"z":48}
+      {"name":"Pinpoint","tagline":"Vibe.je Hackathon HQ · One Waverley Place","color":"#cc2222","x":46.4,"z":-65.4,"primary":true},
+      {"name":"food.je","tagline":"Order Takeaway Online in Jersey","color":"#ff6600","x":44.9,"z":-63.2},
+      {"name":"Bohemia","tagline":"Fine Dining · St Helier","color":"#1a1a2e","x":44.5,"z":-66.1},
+      {"name":"Jersey Dairy","tagline":"Fresh from the Herd","color":"#0066cc","x":50.9,"z":-95.3},
+      {"name":"Jersey Royal","tagline":"Jersey's Finest Spuds","color":"#22aa44","x":18.7,"z":-94.6},
+      {"name":"LibertyBus","tagline":"Get Around Jersey","color":"#ffcc00","x":44.5,"z":-68.4},
+      {"name":"Ports of Jersey","tagline":"Gateway to the Channel Islands","color":"#1a3a6a","x":0.8,"z":-81.9},
+      {"name":"Jersey Telecom","tagline":"Connect with JT","color":"#6633cc","x":43.5,"z":-66.9},
+      {"name":"Tekex.je","tagline":"Tech Innovation Jersey","color":"#008888","x":47.4,"z":-64.7},
+      {"name":"vibe.je","tagline":"Good Vibes Only","color":"#00ccff","x":46.9,"z":-63.9}
     ];
     const billboards = [];
     const adPopup = document.getElementById('ad-popup');
@@ -737,7 +845,7 @@
 
     // ====== GAME STATE ======
     let vehicleMode = 'drive'; // 'drive' or 'fly'
-    let carX = 0, carZ = 50, carHeading = 0, carSpeed = 0;
+    let carX = 46, carZ = -65, carHeading = 0, carSpeed = 0; // Start in St Helier
     let lateralVelocity = 0; // lateral slide momentum for sharp turns
     let planeAlt = 0; // altitude for plane mode
     let planeTakeoffT = 0, planeTakeoffStart = 0, planeTakeoffTarget = 50; // smooth takeoff interpolation
