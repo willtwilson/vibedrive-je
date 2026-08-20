@@ -2858,6 +2858,253 @@
 
     requestAnimationFrame(animate);
     setInterval(fetchWeather, 600000);
+
+    // ====== FLIGHT DATA (T-FLIGHT-DATA #8) ======
+    // Geo-to-game coordinate mapping (derived from airport position and game config)
+    // Jersey Airport: real lng=-2.1955, lat=49.2085 → game (0.8, -81.9)
+    // Game center: (0, -50) maps to lng=-2.1976, lat=49.1654
+    // scale_x = 496 units/deg, scale_z = 747.8 units/deg, z_offset = -50
+    const LNG_CENTER = -2.1976, LAT_CENTER = 49.1654;
+    const SCALE_X = 496, SCALE_Z = 747.8, Z_OFFSET = -50;
+    function geoToGame(lng, lat) {
+      const x = (lng - LNG_CENTER) * SCALE_X;
+      const z = (LAT_CENTER - lat) * SCALE_Z + Z_OFFSET; // invert lat: higher lat = more negative z
+      return { x, z };
+    }
+
+    // --- Airport Board ---
+    const airportToggle = document.getElementById('airport-toggle');
+    const airportPanel = document.getElementById('airport-panel');
+    let airportPanelOpen = false;
+
+    airportToggle.addEventListener('click', (e) => {
+      e.preventDefault();
+      airportPanelOpen = !airportPanelOpen;
+      airportToggle.classList.toggle('active', airportPanelOpen);
+      airportPanel.classList.toggle('show', airportPanelOpen);
+      if (airportPanelOpen) fetchAirportBoard();
+    });
+
+    async function fetchAirportBoard() {
+      try {
+        const res = await fetch('https://pojcdn.blob.core.windows.net/data/airportArrivals48h.json');
+        const data = await res.json();
+        const now = new Date();
+        const nowTime = now.getTime();
+
+        // Filter and sort arrivals — upcoming first
+        const arrivals = (data.FlightArrivalDetails || [])
+          .filter(f => f.Date && new Date(f.Date).getTime() >= nowTime - 3600000) // include recent + upcoming
+          .sort((a, b) => new Date(a.Date) - new Date(b.Date))
+          .slice(0, 5);
+
+        const departures = (data.FlightDepartureDetails || [])
+          .filter(f => f.Date && new Date(f.Date).getTime() >= nowTime - 3600000)
+          .sort((a, b) => new Date(a.Date) - new Date(b.Date))
+          .slice(0, 5);
+
+        const arrContainer = document.getElementById('ap-arrivals');
+        const depContainer = document.getElementById('ap-departures');
+
+        arrContainer.innerHTML = arrivals.length ? arrivals.map(f => {
+          const isDelayed = /delay|cancel|divert/i.test(f.Status || '');
+          const time = f.Scheduled || '';
+          return `<div class="ap-flight">
+            <span class="ap-fn">${f.Flightnumber || '—'}</span>
+            <span class="ap-route">${f.From || '—'}</span>
+            <span class="ap-time">${time}</span>
+            <span class="ap-status${isDelayed ? ' delayed' : ''}">${f.Status || ''}</span>
+          </div>`;
+        }).join('') : '<div class="ap-flight"><span class="ap-route">No upcoming arrivals</span></div>';
+
+        depContainer.innerHTML = departures.length ? departures.map(f => {
+          const isDelayed = /delay|cancel|divert/i.test(f.Status || '');
+          const time = f.Scheduled || '';
+          return `<div class="ap-flight">
+            <span class="ap-fn">${f.Flightnumber || '—'}</span>
+            <span class="ap-route">→ ${f.To || '—'}</span>
+            <span class="ap-time">${time}</span>
+            <span class="ap-status${isDelayed ? ' delayed' : ''}">${f.Status || ''}</span>
+          </div>`;
+        }).join('') : '<div class="ap-flight"><span class="ap-route">No upcoming departures</span></div>';
+
+        const updated = data.Updated ? new Date(data.Updated).toLocaleTimeString('en-GB') : new Date().toLocaleTimeString('en-GB');
+        document.getElementById('ap-updated').textContent = `Updated: ${updated}`;
+      } catch (e) {
+        console.error('Airport board fetch failed:', e);
+        document.getElementById('ap-updated').textContent = 'Fetch failed — retrying…';
+      }
+    }
+
+    // Auto-refresh airport board every 60s when panel is open
+    setInterval(() => { if (airportPanelOpen) fetchAirportBoard(); }, 60000);
+
+    // --- Live Aircraft (OpenSky) ---
+    let liveAircraft = []; // array of { mesh, label, callsign, lat, lon, altitude, heading, velocity }
+    let liveAircraftTimer = null;
+    const liveIndicator = document.getElementById('live-aircraft-indicator');
+
+    // Jersey bbox for filtering
+    const JERSEY_BBOX = { lamin: 49.0, lomin: -2.5, lamax: 49.4, lomax: -1.5 };
+
+    function createAircraftLabel(text) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 128; canvas.height = 32;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = 'rgba(10, 26, 63, 0.7)';
+      ctx.fillRect(0, 0, 128, 32);
+      ctx.font = 'bold 14px JetBrains Mono, monospace';
+      ctx.fillStyle = '#F0F4FF';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, 64, 16);
+      const texture = new THREE.CanvasTexture(canvas);
+      const spriteMat = new THREE.SpriteMaterial({ map: texture, transparent: true, depthTest: false });
+      const sprite = new THREE.Sprite(spriteMat);
+      sprite.scale.set(12, 3, 1);
+      sprite.userData.canvas = canvas;
+      sprite.userData.ctx = ctx;
+      sprite.userData.texture = texture;
+      return sprite;
+    }
+
+    function updateAircraftLabel(sprite, text) {
+      const ctx = sprite.userData.ctx;
+      ctx.clearRect(0, 0, 128, 32);
+      ctx.fillStyle = 'rgba(10, 26, 63, 0.7)';
+      ctx.fillRect(0, 0, 128, 32);
+      ctx.font = 'bold 14px JetBrains Mono, monospace';
+      ctx.fillStyle = '#F0F4FF';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, 64, 16);
+      sprite.userData.texture.needsUpdate = true;
+    }
+
+    function createLiveAircraftMesh() {
+      // Small white plane model — simplified version of createPlane
+      const plane = new THREE.Group();
+      const bodyMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4, metalness: 0.3 });
+      const fus = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 2.2, 8), bodyMat);
+      fus.rotation.z = Math.PI / 2; fus.castShadow = true; plane.add(fus);
+      const wing = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.1, 0.5), bodyMat);
+      wing.position.set(0, 0.2, 0); wing.castShadow = true; plane.add(wing);
+      const tail = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.1, 0.3), bodyMat);
+      tail.position.set(-1.0, 0.2, 0); tail.castShadow = true; plane.add(tail);
+      const fin = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.5, 0.3), bodyMat);
+      fin.position.set(-1.0, 0.5, 0); fin.castShadow = true; plane.add(fin);
+      return plane;
+    }
+
+    async function fetchLiveAircraft() {
+      if (vehicleMode !== 'fly') return;
+      try {
+        const url = `https://opensky-network.org/api/states/all?lamin=${JERSEY_BBOX.lamin}&lomin=${JERSEY_BBOX.lomin}&lamax=${JERSEY_BBOX.lamax}&lomax=${JERSEY_BBOX.lomax}`;
+        const res = await fetch(url);
+        if (!res.ok) return;
+        const data = await res.json();
+        const states = data.states || [];
+        if (!states.length) {
+          liveIndicator.classList.remove('show');
+          return;
+        }
+
+        // Build a map of current aircraft by callsign
+        const newCallsigns = new Set();
+        const existing = new Map(liveAircraft.map(a => [a.callsign, a]));
+
+        for (const s of states) {
+          // OpenSky state vector: [icao24, callsign, origin_country, time_position, last_contact,
+          //   longitude, latitude, baro_altitude, on_ground, velocity, true_track, vertical_rate,
+          //   sensors, geo_altitude, squawk, spi, position_source]
+          const callsign = (s[1] || '').trim();
+          if (!callsign) continue;
+          const lon = s[5], lat = s[6];
+          const baroAlt = s[7]; // barometric altitude in meters
+          const trueTrack = s[10] || 0; // heading in degrees
+          const velocity = s[9] || 0; // m/s
+
+          if (lon == null || lat == null) continue;
+          if (lat < JERSEY_BBOX.lamin || lat > JERSEY_BBOX.lamax) continue;
+          if (lon < JERSEY_BBOX.lomin || lon > JERSEY_BBOX.lomax) continue;
+
+          newCallsigns.add(callsign);
+          const gameCoord = geoToGame(lon, lat);
+          // Scale altitude: 1 game unit = ~10m, so alt_m / 10 = game units up
+          const altMeters = baroAlt != null ? baroAlt : (s[13] || 0);
+          const altGameUnits = Math.max(altMeters / 10, 5); // minimum 5 units above terrain
+
+          if (existing.has(callsign)) {
+            // Update existing aircraft
+            const ac = existing.get(callsign);
+            ac.mesh.position.set(gameCoord.x, altGameUnits, gameCoord.z);
+            ac.mesh.rotation.y = -trueTrack * Math.PI / 180; // heading
+            ac.label.position.set(gameCoord.x, altGameUnits + 3, gameCoord.z);
+            ac.lat = lat; ac.lon = lon; ac.altitude = altMeters; ac.heading = trueTrack;
+          } else {
+            // Create new aircraft
+            const mesh = createLiveAircraftMesh();
+            mesh.position.set(gameCoord.x, altGameUnits, gameCoord.z);
+            mesh.rotation.y = -trueTrack * Math.PI / 180;
+            scene.add(mesh);
+            const label = createAircraftLabel(callsign);
+            label.position.set(gameCoord.x, altGameUnits + 3, gameCoord.z);
+            scene.add(label);
+            liveAircraft.push({ mesh, label, callsign, lat, lon, altitude: altMeters, heading: trueTrack, velocity });
+          }
+        }
+
+        // Remove aircraft no longer in the data
+        liveAircraft = liveAircraft.filter(ac => {
+          if (newCallsigns.has(ac.callsign)) return true;
+          scene.remove(ac.mesh);
+          scene.remove(ac.label);
+          disposeMesh(ac.mesh);
+          if (ac.label.material) ac.label.material.dispose();
+          if (ac.label.material.map) ac.label.material.map.dispose();
+          return false;
+        });
+
+        // Show/hide live indicator
+        if (liveAircraft.length > 0) {
+          liveIndicator.classList.add('show');
+        } else {
+          liveIndicator.classList.remove('show');
+        }
+      } catch (e) {
+        // Silently skip on error — don't crash the game
+        console.warn('OpenSky fetch skipped:', e.message);
+      }
+    }
+
+    function startLiveAircraftTracking() {
+      if (liveAircraftTimer) return; // already running
+      fetchLiveAircraft(); // immediate first fetch
+      liveAircraftTimer = setInterval(fetchLiveAircraft, 180000); // every 3 minutes
+    }
+
+    function stopLiveAircraftTracking() {
+      if (liveAircraftTimer) { clearInterval(liveAircraftTimer); liveAircraftTimer = null; }
+      // Remove all live aircraft from scene
+      liveAircraft.forEach(ac => {
+        scene.remove(ac.mesh);
+        scene.remove(ac.label);
+        disposeMesh(ac.mesh);
+        if (ac.label.material) ac.label.material.dispose();
+        if (ac.label.material.map) ac.label.material.map.dispose();
+      });
+      liveAircraft = [];
+      liveIndicator.classList.remove('show');
+    }
+
+    // Hook into mode switching — hook via MutationObserver on mode-name text
+    const modeNameEl = document.getElementById('mode-name');
+    const modeObserver = new MutationObserver(() => {
+      const txt = modeNameEl.textContent;
+      if (txt.includes('Fly Mode')) startLiveAircraftTracking();
+      else stopLiveAircraftTracking();
+    });
+    modeObserver.observe(modeNameEl, { childList: true, subtree: false, characterData: true });
   </script>
 </body>
 </html>
