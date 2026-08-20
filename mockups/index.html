@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VibeDrive.je — Controls Mockup Comparison</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', sans-serif; background: #0A1A3F; color: #fff; padding: 20px; }
+  h1 { font-size: 28px; font-weight: 900; margin-bottom: 8px; }
+  .subtitle { color: #00A86B; font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 20px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+  @media (max-width: 1024px) { .grid { grid-template-columns: 1fr; } }
+  .card { background: #14264f; border: 1px solid #1a3055; border-radius: 8px; overflow: hidden; }
+  .card-header { padding: 12px 16px; background: #1a3055; display: flex; justify-content: space-between; align-items: center; }
+  .card-title { font-size: 16px; font-weight: 800; }
+  .card-philosophy { font-size: 11px; color: #FFD60A; font-weight: 700; text-transform: uppercase; }
+  .card iframe { width: 100%; height: 600px; border: none; }
+  .card-footer { padding: 10px 16px; font-size: 12px; color: rgba(255,255,255,0.6); }
+  .actions { display: flex; gap: 12px; margin-bottom: 20px; }
+  .btn { padding: 10px 20px; border: none; border-radius: 4px; font-family: 'Inter', sans-serif; font-weight: 700; cursor: pointer; }
+  .btn-primary { background: #00A86B; color: #fff; }
+  .btn-secondary { background: #1a3055; color: #fff; }
+  .full-view { margin-top: 20px; }
+  .full-view iframe { width: 100%; height: 800px; border: 1px solid #1a3055; border-radius: 8px; }
+  .toggle-row { display: flex; gap: 8px; margin-bottom: 12px; }
+  .toggle-btn { padding: 8px 16px; background: #1a3055; border: 1px solid #2a4070; color: #fff; border-radius: 4px; cursor: pointer; font-family: 'Inter'; font-size: 12px; font-weight: 700; }
+  .toggle-btn.active { background: #00A86B; }
+  .info { background: #14264f; padding: 16px; border-radius: 8px; margin-bottom: 20px; font-size: 13px; line-height: 1.6; }
+  .info h2 { font-size: 16px; margin-bottom: 8px; color: #FFD60A; }
+  .checklist { list-style: none; }
+  .checklist li { padding: 4px 0; }
+  .checklist li:before { content: "☐ "; color: #00A86B; }
+</style>
+</head>
+<body>
+<h1>VibeDrive.je — Controls Mockup Tournament</h1>
+<div class="subtitle">3 Design Philosophies · Served via Caddy · Pick your winner</div>
+
+<div class="info">
+  <h2>How to Review</h2>
+  <p>Each mockup below shows a different control layout philosophy. Tap inside each frame to interact. When you find your favorite (or want a hybrid), tell Vibe which elements you want.</p>
+  <ul class="checklist">
+    <li>Can I reach all controls with my thumbs on iPad?</li>
+    <li>Is the 3D view maximized (minimal HUD clutter)?</li>
+    <li>Can I switch vehicle mode in 1 tap?</li>
+    <li>Can I change camera in 1 tap or gesture?</li>
+    <li>Are secondary features (bus, radio, leaderboard) accessible but not in the way?</li>
+    <li>Does it look good? Is it on-brand?</li>
+  </ul>
+</div>
+
+<div class="actions">
+  <button class="btn btn-primary" onclick="window.open('K2-7-Code.html','_blank')">Open Minimalist Full</button>
+  <button class="btn btn-primary" onclick="window.open('GLM-5-2.html','_blank')">Open Feature-Rich Full</button>
+  <button class="btn btn-primary" onclick="window.open('DeepSeek-Pro-V4.html','_blank')">Open Gesture-First Full</button>
+</div>
+
+<div class="grid">
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">K2.7-Code</span>
+      <span class="card-philosophy">Minimalist</span>
+    </div>
+    <iframe src="K2-7-Code.html"></iframe>
+    <div class="card-footer">5 buttons max, hamburger menu, max screen for 3D</div>
+  </div>
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">GLM-5.2</span>
+      <span class="card-philosophy">Feature-Rich</span>
+    </div>
+    <iframe src="GLM-5-2.html"></iframe>
+    <div class="card-footer">All features visible, right-edge strip, iPad-optimized</div>
+  </div>
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">DeepSeek-Pro-V4</span>
+      <span class="card-philosophy">Gesture-First</span>
+    </div>
+    <iframe src="DeepSeek-Pro-V4.html"></iframe>
+    <div class="card-footer">Swipe/pinch/tap gestures, minimal visible UI</div>
+  </div>
+</div>
+</body>
+</html>
