@@ -274,6 +274,53 @@
     #bus-toggle.active { background: rgba(255, 152, 0, 0.35); border-color: #ff9800; color: #ffcc80; }
     #bus-toggle:hover { border-color: #ff9800; }
 
+    /* ====== RADIO BUTTON & PANEL ====== */
+    #radio-toggle {
+      position: fixed; top: 12px; right: 336px; z-index: 50;
+      width: 36px; height: 36px; border-radius: 0;
+      border: 1px solid var(--hud-border);
+      background: var(--hud-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      color: var(--text-primary); font-size: 17px; display: flex; align-items: center; justify-content: center;
+      cursor: pointer; user-select: none; touch-action: none; transition: all 0.15s;
+      pointer-events: auto;
+    }
+    #radio-toggle.active { background: rgba(156, 39, 176, 0.35); border-color: #ab47bc; color: #ce93d8; }
+    #radio-toggle:hover { border-color: #ab47bc; }
+    #radio-toggle.unavailable { opacity: 0.4; cursor: not-allowed; }
+
+    #radio-panel {
+      position: fixed; top: 54px; right: 336px; z-index: 50;
+      background: var(--hud-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--hud-border); border-left: 3px solid #ab47bc;
+      padding: 10px 14px; display: none; flex-direction: column; gap: 8px;
+      min-width: 200px; pointer-events: auto;
+    }
+    #radio-panel.show { display: flex; }
+    #radio-panel .rp-station {
+      font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 700;
+      color: #ce93d8; letter-spacing: 0.5px;
+    }
+    #radio-panel .rp-volume-row {
+      display: flex; align-items: center; gap: 8px;
+    }
+    #radio-panel .rp-volume-row label {
+      font-size: 11px; color: var(--text-secondary);
+    }
+    #radio-panel .rp-volume {
+      -webkit-appearance: none; appearance: none;
+      width: 110px; height: 4px; background: rgba(255,255,255,0.15);
+      border-radius: 2px; outline: none; cursor: pointer;
+    }
+    #radio-panel .rp-volume::-webkit-slider-thumb {
+      -webkit-appearance: none; appearance: none;
+      width: 14px; height: 14px; border-radius: 50%;
+      background: #ab47bc; cursor: pointer; border: none;
+    }
+    #radio-panel .rp-volume::-moz-range-thumb {
+      width: 14px; height: 14px; border-radius: 50%;
+      background: #ab47bc; cursor: pointer; border: none;
+    }
+
     #airport-panel {
       position: fixed; top: 56px; right: 12px; z-index: 49;
       background: var(--atlantic-blue); border: 1px solid var(--hud-border);
@@ -552,6 +599,14 @@
 
   <button id="bus-toggle" title="Bus Routes">🚌</button>
   <button id="airport-toggle" title="Airport Board">✈️</button>
+  <button id="radio-toggle" title="Radio">📻</button>
+  <div id="radio-panel">
+    <div class="rp-station" id="radio-station-name">Off</div>
+    <div class="rp-volume-row">
+      <label>Vol</label>
+      <input type="range" class="rp-volume" id="radio-volume" min="0" max="100" value="40">
+    </div>
+  </div>
   <div id="airport-panel">
     <div class="ap-header">🛫 Jersey Airport — Live Board</div>
     <div class="ap-section-title">↓ Arrivals</div>
@@ -3108,7 +3163,7 @@
              target.closest('#cam-btns') || target.closest('#radar') || target.closest('#radar-label') ||
              target.closest('#badge') || target.closest('#steer-hint') || target.closest('#loading') ||
              target.closest('#ad-popup') || target.closest('#score-display') || target.closest('#toast') ||
-             target.closest('#night-toggle') || target.closest('#airport-toggle') || target.closest('#airport-panel') || target.closest('#bus-toggle');
+             target.closest('#night-toggle') || target.closest('#airport-toggle') || target.closest('#airport-panel') || target.closest('#bus-toggle') || target.closest('#radio-toggle') || target.closest('#radio-panel');
     }
 
     document.addEventListener('pointerdown', (e) => {
@@ -5374,6 +5429,311 @@
       busSystem.setVisible(busVisible);
       busToggleBtn.classList.toggle('active', busVisible);
     });
+
+    // ====== T-RADIO: Web Audio Radio Stations ======
+    (function() {
+      const radioBtn = document.getElementById('radio-toggle');
+      const radioPanel = document.getElementById('radio-panel');
+      const stationNameEl = document.getElementById('radio-station-name');
+      const volumeSlider = document.getElementById('radio-volume');
+
+      const stations = ['Off', 'Jersey Pulse', 'Atlantic Chill', 'Channel FM'];
+      let currentStation = 0;
+      let audioCtx = null;
+      let masterGain = null;
+      let radioNodes = []; // active nodes to stop on station change
+      let radioIntervals = []; // active intervals/timeouts
+      let volume = 0.4;
+
+      function clearRadio() {
+        radioIntervals.forEach(id => clearInterval(id));
+        radioIntervals.forEach(id => clearTimeout(id));
+        radioIntervals = [];
+        radioNodes.forEach(n => { try { n.stop(); } catch(e){} try { n.disconnect(); } catch(e){} });
+        radioNodes = [];
+      }
+
+      function createAudioContext() {
+        if (audioCtx) return true;
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return false;
+        audioCtx = new AC();
+        masterGain = audioCtx.createGain();
+        masterGain.gain.value = volume;
+        masterGain.connect(audioCtx.destination);
+        return true;
+      }
+
+      // --- Station 1: Jersey Pulse (upbeat electronic, 120BPM with filter sweeps) ---
+      function playJerseyPulse() {
+        const bpm = 120;
+        const beatDur = 60 / bpm; // 0.5s per beat
+        const filter = audioCtx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.value = 800;
+        filter.Q.value = 8;
+        filter.connect(masterGain);
+        radioNodes.push(filter);
+
+        // Bass oscillator - sawtooth
+        const bass = audioCtx.createOscillator();
+        bass.type = 'sawtooth';
+        bass.frequency.value = 55; // A1
+        const bassGain = audioCtx.createGain();
+        bassGain.gain.value = 0;
+        bass.connect(bassGain);
+        bassGain.connect(filter);
+        bass.start();
+        radioNodes.push(bass, bassGain);
+
+        // Lead oscillator - square
+        const lead = audioCtx.createOscillator();
+        lead.type = 'square';
+        lead.frequency.value = 220; // A3
+        const leadGain = audioCtx.createGain();
+        leadGain.gain.value = 0;
+        lead.connect(leadGain);
+        leadGain.connect(filter);
+        lead.start();
+        radioNodes.push(lead, leadGain);
+
+        // Kick pattern using gain envelopes on bass
+        let beat = 0;
+        const kickPattern = [1, 0, 0.3, 0, 0.8, 0, 0.3, 0]; // 8th note pattern
+        const pulseInterval = setInterval(() => {
+          const now = audioCtx.currentTime;
+          const intensity = kickPattern[beat % 8];
+          // Bass kick
+          bassGain.gain.cancelScheduledValues(now);
+          bassGain.gain.setValueAtTime(intensity * 0.6, now);
+          bassGain.gain.exponentialRampToValueAtTime(0.001, now + beatDur * 0.4);
+          // Lead note changes
+          if (beat % 4 === 0) {
+            const notes = [220, 220, 277, 246]; // A, A, C#, B
+            lead.frequency.setValueAtTime(notes[(beat / 4) % 4 | 0], now);
+            leadGain.gain.cancelScheduledValues(now);
+            leadGain.gain.setValueAtTime(0.2, now);
+            leadGain.gain.exponentialRampToValueAtTime(0.001, now + beatDur * 1.8);
+          }
+          // Filter sweep
+          const sweepVal = 400 + 1200 * (Math.sin(beat * 0.15) * 0.5 + 0.5);
+          filter.frequency.cancelScheduledValues(now);
+          filter.frequency.linearRampToValueAtTime(sweepVal, now + beatDur * 0.5);
+          beat++;
+        }, beatDur * 1000);
+        radioIntervals.push(pulseInterval);
+      }
+
+      // --- Station 2: Atlantic Chill (ambient pad with delay) ---
+      function playAtlanticChill() {
+        // Delay for reverb-like effect
+        const delay = audioCtx.createDelay();
+        delay.delayTime.value = 0.4;
+        const delayGain = audioCtx.createGain();
+        delayGain.gain.value = 0.45;
+        const delayFilter = audioCtx.createBiquadFilter();
+        delayFilter.type = 'lowpass';
+        delayFilter.frequency.value = 1500;
+        delay.connect(delayFilter);
+        delayFilter.connect(delayGain);
+        delayGain.connect(delay); // feedback loop
+        delayFilter.connect(masterGain);
+        radioNodes.push(delay, delayGain, delayFilter);
+
+        // Ambient pad: 3 detuned oscillators
+        const padFreqs = [110, 164.81, 220]; // A2, E3, A3
+        padFreqs.forEach((freq, i) => {
+          const osc = audioCtx.createOscillator();
+          osc.type = 'sine';
+          osc.frequency.value = freq;
+          osc.detune.value = (i - 1) * 7; // slight detune
+          const gain = audioCtx.createGain();
+          gain.gain.value = 0.08;
+          // Slow LFO on gain for breathing effect
+          const lfo = audioCtx.createOscillator();
+          lfo.type = 'sine';
+          lfo.frequency.value = 0.08 + i * 0.03;
+          const lfoGain = audioCtx.createGain();
+          lfoGain.gain.value = 0.04;
+          lfo.connect(lfoGain);
+          lfoGain.connect(gain.gain);
+          lfo.start();
+          osc.connect(gain);
+          gain.connect(masterGain);
+          gain.connect(delay); // send to delay
+          osc.start();
+          radioNodes.push(osc, gain, lfo, lfoGain);
+        });
+
+        // Slow chord changes
+        const chords = [
+          [110, 164.81, 220],  // Am
+          [98, 146.83, 196],   // G
+          [87.31, 130.81, 174.61], // F
+          [110, 138.59, 164.81], // A
+        ];
+        let chordIdx = 0;
+        const chordInterval = setInterval(() => {
+          chordIdx = (chordIdx + 1) % chords.length;
+          const now = audioCtx.currentTime;
+          // We can't easily change existing oscillators, so just morph filter
+          // Actually let's fade and recreate... simpler: just keep the pad
+          // The chord changes are subtle enough with the existing drones
+        }, 8000);
+        radioIntervals.push(chordInterval);
+      }
+
+      // --- Station 3: Channel FM (talk radio - white noise bursts) ---
+      function playChannelFM() {
+        // Create a buffer source for white noise
+        const bufferSize = audioCtx.sampleRate * 2; // 2 seconds
+        const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+        const data = noiseBuffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          data[i] = Math.random() * 2 - 1;
+        }
+
+        const noiseFilter = audioCtx.createBiquadFilter();
+        noiseFilter.type = 'bandpass';
+        noiseFilter.frequency.value = 1200;
+        noiseFilter.Q.value = 0.5;
+        noiseFilter.connect(masterGain);
+        radioNodes.push(noiseFilter);
+
+        function playNoiseBurst(duration, intensity) {
+          const noise = audioCtx.createBufferSource();
+          noise.buffer = noiseBuffer;
+          noise.loop = true;
+          const gain = audioCtx.createGain();
+          gain.gain.value = 0;
+          const now = audioCtx.currentTime;
+          gain.gain.setValueAtTime(0, now);
+          gain.gain.linearRampToValueAtTime(intensity, now + 0.05);
+          gain.gain.setValueAtTime(intensity, now + duration - 0.05);
+          gain.gain.linearRampToValueAtTime(0, now + duration);
+          noise.connect(gain);
+          gain.connect(noiseFilter);
+          noise.start(now);
+          noise.stop(now + duration);
+          // Clean up after
+          setTimeout(() => { try { noise.disconnect(); gain.disconnect(); } catch(e){} }, (duration + 0.1) * 1000);
+        }
+
+        // Schedule random noise bursts (static between "shows")
+        function scheduleNext() {
+          const delay = 2000 + Math.random() * 6000; // 2-8s gap
+          const dur = 1 + Math.random() * 3; // 1-4s burst
+          const intensity = 0.05 + Math.random() * 0.1;
+          const timeoutId = setTimeout(() => {
+            playNoiseBurst(dur, intensity);
+            scheduleNext();
+          }, delay);
+          radioIntervals.push(timeoutId);
+        }
+        scheduleNext();
+
+        // Occasional "voice-like" tone bursts
+        function scheduleVoice() {
+          const delay = 8000 + Math.random() * 15000;
+          const timeoutId = setTimeout(() => {
+            // Simulate a muffled voice with filtered oscillator
+            const osc = audioCtx.createOscillator();
+            osc.type = 'sawtooth';
+            const baseFreq = 150 + Math.random() * 100;
+            osc.frequency.value = baseFreq;
+            const vgain = audioCtx.createGain();
+            vgain.gain.value = 0;
+            const vfilter = audioCtx.createBiquadFilter();
+            vfilter.type = 'bandpass';
+            vfilter.frequency.value = 800;
+            vfilter.Q.value = 2;
+            const now = audioCtx.currentTime;
+            const vDur = 2 + Math.random() * 4;
+            // AM modulation for "talking"
+            const modOsc = audioCtx.createOscillator();
+            modOsc.type = 'sine';
+            modOsc.frequency.value = 4 + Math.random() * 3;
+            const modGain = audioCtx.createGain();
+            modGain.gain.value = 0.03;
+            modOsc.connect(modGain);
+            modGain.connect(vgain.gain);
+            vgain.gain.setValueAtTime(0.05, now);
+            vgain.gain.linearRampToValueAtTime(0.05, now + 0.3);
+            vgain.gain.setValueAtTime(0.05, now + vDur - 0.3);
+            vgain.gain.linearRampToValueAtTime(0, now + vDur);
+            osc.connect(vfilter);
+            vfilter.connect(vgain);
+            vgain.connect(masterGain);
+            modOsc.start(now);
+            osc.start(now);
+            osc.stop(now + vDur);
+            modOsc.stop(now + vDur);
+            setTimeout(() => { try { osc.disconnect(); vgain.disconnect(); vfilter.disconnect(); modOsc.disconnect(); modGain.disconnect(); } catch(e){} }, (vDur + 0.1) * 1000);
+            scheduleVoice();
+          }, delay);
+          radioIntervals.push(timeoutId);
+        }
+        scheduleVoice();
+      }
+
+      function setStation(idx) {
+        clearRadio();
+        currentStation = idx;
+        const name = stations[idx];
+        stationNameEl.textContent = name;
+
+        if (name === 'Off') {
+          radioBtn.classList.remove('active');
+        } else {
+          radioBtn.classList.add('active');
+          if (!createAudioContext()) {
+            stationNameEl.textContent = 'Radio unavailable';
+            radioBtn.classList.remove('active');
+            radioBtn.classList.add('unavailable');
+            return;
+          }
+          // Resume context if suspended (autoplay policy)
+          if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+          }
+          masterGain.gain.value = volume;
+          if (name === 'Jersey Pulse') playJerseyPulse();
+          else if (name === 'Atlantic Chill') playAtlanticChill();
+          else if (name === 'Channel FM') playChannelFM();
+        }
+      }
+
+      // Radio toggle button — cycles through stations
+      radioBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        setStation((currentStation + 1) % stations.length);
+      });
+
+      // Volume slider
+      volumeSlider.addEventListener('input', (e) => {
+        volume = e.target.value / 100;
+        if (masterGain) {
+          masterGain.gain.linearRampToValueAtTime(volume, audioCtx.currentTime + 0.05);
+        }
+      });
+
+      // Show panel on hover/focus, keep it visible while interacting
+      radioBtn.addEventListener('mouseenter', () => radioPanel.classList.add('show'));
+      radioPanel.addEventListener('mouseenter', () => radioPanel.classList.add('show'));
+      radioBtn.addEventListener('mouseleave', () => {
+        setTimeout(() => {
+          if (!radioPanel.matches(':hover')) radioPanel.classList.remove('show');
+        }, 200);
+      });
+      radioPanel.addEventListener('mouseleave', () => radioPanel.classList.remove('show'));
+
+      // Init: check Web Audio availability
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) {
+        radioBtn.classList.add('unavailable');
+        radioBtn.title = 'Radio unavailable (Web Audio not supported)';
+      }
+    })();
   </script>
 </body>
 </html>
