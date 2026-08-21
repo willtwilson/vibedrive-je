@@ -779,6 +779,7 @@
 
   <script src="jersey-roads.js"></script>
   <script src="jersey-bus-data.js"></script>
+  <script src="jersey-coastline.js"></script>
   <script type="importmap">
   { "imports": {
     "three": "https://unpkg.com/three@0.185.0/build/three.module.js",
@@ -4075,38 +4076,35 @@
     const RADAR_SIZE = 180, RADAR_RANGE = 350; // wider range to show whole island
 
     // Sample coastline from islandMask() — trace boundary by ray-casting from island center
-    const coastlinePoints = (() => {
-      const points = [];
-      const icx = 0, icz = -50;
-      const numRays = 120;
-      const maxRadius = 300;
-      const stepSize = 2;
-      for (let i = 0; i < numRays; i++) {
-        const angle = (i / numRays) * Math.PI * 2;
-        const dirX = Math.cos(angle), dirZ = Math.sin(angle);
-        let lastInside = true;
-        let bx = icx, bz = icz;
-        for (let r = 0; r <= maxRadius; r += stepSize) {
-          const x = icx + dirX * r, z = icz + dirZ * r;
-          const mask = islandMask(x, z);
-          if (mask <= 0 && lastInside) {
-            // Binary-search refine the boundary
-            let lo = r - stepSize, hi = r;
-            for (let j = 0; j < 10; j++) {
-              const mid = (lo + hi) / 2;
-              if (islandMask(icx + dirX * mid, icz + dirZ * mid) > 0) lo = mid;
-              else hi = mid;
+    // Radar coastline: use the REAL Jersey outline from jersey-coastline.js.
+    // Fall back to ray-casting islandMask() only if the real data failed to load.
+    const coastlinePoints = (typeof jerseyCoastline !== 'undefined' && jerseyCoastline.length > 0)
+      ? jerseyCoastline[0].map(pt => ({ x: pt[0], z: pt[1] }))
+      : (() => {
+          const points = [];
+          const icx = 0, icz = -50, numRays = 120, maxRadius = 300, stepSize = 2;
+          for (let i = 0; i < numRays; i++) {
+            const angle = (i / numRays) * Math.PI * 2;
+            const dirX = Math.cos(angle), dirZ = Math.sin(angle);
+            let lastInside = true, bx = icx, bz = icz;
+            for (let r = 0; r <= maxRadius; r += stepSize) {
+              const x = icx + dirX * r, z = icz + dirZ * r;
+              const mask = islandMask(x, z);
+              if (mask <= 0 && lastInside) {
+                let lo = r - stepSize, hi = r;
+                for (let j = 0; j < 10; j++) {
+                  const mid = (lo + hi) / 2;
+                  if (islandMask(icx + dirX * mid, icz + dirZ * mid) > 0) lo = mid; else hi = mid;
+                }
+                bx = icx + dirX * (lo + hi) / 2; bz = icz + dirZ * (lo + hi) / 2;
+                break;
+              }
+              lastInside = mask > 0;
             }
-            bx = icx + dirX * (lo + hi) / 2;
-            bz = icz + dirZ * (lo + hi) / 2;
-            break;
+            points.push({ x: bx, z: bz });
           }
-          lastInside = mask > 0;
-        }
-        points.push({ x: bx, z: bz });
-      }
-      return points;
-    })();
+          return points;
+        })();
 
     function drawRadar() {
       radarCtx.clearRect(0, 0, RADAR_SIZE, RADAR_SIZE);
