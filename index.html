@@ -623,6 +623,51 @@
     #settings-panel .panel-close:hover { color: var(--rally-red); }
     #lightning-flash { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; opacity: 0; pointer-events: none; z-index: 9999; transition: opacity 0.05s ease; }
     #slippery-warning { display: none; color: #ff9900; font-size: 12px; font-weight: 700; margin-top: 4px; text-shadow: 0 1px 3px rgba(0,0,0,0.7); }
+
+    /* ====== LANDING / MODE TOGGLE (3D vs Retro) ====== */
+    #landing {
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh; z-index: 320;
+      display: flex; align-items: center; justify-content: center;
+      background:
+        radial-gradient(ellipse at 50% 40%, rgba(10,26,63,0.55), rgba(10,26,63,0.92)),
+        repeating-linear-gradient(0deg, rgba(0,0,0,0.25) 0px, rgba(0,0,0,0.25) 2px, transparent 2px, transparent 4px);
+      backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+    }
+    #landing.hidden { display: none; }
+    #landing .land-card {
+      background: rgba(10, 26, 63, 0.9); border: 2px solid var(--jersey-green);
+      border-left: 6px solid var(--jersey-green);
+      padding: 28px 34px; text-align: center; max-width: 420px; width: 90%;
+      box-shadow: 0 0 60px rgba(0, 168, 107, 0.35), 0 12px 40px rgba(0, 0, 0, 0.6);
+    }
+    #landing .land-title {
+      font-family: 'Inter', sans-serif; font-size: 24px; font-weight: 900;
+      text-transform: uppercase; letter-spacing: 0.05em; color: var(--sprint-yellow);
+    }
+    #landing .land-sub {
+      font-size: 12px; font-weight: 700; color: var(--text-secondary);
+      text-transform: uppercase; letter-spacing: 0.1em; margin: 6px 0 4px;
+    }
+    #landing .land-jersey {
+      font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-muted);
+      margin-bottom: 18px;
+    }
+    #landing .land-modes { display: flex; flex-direction: column; gap: 12px; }
+    #landing .land-mode {
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      padding: 16px; border-radius: 0; border: 1px solid var(--hud-border);
+      background: rgba(240, 244, 255, 0.04); color: var(--text-primary);
+      font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 800;
+      text-transform: uppercase; letter-spacing: 0.05em; cursor: pointer;
+      min-height: 56px; transition: all 0.15s; user-select: none; -webkit-user-select: none; touch-action: none;
+    }
+    #landing .land-mode:active { transform: scale(0.97); }
+    #landing .land-mode .lm-ico { font-size: 22px; }
+    #landing .land-mode .lm-hint { display: block; font-size: 10px; font-weight: 500; color: var(--text-muted); letter-spacing: 0.02em; }
+    #landing .land-mode.retro { background: rgba(255, 214, 10, 0.12); border-color: rgba(255, 214, 10, 0.5); color: var(--sprint-yellow); }
+    #landing .land-mode.retro.active, #landing .land-mode.retro:active { background: var(--sprint-yellow); color: var(--atlantic-blue); }
+    #landing .land-mode.d3.active, #landing .land-mode.d3:active { background: var(--jersey-green); border-color: var(--jersey-green); color: var(--atlantic-blue); }
+    #landing .land-foot { margin-top: 16px; font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
   
     /* Mobile density pass — compact HUD on phones (iPhone 13 Pro Max = 428px wide) */
     @media (max-width: 500px) {
@@ -642,6 +687,41 @@
     </style>
 </head>
 <body>
+  <div id="landing">
+    <div class="land-card">
+      <div class="land-title">Vibe Drive Jersey</div>
+      <div class="land-sub">Select a mode</div>
+      <div class="land-jersey">3D DRIVING · REAL JERSEY ROADS · LIVE WEATHER</div>
+      <div class="land-modes">
+        <button class="land-mode d3" id="land-3d">
+          <span class="lm-ico">🏎️</span>
+          <span>3D Mode<span class="lm-hint">Full 3D driving · desktop</span></span>
+        </button>
+        <button class="land-mode retro" id="land-retro">
+          <span class="lm-ico">🕹️</span>
+          <span>Retro Mode<span class="lm-hint">GTA 1 top-down · best on mobile</span></span>
+        </button>
+      </div>
+      <div class="land-foot">supabase leaderboard · taxi missions · police chase</div>
+    </div>
+  </div>
+  <script>
+    // ====== LANDING / MODE TOGGLE ======
+    (function() {
+      var landing = document.getElementById('landing');
+      if (!landing) return;
+      var retro = document.getElementById('land-retro');
+      var d3 = document.getElementById('land-3d');
+      if (retro) retro.addEventListener('click', function(e) {
+        e.preventDefault();
+        window.location.href = 'index-retro.html';
+      });
+      if (d3) d3.addEventListener('click', function(e) {
+        e.preventDefault();
+        landing.classList.add('hidden');
+      });
+    })();
+  </script>
   <div id="loading">⚡ Loading Jersey 3D…</div>
   <div id="lightning-flash"></div>
 
@@ -3916,7 +3996,8 @@
              target.closest('#menu-btn') || target.closest('#menu-panel') || target.closest('#night-toggle') ||
              target.closest('#airport-toggle') || target.closest('#airport-panel') || target.closest('#bus-toggle') ||
              target.closest('#radio-toggle') || target.closest('#radio-panel') ||
-             target.closest('#leaderboard-modal') || target.closest('#settings-panel') || target.closest('#username-modal');
+             target.closest('#leaderboard-modal') || target.closest('#settings-panel') || target.closest('#username-modal') ||
+             target.closest('#landing');
     }
 
     document.addEventListener('pointerdown', (e) => {
