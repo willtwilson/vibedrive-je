@@ -1552,6 +1552,26 @@
       if (h >= 17 && h < 20) return 'dusk';
       return 'night';
     }
+
+    // Continuous "darkness" factor 0..1 based on sun angle — used to fade headlights in gradually.
+    function getDarknessFactor() {
+      if (forceNight) return 1.0;
+      const h = new Date().getHours() + new Date().getMinutes() / 60;
+      // Dawn window 6h->8h : fades 0.55 -> 0
+      // Dusk window 17h->20h : fades 0 -> 1
+      if (h < 6) return 1.0;
+      if (h < 8)  return 0.55 * (1 - (h - 6) / 2);      // 0.55 -> 0 across dawn
+      if (h < 17) return 0.0;
+      if (h < 20) return (h - 17) / 3;                   // 0 -> 1 across dusk
+      return 1.0;
+    }
+
+    // Per-vehicle: whether THIS car's headlights are on, given current darkness.
+    // threshold is a per-car constant (0..1) assigned at creation; lower = earlier to switch on.
+    function headlightsOnForCar(darkness, threshold) {
+      return darkness >= threshold;
+    }
+
     const skyColors = { dawn: 0xff8844, day: 0x87CEEB, dusk: 0xff6644, night: 0x0a0a1e };
     // --- Sky color transition (lerp over 1 second) ---
     let targetSkyColor = new THREE.Color(skyColors.day);
@@ -1611,12 +1631,20 @@
         buildingMat.emissiveIntensity = 0.0;
         roofMat.emissive.setHex(0x000000);
       }
-      // Toggle headlights (intensity 3.0 at night) and taillight glow (0.8 at night)
+      // Headlights fade in gradually as dusk darkens (per-car threshold for variance).
+      const darkness = getDarknessFactor();
       if (carGroup && carGroup.userData && carGroup.userData.headlights) {
-        carGroup.userData.headlights.forEach(hl => { hl.intensity = isNight ? 3.0 : 0; });
+        // Player threshold ~0.35 — comes on as dusk is ~1/3 through
+        const on = headlightsOnForCar(darkness, 0.35);
+        const level = on ? Math.max(0, Math.min(1, (darkness - 0.35) / 0.65)) : 0;
+        carGroup.userData.headlights.forEach(hl => { hl.intensity = level * 3.0; });
       }
       if (carGroup && carGroup.userData && carGroup.userData.taillights) {
-        carGroup.userData.taillights.forEach(tl => { tl.material.emissiveIntensity = isNight ? 0.8 : 0.3; });
+        // Taillights: minor idle glow at day (0.3), brighter as it gets dark
+        const darkness = getDarknessFactor();
+        carGroup.userData.taillights.forEach(tl => {
+          tl.material.emissiveIntensity = 0.3 + Math.min(0.5, darkness * 0.5);
+        });
       }
     }
 
@@ -3687,7 +3715,8 @@
       const destNode = roadGraph.randomDestination();
       const route = (startNode && destNode !== null) ? roadGraph.aStar(startNode.id, destNode) : null;
 
-      aiCars.push({
+      aiCars.push({ headlightThreshold: 0.3 + Math.random() * 0.5,
+
         mesh: aiCar,
         x: ax, z: az,
         heading: seg.angle * 180 / Math.PI,
@@ -4613,11 +4642,13 @@
         ai.mesh.position.set(ai.x, Math.max(ah + 0.5, 0), ai.z);
         ai.mesh.rotation.y = ai.heading * Math.PI / 180;
 
-        // Headlights at night
-        const todAI = forceNight ? 'night' : getTimeOfDay();
-        const aiNight = todAI === 'night';
+        // Headlights fade in as dusk darkens; each AI car has its own threshold (some earlier, some later).
+        const darkAI = getDarknessFactor();
         if (ai.mesh.userData.headlights) {
-          ai.mesh.userData.headlights.forEach(h => h.intensity = aiNight ? 2.0 : 0);
+          const thr = (ai.headlightThreshold != null) ? ai.headlightThreshold : 0.45;
+          const on = darkAI >= thr;
+          const level = on ? Math.max(0, Math.min(1, (darkAI - thr) / Math.max(0.001, 1 - thr))) : 0;
+          ai.mesh.userData.headlights.forEach(h => h.intensity = level * 2.0);
         }
       });
 
