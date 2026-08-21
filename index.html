@@ -1604,12 +1604,13 @@
       updateEnvironmentForTOD(tod, sunDir);
       const isNight = tod === 'night';
       if (isNight) {
-        sunLight.intensity = 0.15;
+        sunLight.intensity = 0.25;
         sunLight.color.setHex(0x4466aa);
-        hemiLight.intensity = 0.25;
-        hemiLight.color.setHex(0x1a1a3e);
-        hemiLight.groundColor.setHex(0x1a2a1a);
+        hemiLight.intensity = 0.55;
+        hemiLight.color.setHex(0x2a3a6e);
+        hemiLight.groundColor.setHex(0x2a3a2a);
         if (moonMesh) moonMesh.visible = true;
+        if (moonLight) moonLight.intensity = 0.7;
         buildingMat.emissiveIntensity = 0.8;
         roofMat.emissive.setHex(0x221100); roofMat.emissiveIntensity = 0.2;
       } else if (tod === 'dawn' || tod === 'dusk') {
@@ -1619,6 +1620,7 @@
         hemiLight.color.setHex(0xff8844);
         hemiLight.groundColor.setHex(0x3a5a2a);
         if (moonMesh) moonMesh.visible = false;
+        if (moonLight) moonLight.intensity = 0.0;
         buildingMat.emissiveIntensity = 0.0;
         roofMat.emissive.setHex(0x000000);
       } else {
@@ -1628,6 +1630,7 @@
         hemiLight.color.setHex(0x87CEEB);
         hemiLight.groundColor.setHex(0x3a5a2a);
         if (moonMesh) moonMesh.visible = false;
+        if (moonLight) moonLight.intensity = 0.0;
         buildingMat.emissiveIntensity = 0.0;
         roofMat.emissive.setHex(0x000000);
       }
@@ -1655,6 +1658,11 @@
     moonMesh.position.set(200, 150, 0);
     moonMesh.visible = false;
     scene.add(moonMesh);
+
+    // Moonlight — a cool blue directional light so night isn't pitch black (playability)
+    const moonLight = new THREE.DirectionalLight(0x9db8ff, 0.0);
+    moonLight.position.set(200, 150, 0);
+    scene.add(moonLight);
 
     // --- Clouds (6 flat white planes drifting in +x, wrap around) ---
     const clouds = [];
@@ -3339,6 +3347,7 @@
 
       // Check proximity to player car
       for (const c of collectibles) {
+        if (!gameStarted) continue; // no collection until player drives
         if (c.collected) continue;
         const dx = c.x - carX;
         const dz = c.z - carZ;
@@ -3835,6 +3844,8 @@
     // ====== GAME STATE ======
     let vehicleMode = 'drive'; // 'drive' or 'fly'
     let carX = 46, carZ = -65, carHeading = 0, carSpeed = 0; // Start in St Helier
+    let gameStarted = false; // flips true on first user input (prevents pre-drive reward collection)
+    function markGameStarted(){ if(!gameStarted){ gameStarted = true; } }
     let lateralVelocity = 0; // lateral slide momentum for sharp turns
     let planeAlt = 0; // altitude for plane mode
     let planeTakeoffT = 0, planeTakeoffStart = 0, planeTakeoffTarget = 50; // smooth takeoff interpolation
@@ -3852,6 +3863,7 @@
 
     // Keyboard — arrow keys AND WASD both work; space = handbrake
     document.addEventListener('keydown', (e) => {
+      if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','w','W','a','A','s','S','d','D',' '].includes(e.key)) markGameStarted();
       if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') keys.up = true;
       if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') keys.down = true;
       if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') keys.left = true;
@@ -3870,9 +3882,9 @@
     function bindCtrl(id, key) {
       const btn = document.getElementById(id);
       if (!btn) return;
-      const press = (e) => { e.preventDefault(); e.stopPropagation(); keys[key] = true; btn.classList.add('pressed'); };
+      const press = (e) => { e.preventDefault(); e.stopPropagation(); keys[key] = true; btn.classList.add('pressed'); markGameStarted(); };
       const release = (e) => { e.preventDefault(); e.stopPropagation(); keys[key] = false; btn.classList.remove('pressed'); };
-      btn.addEventListener('pointerdown', press, { passive: false });
+      addEventListener('pointerdown', press, { passive: false });
       btn.addEventListener('pointerup', release, { passive: false });
       btn.addEventListener('pointercancel', release, { passive: false });
       btn.addEventListener('pointerleave', release, { passive: false });
@@ -4841,10 +4853,11 @@
 
       // Landmark proximity (+50 each, once per session)
       landmarks.forEach(lm => {
+        if (!gameStarted) return; // no rewards until player drives
         if (lm.awarded) return;
         const dx = lm.x - carX, dz = lm.z - carZ;
         const d = Math.sqrt(dx*dx + dz*dz);
-        if (d < 20) {
+        if (d < 16) {
           lm.awarded = true;
           addPoints(lm.points || 50, `🏛️ ${lm.name} discovered! +${lm.points || 50} pts`);
         }
@@ -4852,6 +4865,7 @@
 
       // AI car proximity (+10 within 15 units)
       aiCars.forEach(ai => {
+        if (!gameStarted) return; // no rewards until player drives
         const dx = ai.x - carX, dz = ai.z - carZ;
         const d = Math.sqrt(dx*dx + dz*dz);
         if (d < 15) {
