@@ -5856,12 +5856,25 @@
 
       const BUS_SPEED = 11; // units/sec along route (slower than car traffic)
 
+      // Label budget: stops are dense (744 across a ~140u-wide island), so cap
+      // the visible route-number sprites to the nearest few — flat draw-call
+      // cost on iPad regardless of how many stops are around the player.
+      const STOP_LABEL_RADIUS = 60;   // show labels within this radius...
+      const MAX_STOP_LABELS = 12;     // ...but at most this many at once
+
       // --- 1. BUS STOP MARKERS ---
       // Yellow cylinders with a label that shows the route numbers serving the
-      // stop when the player approaches. LOD-culled around the player.
+      // stop when the player approaches. All 744 markers share one InstancedMesh
+      // (a single draw call) so the marker cost is negligible even though the
+      // whole island sits within the player's view distance. Labels are sprites,
+      // so those are budget-capped to the nearest handful of stops.
       const stopMeshes = [];
       const stopGeo = new THREE.CylinderGeometry(0.25, 0.25, 2, 6);
       const stopMat = new THREE.MeshStandardMaterial({ color: 0xffd700, roughness: 0.6, metalness: 0.3, emissive: 0x444400 });
+      const stopInstMesh = new THREE.InstancedMesh(stopGeo, stopMat, stopData.length);
+      stopInstMesh.castShadow = true;
+      stopInstMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+      group.add(stopInstMesh);
 
       function createStopLabel() {
         const canvas = document.createElement('canvas');
@@ -5920,17 +5933,18 @@
         tex.needsUpdate = true;
       }
 
+      const dummy = new THREE.Object3D();
       for (let si = 0; si < stopData.length; si++) {
         const s = stopData[si];
         const x = s[0], z = s[1], name = s[2];
-        if (islandMask(x, z) <= 0.1) continue;
+        const onIsland = islandMask(x, z) > 0.1;
+        const h = onIsland ? getTerrainHeight(x, z) : -5;
 
-        const h = getTerrainHeight(x, z);
-        const mesh = new THREE.Mesh(stopGeo, stopMat);
-        mesh.position.set(x, h + 1, z);
-        mesh.castShadow = true;
-        mesh.visible = false;
-        group.add(mesh);
+        // Instance matrix: park off-island stops below the sea so they render
+        // as nothing, and let the single InstancedMesh carry the draw call.
+        dummy.position.set(x, onIsland ? h + 1 : -1000, z);
+        dummy.updateMatrix();
+        stopInstMesh.setMatrixAt(si, dummy.matrix);
 
         const label = createStopLabel();
         label.position.set(x, h + 3, z);
@@ -5938,8 +5952,9 @@
         group.add(label);
 
         const serving = stopRoutes && stopRoutes[si] ? stopRoutes[si] : [];
-        stopMeshes.push({ mesh, label, x, z, name, serving, baseY: h + 1, labelKey: '' });
+        stopMeshes.push({ label, x, z, name, serving, baseY: h + 1, labelKey: '' });
       }
+      stopInstMesh.instanceMatrix.needsUpdate = true;
 
       // --- 2. ROUTE LINE RENDERING ---
       // One coloured LineSegments per route from the OSM route geometry,
@@ -6278,27 +6293,32 @@
           }
         }
 
-        // LOD culling for bus stops + route-number labels — every 0.5s
+        // LOD culling for bus-stop route-number labels — every 0.5s. Stop
+        // markers are a single InstancedMesh (always rendered, 1 draw call), so
+        // only the sprite labels need distance control. Stops are dense in St
+        // Helier, so cap labels to the nearest STOP_LABEL_RADIUS stops — keeps
+        // the iPad draw-call budget flat no matter how many stops are near.
         stopLodTimer += dt;
         if (stopLodTimer > 0.5) {
           stopLodTimer = 0;
+          const candidates = [];
           for (const sm of stopMeshes) {
             const dx = sm.x - carX, dz = sm.z - carZ;
             const dist = Math.sqrt(dx * dx + dz * dz);
-            const show = dist < 200;
-            sm.mesh.visible = show;
-            // Route numbers appear on approach (labels only when close)
-            const showLabel = show && dist < 110;
-            if (showLabel) {
-              if (sm.serving.length && sm.labelKey !== sm.serving.join()) {
-                sm.labelKey = sm.serving.join();
-                drawStopLabel(sm.label, sm.serving);
-              } else if (!sm.serving.length && sm.labelKey !== 'BUS') {
-                sm.labelKey = 'BUS';
-                drawStopLabel(sm.label, ['BUS']);
-              }
+            if (dist <= STOP_LABEL_RADIUS) candidates.push({ sm, dist });
+          }
+          candidates.sort((a, b) => a.dist - b.dist);
+          for (const sm of stopMeshes) sm.label.visible = false;
+          for (let ci = 0; ci < candidates.length && ci < MAX_STOP_LABELS; ci++) {
+            const sm = candidates[ci].sm;
+            sm.label.visible = true;
+            if (sm.serving.length && sm.labelKey !== sm.serving.join()) {
+              sm.labelKey = sm.serving.join();
+              drawStopLabel(sm.label, sm.serving);
+            } else if (!sm.serving.length && sm.labelKey !== 'BUS') {
+              sm.labelKey = 'BUS';
+              drawStopLabel(sm.label, ['BUS']);
             }
-            sm.label.visible = showLabel;
           }
         }
       }
@@ -6308,7 +6328,7 @@
         busVisible = v;
         group.visible = v;
         if (!v) {
-          for (const sm of stopMeshes) { sm.mesh.visible = false; sm.label.visible = false; }
+          for (const sm of stopMeshes) sm.label.visible = false;
           for (const b of busPool) { b.visible = false; b.mesh.visible = false; b.label.visible = false; }
         }
       }
