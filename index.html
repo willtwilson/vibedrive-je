@@ -3852,11 +3852,25 @@
     let planeTakeoffT = 0, planeTakeoffStart = 0, planeTakeoffTarget = 50; // smooth takeoff interpolation
     let planeShadow = null; // flat dark circle shadow under the plane
     const MAX_SPEED = 80, ACCEL = 30, BRAKE = 60, FRICTION = 10, TURN_RATE = 3.0;
+    // ====== CAR PHYSICS TUNING (T-PHYS-CAR #17) ======
+    // Arcade drift/traction/weight-transfer model — tunable without hunting magic numbers.
+    const PHYS = {
+      maxSpeed: 80, accel: 30, brake: 60, reverseAccel: 15, engineBrake: 10,
+      grip: 1.0, gripWet: 0.7, handbrakeGrip: 0.35, driftFactor: 0.5,
+      weightTransfer: 0.18, rollFactor: 0.02,
+      turnRate: 3.0, speedSteerFalloff: 0.5,
+      springStiffness: 60, springDamping: 8, bodyRoll: 0.06, bodyPitch: 0.04,
+    };
+    // Drive-mode suspension + body-dynamics state (spring-damper on carY, accel tracking)
+    let carY = 0, carYVel = 0;
+    let prevCarSpeed = 0;
+    let bodyPitch = 0, bodyRoll = 0;
     // Wake trail for boat mode
     let wakeTrailLine = null;
     let wakeTrailPoints = [];
     const WAKE_TRAIL_MAX = 80;
     carGroup.position.set(carX, getTerrainHeight(carX, carZ) + 0.5, carZ);
+    carY = getTerrainHeight(carX, carZ) + 0.5;
 
     // ====== CONTROLS ======
     const keys = { up: false, down: false, left: false, right: false, handbrake: false };
@@ -4347,69 +4361,153 @@
       const accel = vehicleMode === 'boat' ? ACCEL / 2 : ACCEL;
       const friction = vehicleMode === 'boat' ? FRICTION / 2 : (isWetRoads(weatherCategory) ? FRICTION * 0.8 : FRICTION);
       const turnRate = vehicleMode === 'boat' ? TURN_RATE * 0.6 : TURN_RATE;
-      // Vehicle physics — improved with exponential accel, proportional brake, speed-sensitive turning
-      if (keys.up) {
-        // (1) Exponential acceleration ramp — slows as approaching MAX_SPEED
-        carSpeed += accel * dt * (1 - carSpeed / MAX_SPEED);
-      } else if (keys.down) {
-        if (carSpeed > 0) {
-          // (2) Braking proportional to speed
-          const brakeForce = BRAKE * dt * (Math.abs(carSpeed) / MAX_SPEED + 0.3);
-          carSpeed -= brakeForce;
+
+      if (vehicleMode === 'drive') {
+        // ====== DRIVE — enhanced bicycle grip model (T-PHYS-CAR #17) ======
+        // Grip-limited lateral slide + weight transfer + handbrake oversteer.
+        const gripScale = isWetRoads(weatherCategory) ? PHYS.gripWet : PHYS.grip;
+
+        // (1) Longitudinal — throttle / brake / reverse / engine-brake
+        if (keys.up) {
+          carSpeed += PHYS.accel * dt * (1 - carSpeed / PHYS.maxSpeed);
+        } else if (keys.down) {
+          if (carSpeed > 0) {
+            const brakeForce = PHYS.brake * dt * (Math.abs(carSpeed) / PHYS.maxSpeed + 0.3);
+            carSpeed -= brakeForce;
+          } else {
+            carSpeed -= PHYS.reverseAccel * dt * (1 - Math.abs(carSpeed) / 20);
+          }
         } else {
-          // (7) Reverse — accelerate backwards at half rate
-          carSpeed -= accel * dt * 0.5 * (1 - Math.abs(carSpeed) / 20);
+          const frictionRate = keys.handbrake ? PHYS.engineBrake * 0.2 : PHYS.engineBrake;
+          if (carSpeed > 0) carSpeed -= frictionRate * dt;
+          else if (carSpeed < 0) carSpeed += frictionRate * dt;
         }
+        carSpeed = Math.max(-20, Math.min(PHYS.maxSpeed, carSpeed));
+        if (Math.abs(carSpeed) < 0.3) carSpeed = 0;
+
+        const speed = Math.abs(carSpeed);
+
+        // (2) Steering input (keys + touch)
+        const steerInput = (keys.left ? 1 : 0) - (keys.right ? 1 : 0) - steerValue;
+        const steer = Math.max(-1, Math.min(1, steerInput));
+
+        // (3) Weight transfer — load split front/rear from pitch (accel) + roll (steer)
+        const longAccel = dt > 0 ? (carSpeed - prevCarSpeed) / dt : 0;
+        const pitchTransfer = Math.max(-0.3, Math.min(0.3, -longAccel * PHYS.weightTransfer));
+        const rollTransfer = Math.max(-0.3, Math.min(0.3, Math.abs(steer) * speed * PHYS.rollFactor));
+        const loadFront = 0.5 + pitchTransfer + rollTransfer;
+        const loadRear = 0.5 - pitchTransfer - rollTransfer;
+
+        // (4) Grip limits per axle — handbrake cuts rear grip (drift trigger)
+        const gripRear = gripScale * PHYS.grip * loadRear * (keys.handbrake ? PHYS.handbrakeGrip : 1);
+
+        // (5) Turning — speed-sensitive yaw
+        if (speed > 1) {
+          const dir = carSpeed > 0 ? 1 : -1;
+          const turnFactor = PHYS.turnRate * dt * (1 - speed / PHYS.maxSpeed * PHYS.speedSteerFalloff);
+          carHeading += steer * turnFactor * 3 * dir;
+        }
+
+        // (6) Lateral slide — grip-limited (low rear grip = oversteer drift)
+        if (speed > 1) {
+          const turnInput = (keys.left ? 1 : 0) - (keys.right ? 1 : 0) - steerValue;
+          const slideFactor = (1 / gripRear) * PHYS.driftFactor;
+          lateralVelocity += turnInput * speed / PHYS.maxSpeed * dt * 8 * slideFactor;
+        }
+        // Grip recovery — pull lateral velocity back toward 0 (self-correcting)
+        const lateralDecay = keys.handbrake ? 0.90 : 0.94;
+        lateralVelocity *= lateralDecay;
+        if (Math.abs(lateralVelocity) < 0.01) lateralVelocity = 0;
+
+        // (7) Terrain slope — sample height at car position and 1 unit ahead
+        const rad = carHeading * Math.PI / 180;
+        const aheadX = carX + Math.sin(rad) * 1;
+        const aheadZ = carZ + Math.cos(rad) * 1;
+        const hHere = getTerrainHeight(carX, carZ);
+        const hAhead = getTerrainHeight(aheadX, aheadZ);
+        if (hAhead > hHere) carSpeed *= 1 - 0.05 * dt * 10;
+        else if (hAhead < hHere) carSpeed *= 1 + 0.03 * dt * 10;
+
+        // (8) Movement — forward + lateral slide
+        if (Math.abs(carSpeed) > 0.1 || Math.abs(lateralVelocity) > 0.01) {
+          const dist = carSpeed * 0.3 * dt;
+          carX += Math.sin(rad) * dist;
+          carZ += Math.cos(rad) * dist;
+          const latRad = rad + Math.PI / 2;
+          carX += Math.sin(latRad) * lateralVelocity * dt;
+          carZ += Math.cos(latRad) * lateralVelocity * dt;
+        }
+
+        // Body dynamics (applied in the drive render block)
+        bodyPitch = Math.max(-0.2, Math.min(0.2, longAccel * PHYS.bodyPitch));
+        bodyRoll = Math.max(-0.3, Math.min(0.3, -lateralVelocity * PHYS.bodyRoll));
+        prevCarSpeed = carSpeed;
       } else {
-        // Natural friction / engine braking — handbrake reduces friction for more slide
-        const frictionRate = keys.handbrake ? 2 : friction;
-        if (carSpeed > 0) carSpeed -= frictionRate * dt;
-        else if (carSpeed < 0) carSpeed += frictionRate * dt;
-      }
-      carSpeed = Math.max(-20, Math.min(MAX_SPEED, carSpeed));
-      if (Math.abs(carSpeed) < 0.3) carSpeed = 0;
+        // ====== BOAT / PLANE — original arcade model ======
+        // Vehicle physics — improved with exponential accel, proportional brake, speed-sensitive turning
+        if (keys.up) {
+          // (1) Exponential acceleration ramp — slows as approaching MAX_SPEED
+          carSpeed += accel * dt * (1 - carSpeed / MAX_SPEED);
+        } else if (keys.down) {
+          if (carSpeed > 0) {
+            // (2) Braking proportional to speed
+            const brakeForce = BRAKE * dt * (Math.abs(carSpeed) / MAX_SPEED + 0.3);
+            carSpeed -= brakeForce;
+          } else {
+            // (7) Reverse — accelerate backwards at half rate
+            carSpeed -= accel * dt * 0.5 * (1 - Math.abs(carSpeed) / 20);
+          }
+        } else {
+          // Natural friction / engine braking — handbrake reduces friction for more slide
+          const frictionRate = keys.handbrake ? 2 : friction;
+          if (carSpeed > 0) carSpeed -= frictionRate * dt;
+          else if (carSpeed < 0) carSpeed += frictionRate * dt;
+        }
+        carSpeed = Math.max(-20, Math.min(MAX_SPEED, carSpeed));
+        if (Math.abs(carSpeed) < 0.3) carSpeed = 0;
 
-      // (3) Turning — turn rate inversely proportional to speed
-      if (Math.abs(carSpeed) > 1) {
-        const turnFactor = turnRate * dt * (1 - Math.abs(carSpeed) / MAX_SPEED * 0.5);
-        const dir = carSpeed > 0 ? 1 : -1; // reverse steering when going backwards
-        if (keys.left) carHeading += turnFactor * 3 * dir;
-        if (keys.right) carHeading -= turnFactor * 3 * dir;
-        if (Math.abs(steerValue) > 0.05) carHeading -= steerValue * turnFactor * 5 * dir;
+        // (3) Turning — turn rate inversely proportional to speed
+        if (Math.abs(carSpeed) > 1) {
+          const turnFactor = turnRate * dt * (1 - Math.abs(carSpeed) / MAX_SPEED * 0.5);
+          const dir = carSpeed > 0 ? 1 : -1; // reverse steering when going backwards
+          if (keys.left) carHeading += turnFactor * 3 * dir;
+          if (keys.right) carHeading -= turnFactor * 3 * dir;
+          if (Math.abs(steerValue) > 0.05) carHeading -= steerValue * turnFactor * 5 * dir;
 
-        // (4) Lateral momentum — on sharp turns, car slides slightly
-        const turnInput = (keys.left ? 1 : 0) - (keys.right ? 1 : 0) - steerValue;
-        const slideFactor = keys.handbrake ? 3.0 : 1.0; // handbrake increases slide
-        lateralVelocity += turnInput * Math.abs(carSpeed) / MAX_SPEED * dt * 8 * slideFactor;
-      }
-      // Decay lateral velocity over time
-      const lateralDecay = keys.handbrake ? 0.90 : 0.92; // handbrake = slower decay = more slide
-      lateralVelocity *= lateralDecay;
-      if (Math.abs(lateralVelocity) < 0.01) lateralVelocity = 0;
+          // (4) Lateral momentum — on sharp turns, car slides slightly
+          const turnInput = (keys.left ? 1 : 0) - (keys.right ? 1 : 0) - steerValue;
+          const slideFactor = keys.handbrake ? 3.0 : 1.0; // handbrake increases slide
+          lateralVelocity += turnInput * Math.abs(carSpeed) / MAX_SPEED * dt * 8 * slideFactor;
+        }
+        // Decay lateral velocity over time
+        const lateralDecay = keys.handbrake ? 0.90 : 0.92; // handbrake = slower decay = more slide
+        lateralVelocity *= lateralDecay;
+        if (Math.abs(lateralVelocity) < 0.01) lateralVelocity = 0;
 
-      // (5) Terrain slope — sample height at car position and 1 unit ahead
-      const rad = carHeading * Math.PI / 180;
-      const aheadX = carX + Math.sin(rad) * 1;
-      const aheadZ = carZ + Math.cos(rad) * 1;
-      const hHere = getTerrainHeight(carX, carZ);
-      const hAhead = getTerrainHeight(aheadX, aheadZ);
-      if (hAhead > hHere) {
-        // Uphill — reduce speed by 5%
-        carSpeed *= 1 - 0.05 * dt * 10;
-      } else if (hAhead < hHere) {
-        // Downhill — increase speed by 3%
-        carSpeed *= 1 + 0.03 * dt * 10;
-      }
+        // (5) Terrain slope — sample height at car position and 1 unit ahead
+        const rad = carHeading * Math.PI / 180;
+        const aheadX = carX + Math.sin(rad) * 1;
+        const aheadZ = carZ + Math.cos(rad) * 1;
+        const hHere = getTerrainHeight(carX, carZ);
+        const hAhead = getTerrainHeight(aheadX, aheadZ);
+        if (hAhead > hHere) {
+          // Uphill — reduce speed by 5%
+          carSpeed *= 1 - 0.05 * dt * 10;
+        } else if (hAhead < hHere) {
+          // Downhill — increase speed by 3%
+          carSpeed *= 1 + 0.03 * dt * 10;
+        }
 
-      // Movement — forward + lateral slide
-      if (Math.abs(carSpeed) > 0.1 || Math.abs(lateralVelocity) > 0.01) {
-        const dist = carSpeed * 0.3 * dt;
-        carX += Math.sin(rad) * dist;
-        carZ += Math.cos(rad) * dist;
-        // Apply lateral velocity (perpendicular to heading)
-        const latRad = rad + Math.PI / 2;
-        carX += Math.sin(latRad) * lateralVelocity * dt;
-        carZ += Math.cos(latRad) * lateralVelocity * dt;
+        // Movement — forward + lateral slide
+        if (Math.abs(carSpeed) > 0.1 || Math.abs(lateralVelocity) > 0.01) {
+          const dist = carSpeed * 0.3 * dt;
+          carX += Math.sin(rad) * dist;
+          carZ += Math.cos(rad) * dist;
+          // Apply lateral velocity (perpendicular to heading)
+          const latRad = rad + Math.PI / 2;
+          carX += Math.sin(latRad) * lateralVelocity * dt;
+          carZ += Math.cos(latRad) * lateralVelocity * dt;
+        }
       }
 
       if (vehicleMode === 'fly') {
@@ -4512,13 +4610,18 @@
           carZ -= Math.cos(carHeading * Math.PI / 180) * 2;
         }
         const terrainHeight = getTerrainHeight(carX, carZ);
-        // (6) Suspension bounce — small sin offset on car Y
-        const suspensionBounce = Math.sin(now * 0.01) * 0.1;
-        carGroup.position.set(carX, Math.max(terrainHeight + 0.5 + suspensionBounce, 0), carZ);
+        // (6) Spring-damper suspension — responds to terrain height changes (T-PHYS-CAR #17)
+        const targetY = Math.max(terrainHeight + 0.5, 0);
+        carYVel += (targetY - carY) * PHYS.springStiffness * dt - carYVel * PHYS.springDamping * dt;
+        carYVel = Math.max(-10, Math.min(10, carYVel));
+        carY += carYVel * dt;
+        carY += (targetY - carY) * 0.1; // soft snap to target (keeps it grounded)
+        carGroup.position.set(carX, carY, carZ);
         carGroup.rotation.y = carHeading * Math.PI / 180;
-        carGroup.rotation.x = 0;
-        const tilt = (keys.left ? 0.05 : keys.right ? -0.05 : 0) - steerValue * 0.05;
-        carGroup.rotation.z = tilt * (Math.abs(carSpeed) / MAX_SPEED);
+        // Body pitch from longitudinal accel (nose-down under braking, nose-up under throttle)
+        carGroup.rotation.x = bodyPitch;
+        // Body roll from lateral slide (lean into corners / drift)
+        carGroup.rotation.z = bodyRoll;
       }
 
       // Traffic lights — update state machine (T-TRAFFIC-LIGHTS #11)
