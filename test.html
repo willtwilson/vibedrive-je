@@ -135,6 +135,33 @@ window.addEventListener('load', () => {
       updateSummary();
     });
 
+    // Test 14: Enhanced boat physics implementation (T-PHYS-BOAT #18)
+    setTimeout(() => {
+      const bp = fw.BOAT_PHYSICS;
+      log(`BOAT_PHYSICS object exposed on window`, bp ? 'pass' : 'fail');
+      if (bp) {
+        const requiredKeys = ['maxSpeed','accel','reverseAccel','planingSpeed','planingBoost','dragLinear','dragQuadratic','idleFriction','rudderRate','turnRadiusMin','turnRadiusMax','drift','driftDecay','waveBobAmp','waveBobSpeed','wavePitchAmp','waveRollAmp','waveResponse','waveSpeedScale','dockSpeed','dockRudderBoost','dockReverseBoost','fenderRange'];
+        requiredKeys.forEach(k => {
+          log(`BOAT_PHYSICS.${k} defined`, typeof bp[k] !== 'undefined' ? 'pass' : 'fail');
+        });
+        log(`Boat maxSpeed (${bp.maxSpeed}) < car MAX_SPEED (80)`, bp.maxSpeed < 80 ? 'pass' : 'fail');
+        log(`reverseAccel (${bp.reverseAccel}) < accel (${bp.accel})`, bp.reverseAccel < bp.accel ? 'pass' : 'fail');
+        log(`dockRudderBoost (${bp.dockRudderBoost}) > 1`, bp.dockRudderBoost > 1 ? 'pass' : 'fail');
+        log(`waveResponse (${bp.waveResponse}) in [0,1]`, bp.waveResponse >= 0 && bp.waveResponse <= 1 ? 'pass' : 'fail');
+      }
+      // Source-level checks: boat branch still references tideLevel, getTerrainHeight, marinaBerths
+      fetch('/index.html').then(r => r.text()).then(src => {
+        const boatBlock = src.slice(src.indexOf("vehicleMode === 'boat'"));
+        log(`Boat branch references tideLevel`, boatBlock.includes('tideLevel') ? 'pass' : 'fail');
+        log(`Boat branch references getTerrainHeight`, boatBlock.includes('getTerrainHeight') ? 'pass' : 'fail');
+        log(`Boat branch references marinaBerths`, boatBlock.includes('marinaBerths') ? 'pass' : 'fail');
+        updateSummary();
+      }).catch(e => {
+        log(`Boat source fetch: ${e.message}`, 'fail');
+        updateSummary();
+      });
+    }, 2500);
+
   }, 2000);
 });
 </script>
