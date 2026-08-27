@@ -3852,6 +3852,42 @@
     let planeTakeoffT = 0, planeTakeoffStart = 0, planeTakeoffTarget = 50; // smooth takeoff interpolation
     let planeShadow = null; // flat dark circle shadow under the plane
     const MAX_SPEED = 80, ACCEL = 30, BRAKE = 60, FRICTION = 10, TURN_RATE = 3.0;
+
+    // ====== VEHICLE ROSTER (T-GARAGE-ROSTER #30) ======
+    // Base physics defaults per mode — match the original global constants so the
+    // default vehicle per mode preserves existing behaviour exactly.
+    const BASE_PHYSICS = {
+      drive: { maxSpeed: 80, accel: 30, brake: 60, friction: 10, turnRate: 3.0, grip: 1.0, weight: 1.0, drift: 1.0 },
+      boat:  { maxSpeed: 80, accel: 15, brake: 60, friction: 5, turnRate: 1.8, planingSpeed: 18, rudderRate: 1.5, waveResponse: 0.6 },
+      fly:   { maxSpeed: 120, accel: 30, brake: 60, friction: 10, turnRate: 3.0, stallSpeed: 30, climbRate: 15, bankRate: 1.0, turnRadius: 1.0 },
+    };
+    // Roster — 3 vehicles per mode, each a named config with stat overrides.
+    const VEHICLES = {
+      hatchback: { mode: 'drive', name: 'Hatchback', color: 0xcc2222, stats: { maxSpeed: 80, accel: 30, brake: 60, friction: 10, turnRate: 3.0, grip: 1.0, weight: 1.0, drift: 1.0 } },
+      sports:    { mode: 'drive', name: 'Sports', color: 0x2244cc, stats: { maxSpeed: 110, accel: 42, brake: 60, friction: 10, turnRate: 3.6, grip: 0.7, weight: 0.8, drift: 1.6 } },
+      truck:     { mode: 'drive', name: 'Truck', color: 0x886633, stats: { maxSpeed: 60, accel: 18, brake: 60, friction: 10, turnRate: 2.2, grip: 1.4, weight: 1.8, drift: 0.4 } },
+      cruiser:   { mode: 'boat', name: 'Cruiser', color: 0xffffff, stats: { maxSpeed: 80, accel: 15, brake: 60, friction: 5, turnRate: 1.8, planingSpeed: 18, rudderRate: 1.5, waveResponse: 0.6 } },
+      speedboat: { mode: 'boat', name: 'Speedboat', color: 0xff6600, stats: { maxSpeed: 100, accel: 22, brake: 60, friction: 5, turnRate: 2.0, planingSpeed: 12, rudderRate: 2.0, waveResponse: 0.9 } },
+      fishing:   { mode: 'boat', name: 'Fishing Boat', color: 0x2266aa, stats: { maxSpeed: 50, accel: 9, brake: 60, friction: 5, turnRate: 1.0, planingSpeed: 24, rudderRate: 1.0, waveResponse: 0.3 } },
+      cessna:    { mode: 'fly', name: 'Cessna', color: 0xcc2222, stats: { maxSpeed: 120, accel: 30, brake: 60, friction: 10, turnRate: 3.0, stallSpeed: 30, climbRate: 15, bankRate: 1.0, turnRadius: 1.0 } },
+      stunt:     { mode: 'fly', name: 'Stunt Plane', color: 0x22cc44, stats: { maxSpeed: 100, accel: 30, brake: 60, friction: 10, turnRate: 3.0, stallSpeed: 20, climbRate: 22, bankRate: 1.6, turnRadius: 0.7 } },
+      jet:       { mode: 'fly', name: 'Jet', color: 0x888888, stats: { maxSpeed: 200, accel: 30, brake: 60, friction: 10, turnRate: 3.0, stallSpeed: 45, climbRate: 10, bankRate: 0.6, turnRadius: 1.4 } },
+    };
+    // Default vehicle per mode — preserves current behaviour until a choice is made.
+    const DEFAULT_VEHICLE = { drive: 'hatchback', boat: 'cruiser', fly: 'cessna' };
+    // Single source of truth for the active vehicle (settable for tests / garage UI).
+    window.currentVehicle = VEHICLES.hatchback;
+    // Merge the mode's base physics with the current vehicle's stat overrides.
+    function resolveVehicleStats(mode) {
+      const base = BASE_PHYSICS[mode] || BASE_PHYSICS.drive;
+      const v = (window.currentVehicle && window.currentVehicle.mode === mode) ? window.currentVehicle : VEHICLES[DEFAULT_VEHICLE[mode]];
+      return Object.assign({}, base, v.stats);
+    }
+    // Expose for tests
+    window.VEHICLES = VEHICLES;
+    window.BASE_PHYSICS = BASE_PHYSICS;
+    window.resolveVehicleStats = resolveVehicleStats;
+
     // Wake trail for boat mode
     let wakeTrailLine = null;
     let wakeTrailPoints = [];
@@ -4343,18 +4379,21 @@
       water.position.y = tideLevel;
 
       // ====== VEHICLE PHYSICS ======
-      // Boat physics: ACCEL/2, wider turning (TURN_RATE*0.6), more momentum (FRICTION/2)
-      const accel = vehicleMode === 'boat' ? ACCEL / 2 : ACCEL;
-      const friction = vehicleMode === 'boat' ? FRICTION / 2 : (isWetRoads(weatherCategory) ? FRICTION * 0.8 : FRICTION);
-      const turnRate = vehicleMode === 'boat' ? TURN_RATE * 0.6 : TURN_RATE;
+      // Resolve per-vehicle stats (T-GARAGE-ROSTER #30) — merge mode base + current vehicle overrides.
+      // Boat scalars (ACCEL/2, FRICTION/2, TURN_RATE*0.6) are baked into BASE_PHYSICS.boat.
+      const veh = resolveVehicleStats(vehicleMode);
+      const vMax = veh.maxSpeed, vAccel = veh.accel, vBrake = veh.brake, vFriction = veh.friction, vTurn = veh.turnRate;
+      const accel = vAccel;
+      const friction = vehicleMode === 'boat' ? vFriction : (isWetRoads(weatherCategory) ? vFriction * 0.8 : vFriction);
+      const turnRate = vTurn;
       // Vehicle physics — improved with exponential accel, proportional brake, speed-sensitive turning
       if (keys.up) {
         // (1) Exponential acceleration ramp — slows as approaching MAX_SPEED
-        carSpeed += accel * dt * (1 - carSpeed / MAX_SPEED);
+        carSpeed += accel * dt * (1 - carSpeed / vMax);
       } else if (keys.down) {
         if (carSpeed > 0) {
           // (2) Braking proportional to speed
-          const brakeForce = BRAKE * dt * (Math.abs(carSpeed) / MAX_SPEED + 0.3);
+          const brakeForce = vBrake * dt * (Math.abs(carSpeed) / vMax + 0.3);
           carSpeed -= brakeForce;
         } else {
           // (7) Reverse — accelerate backwards at half rate
@@ -4366,12 +4405,12 @@
         if (carSpeed > 0) carSpeed -= frictionRate * dt;
         else if (carSpeed < 0) carSpeed += frictionRate * dt;
       }
-      carSpeed = Math.max(-20, Math.min(MAX_SPEED, carSpeed));
+      carSpeed = Math.max(-20, Math.min(vMax, carSpeed));
       if (Math.abs(carSpeed) < 0.3) carSpeed = 0;
 
       // (3) Turning — turn rate inversely proportional to speed
       if (Math.abs(carSpeed) > 1) {
-        const turnFactor = turnRate * dt * (1 - Math.abs(carSpeed) / MAX_SPEED * 0.5);
+        const turnFactor = turnRate * dt * (1 - Math.abs(carSpeed) / vMax * 0.5);
         const dir = carSpeed > 0 ? 1 : -1; // reverse steering when going backwards
         if (keys.left) carHeading += turnFactor * 3 * dir;
         if (keys.right) carHeading -= turnFactor * 3 * dir;
@@ -4379,11 +4418,11 @@
 
         // (4) Lateral momentum — on sharp turns, car slides slightly
         const turnInput = (keys.left ? 1 : 0) - (keys.right ? 1 : 0) - steerValue;
-        const slideFactor = keys.handbrake ? 3.0 : 1.0; // handbrake increases slide
-        lateralVelocity += turnInput * Math.abs(carSpeed) / MAX_SPEED * dt * 8 * slideFactor;
+        const slideFactor = (keys.handbrake ? 3.0 : 1.0) * veh.drift; // handbrake increases slide; drift stat scales it
+        lateralVelocity += turnInput * Math.abs(carSpeed) / vMax * dt * 8 * slideFactor * (1 / veh.grip);
       }
       // Decay lateral velocity over time
-      const lateralDecay = keys.handbrake ? 0.90 : 0.92; // handbrake = slower decay = more slide
+      const lateralDecay = (keys.handbrake ? 0.90 : 0.92) * (1 - 0.04 * (veh.drift - 1)); // handbrake = slower decay = more slide
       lateralVelocity *= lateralDecay;
       if (Math.abs(lateralVelocity) < 0.01) lateralVelocity = 0;
 
@@ -4415,8 +4454,8 @@
       if (vehicleMode === 'fly') {
         // Plane: Cessna-like physics — constant forward momentum
         // (1) Maintain minimum airspeed of 30 (auto-throttle if below)
-        if (carSpeed < 30) carSpeed += ACCEL * dt * 0.5; // auto-throttle to prevent stall
-        if (carSpeed > MAX_SPEED * 1.5) carSpeed = MAX_SPEED * 1.5; // planes can go faster
+        if (carSpeed < veh.stallSpeed) carSpeed += vAccel * dt * 0.5; // auto-throttle to prevent stall
+        if (carSpeed > vMax) carSpeed = vMax; // planes can go faster
 
         // (8) Smooth takeoff: interpolate altitude from terrain+5 to 50 over 2 seconds
         if (planeTakeoffT < 1) {
@@ -4518,7 +4557,7 @@
         carGroup.rotation.y = carHeading * Math.PI / 180;
         carGroup.rotation.x = 0;
         const tilt = (keys.left ? 0.05 : keys.right ? -0.05 : 0) - steerValue * 0.05;
-        carGroup.rotation.z = tilt * (Math.abs(carSpeed) / MAX_SPEED);
+        carGroup.rotation.z = tilt * (Math.abs(carSpeed) / vMax);
       }
 
       // Traffic lights — update state machine (T-TRAFFIC-LIGHTS #11)
