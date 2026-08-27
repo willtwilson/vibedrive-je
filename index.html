@@ -200,6 +200,66 @@
     .menu-item.night-on .mi-state { color: var(--sprint-yellow); }
     .menu-sep { height: 1px; background: rgba(0, 168, 107, 0.15); margin: 6px 0; }
 
+    /* ====== GARAGE (T-GARAGE #23) ====== */
+    #garage-btn {
+      position: fixed; top: 12px; right: 68px; z-index: 70;
+      width: 48px; height: 48px; border-radius: 0;
+      border: 1px solid var(--hud-border); border-left: 3px solid var(--jersey-green);
+      background: var(--glass-deep); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      color: var(--text-primary); font-size: 20px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; user-select: none; touch-action: none; transition: all 0.15s;
+      pointer-events: auto;
+    }
+    #garage-btn:hover, #garage-btn.active { border-color: var(--jersey-green); background: var(--jersey-green); color: var(--atlantic-blue); }
+    #garage-overlay {
+      position: fixed; inset: 0; z-index: 90; display: none;
+      background: rgba(0, 0, 0, 0.55); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+      align-items: flex-end; justify-content: center;
+    }
+    #garage-overlay.show { display: flex; }
+    #garage-sheet {
+      width: 100%; max-width: 560px; max-height: 70vh;
+      background: var(--glass-deep); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--hud-border); border-top: 3px solid var(--jersey-green);
+      border-radius: 0; box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.6);
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+    .garage-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 18px; border-bottom: 1px solid rgba(0, 168, 107, 0.15);
+    }
+    .garage-title { font-family: 'Inter', sans-serif; font-size: 16px; font-weight: 800; color: var(--text-primary); letter-spacing: 0.03em; }
+    #garage-close {
+      width: 44px; height: 44px; border: 1px solid var(--hud-border); background: none;
+      color: var(--text-primary); font-size: 18px; cursor: pointer; touch-action: none;
+      display: flex; align-items: center; justify-content: center;
+    }
+    #garage-close:active { background: rgba(230, 57, 70, 0.3); }
+    #garage-tabs { display: flex; gap: 8px; padding: 12px 18px 0; }
+    .garage-tab {
+      flex: 1; min-height: 48px; border: 1px solid var(--hud-border); background: var(--glass);
+      color: var(--text-secondary); font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.04em; cursor: pointer; touch-action: none;
+    }
+    .garage-tab.active { background: var(--jersey-green); border-color: var(--jersey-green); color: var(--atlantic-blue); }
+    #garage-carousel {
+      display: flex; gap: 12px; padding: 16px 18px 20px; overflow-x: auto;
+      -webkit-overflow-scrolling: touch; touch-action: pan-x; scroll-snap-type: x mandatory;
+    }
+    .garage-card {
+      flex: 0 0 150px; min-height: 88px; scroll-snap-align: start;
+      border: 1px solid var(--hud-border); background: var(--glass);
+      padding: 12px; cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none;
+      display: flex; flex-direction: column; gap: 8px; transition: border-color 0.12s, background 0.12s;
+    }
+    .garage-card.selected { border-color: var(--jersey-green); background: rgba(0, 168, 107, 0.18); box-shadow: 0 0 16px rgba(0, 168, 107, 0.3); }
+    .garage-card .gc-name { font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 800; color: var(--text-primary); }
+    .garage-card .gc-swatch { width: 100%; height: 26px; border: 1px solid rgba(255,255,255,0.15); }
+    .garage-card .gc-stat { display: flex; align-items: center; gap: 6px; font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+    .garage-card .gc-bar { flex: 1; height: 5px; background: rgba(255,255,255,0.12); }
+    .garage-card .gc-bar > i { display: block; height: 100%; background: var(--jersey-green); }
+
     #loading {
       position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); z-index: 200;
       background: var(--glass-deep); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
@@ -705,6 +765,7 @@
   <div id="radar"><canvas id="radar-canvas" width="180" height="180"></canvas></div>
 
   <button id="menu-btn" title="Menu">☰</button>
+  <button id="garage-btn" title="Garage">🔧</button>
   <div id="menu-panel">
     <button class="menu-item night-on" id="menu-night"><span class="mi-icon">🌙</span><span class="mi-label">Night</span><span class="mi-state" id="mi-night-state">Off</span></button>
     <button class="menu-item on" id="menu-bus"><span class="mi-icon">🚌</span><span class="mi-label">Bus Routes</span><span class="mi-state" id="mi-bus-state">On</span></button>
@@ -717,6 +778,22 @@
 
   <div id="badge">vibe.je hackathon · 3D terrain · real weather</div>
   <div id="steer-hint">👆 Touch and drag anywhere to steer</div>
+
+  <!-- ====== GARAGE OVERLAY (T-GARAGE #23) ====== -->
+  <div id="garage-overlay">
+    <div id="garage-sheet">
+      <div class="garage-header">
+        <span class="garage-title">🔧 Garage</span>
+        <button id="garage-close" title="Close">✕</button>
+      </div>
+      <div id="garage-tabs">
+        <button class="garage-tab active" data-mode="drive">🚗 Cars</button>
+        <button class="garage-tab" data-mode="boat">🚤 Boats</button>
+        <button class="garage-tab" data-mode="fly">✈️ Planes</button>
+      </div>
+      <div id="garage-carousel"></div>
+    </div>
+  </div>
 
   <div id="collectible-counter">📦 0/50</div>
   <div id="wanted-level">
@@ -3408,7 +3485,12 @@
     }
 
     // ====== CAR FACTORY ======
-    function createCar(color) {
+    // Accepts a vehicle config object (or a plain color number for AI cars).
+    function createCar(spec) {
+      const v = typeof spec === 'number' ? { color: spec, stats: {} } : spec;
+      const color = v.color;
+      const stats = v.stats || {};
+      const scale = 0.8 + (stats.weight || 1) * 0.2; // heavier = bigger mesh
       const car = new THREE.Group();
       const body = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.8, 4.5), new THREE.MeshPhysicalMaterial({ color, roughness: 0.3, metalness: 0.9, clearcoat: 1.0, clearcoatRoughness: 0.1, envMapIntensity: 2.0 }));
       body.position.y = 0.6; body.castShadow = true; car.add(body);
@@ -3438,11 +3520,16 @@
       car.add(headlight2); car.add(headlight2.target);
       car.userData.headlights = [headlight1, headlight2];
       car.userData.taillights = taillightMeshes;
+      car.scale.setScalar(scale);
       return car;
     }
 
     // ====== AIRPLANE FACTORY ======
-    function createPlane(color) {
+    function createPlane(spec) {
+      const v = typeof spec === 'number' ? { color: spec, stats: {} } : spec;
+      const color = v.color;
+      const stats = v.stats || {};
+      const scale = 0.8 + (stats.weight || 1) * 0.2;
       const plane = new THREE.Group();
       // Fuselage
       const fus = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.3, 4, 8), new THREE.MeshStandardMaterial({ color, roughness: 0.4, metalness: 0.5 }));
@@ -3462,11 +3549,16 @@
       // Cockpit
       const cockpit = new THREE.Mesh(new THREE.SphereGeometry(0.35, 8, 6, 0, Math.PI*2, 0, Math.PI/2), new THREE.MeshStandardMaterial({ color: 0x4488cc, transparent: true, opacity: 0.6, roughness: 0.1 }));
       cockpit.position.set(0.3, 0.4, 0); cockpit.scale.set(1, 0.8, 1.2); plane.add(cockpit);
+      plane.scale.setScalar(scale);
       return plane;
     }
 
     // ====== BOAT FACTORY ======
-    function createBoat(color) {
+    function createBoat(spec) {
+      const v = typeof spec === 'number' ? { color: spec, stats: {} } : spec;
+      const color = v.color;
+      const stats = v.stats || {};
+      const scale = 0.8 + (stats.weight || 1) * 0.2;
       const boat = new THREE.Group();
       // Hull: BoxGeometry(4,1.5,10) — bigger for visibility from above
       const hullMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4, metalness: 0.3 });
@@ -3492,6 +3584,7 @@
       sailPos.setZ(2, 0); sailPos.setZ(3, 0); // narrow bottom to point
       sailPos.setX(2, 0); sailPos.setX(3, 0);
       sail.geometry.computeVertexNormals();
+      boat.scale.setScalar(scale);
       return boat;
     }
 
@@ -3852,6 +3945,31 @@
     let planeTakeoffT = 0, planeTakeoffStart = 0, planeTakeoffTarget = 50; // smooth takeoff interpolation
     let planeShadow = null; // flat dark circle shadow under the plane
     const MAX_SPEED = 80, ACCEL = 30, BRAKE = 60, FRICTION = 10, TURN_RATE = 3.0;
+
+    // ====== GARAGE — VEHICLE ROSTER & STAT MODEL (T-GARAGE #23) ======
+    // Per-mode base physics. Default vehicles match the pre-garage behaviour exactly.
+    const MODE_PHYSICS = {
+      drive: { maxSpeed: 80, accel: 30, brake: 60, friction: 10, turnRate: 3.0, grip: 1.0, weight: 1.0, drift: 1.0 },
+      boat:  { maxSpeed: 80, accel: 15, brake: 60, friction: 5,  turnRate: 1.8, grip: 1.0, weight: 1.0, drift: 1.0 },
+      fly:   { maxSpeed: 80, accel: 30, brake: 60, friction: 10, turnRate: 3.0, grip: 1.0, weight: 1.0, drift: 1.0 },
+    };
+    // Named config objects — one place to tune. Each overrides a subset of its mode's base.
+    const VEHICLES = {
+      hatchback: { id: 'hatchback', mode: 'drive', label: 'Hatchback', color: 0xcc2222, stats: { maxSpeed: 80, accel: 30, brake: 60, friction: 10, turnRate: 3.0, grip: 1.0, weight: 1.0, drift: 1.0 } },
+      sports:    { id: 'sports', mode: 'drive', label: 'Sports', color: 0x2244cc, stats: { maxSpeed: 110, accel: 42, brake: 60, friction: 8, turnRate: 3.6, grip: 0.7, weight: 0.8, drift: 1.6 } },
+      truck:     { id: 'truck', mode: 'drive', label: 'Truck', color: 0x886633, stats: { maxSpeed: 60, accel: 18, brake: 60, friction: 12, turnRate: 2.2, grip: 1.4, weight: 1.8, drift: 0.4 } },
+      cruiser:   { id: 'cruiser', mode: 'boat', label: 'Cruiser', color: 0xffffff, stats: { maxSpeed: 80, accel: 15, brake: 60, friction: 5, turnRate: 1.8, grip: 1.0, weight: 1.0, drift: 1.0 } },
+      speedboat: { id: 'speedboat', mode: 'boat', label: 'Speedboat', color: 0xff6600, stats: { maxSpeed: 100, accel: 22, brake: 60, friction: 4, turnRate: 2.4, grip: 1.0, weight: 0.7, drift: 1.0 } },
+      fishing:   { id: 'fishing', mode: 'boat', label: 'Fishing Boat', color: 0x2266aa, stats: { maxSpeed: 50, accel: 9, brake: 60, friction: 6, turnRate: 1.2, grip: 1.0, weight: 1.5, drift: 1.0 } },
+      cessna:    { id: 'cessna', mode: 'fly', label: 'Cessna', color: 0xcc2222, stats: { maxSpeed: 80, accel: 30, brake: 60, friction: 10, turnRate: 3.0, grip: 1.0, weight: 1.0, drift: 1.0, stallSpeed: 30, climbRate: 15, bankRate: 1.0, turnRadius: 1.0 } },
+      stunt:     { id: 'stunt', mode: 'fly', label: 'Stunt Plane', color: 0x22cc44, stats: { maxSpeed: 100, accel: 30, brake: 60, friction: 10, turnRate: 3.0, grip: 1.0, weight: 0.8, drift: 1.0, stallSpeed: 20, climbRate: 22, bankRate: 1.6, turnRadius: 0.7 } },
+      jet:       { id: 'jet', mode: 'fly', label: 'Jet', color: 0x888888, stats: { maxSpeed: 200, accel: 30, brake: 60, friction: 10, turnRate: 3.0, grip: 1.0, weight: 1.2, drift: 1.0, stallSpeed: 45, climbRate: 10, bankRate: 0.6, turnRadius: 1.4 } },
+    };
+    const VEHICLE_ORDER = ['hatchback', 'sports', 'truck', 'cruiser', 'speedboat', 'fishing', 'cessna', 'stunt', 'jet'];
+    let currentVehicle = VEHICLES.hatchback; // default — preserves existing behaviour
+    function getDefaultVehicle(mode) {
+      return VEHICLES[VEHICLE_ORDER.find(id => VEHICLES[id].mode === mode)];
+    }
     // Wake trail for boat mode
     let wakeTrailLine = null;
     let wakeTrailPoints = [];
@@ -3914,6 +4032,7 @@
              target.closest('#ad-popup') || target.closest('#toast') ||
              target.closest('#collectible-counter') || target.closest('#wanted-level') || target.closest('#mission-display') ||
              target.closest('#menu-btn') || target.closest('#menu-panel') || target.closest('#night-toggle') ||
+             target.closest('#garage-btn') || target.closest('#garage-overlay') ||
              target.closest('#airport-toggle') || target.closest('#airport-panel') || target.closest('#bus-toggle') ||
              target.closest('#radio-toggle') || target.closest('#radio-panel') ||
              target.closest('#leaderboard-modal') || target.closest('#settings-panel') || target.closest('#username-modal');
@@ -3952,13 +4071,15 @@
     const modeCycleBtn = document.getElementById('mode-cycle');
 
     function applyMode(mode) {
+      // Entering a mode selects that mode's default vehicle unless one is already chosen
+      if (currentVehicle.mode !== mode) currentVehicle = getDefaultVehicle(mode);
       // Switch vehicle
       if (mode === 'fly') {
         vehicleMode = 'fly';
         // Replace car with plane — use plane mesh directly
         scene.remove(carGroup);
         if (wakeTrailLine) { scene.remove(wakeTrailLine); wakeTrailLine = null; }
-        carGroup = createPlane(0xcc2222);
+        carGroup = createPlane(currentVehicle);
         const terrainH = getTerrainHeight(carX, carZ);
         carGroup.position.set(carX, terrainH + 5, carZ);
         scene.add(carGroup);
@@ -3985,7 +4106,7 @@
         vehicleMode = 'boat';
         // Replace car with boat — use boat mesh directly, not copy
         scene.remove(carGroup);
-        carGroup = createBoat(0xcc2222);
+        carGroup = createBoat(currentVehicle);
         // Current tide level (mirrors the animation loop: oscillates between -5 and -1)
         const tideLevel = -3 + Math.sin(performance.now() * 0.0005) * 2;
         // Start boat at nearest water point
@@ -4012,7 +4133,7 @@
         // Restore original car — create fresh car mesh
         scene.remove(carGroup);
         if (wakeTrailLine) { scene.remove(wakeTrailLine); wakeTrailLine = null; }
-        carGroup = createCar(0xcc2222);
+        carGroup = createCar(currentVehicle);
         const th = getTerrainHeight(carX, carZ);
         carGroup.position.set(carX, Math.max(th + 0.5, 0), carZ);
         scene.add(carGroup);
@@ -4343,18 +4464,19 @@
       water.position.y = tideLevel;
 
       // ====== VEHICLE PHYSICS ======
-      // Boat physics: ACCEL/2, wider turning (TURN_RATE*0.6), more momentum (FRICTION/2)
-      const accel = vehicleMode === 'boat' ? ACCEL / 2 : ACCEL;
-      const friction = vehicleMode === 'boat' ? FRICTION / 2 : (isWetRoads(weatherCategory) ? FRICTION * 0.8 : FRICTION);
-      const turnRate = vehicleMode === 'boat' ? TURN_RATE * 0.6 : TURN_RATE;
+      // Resolve effective constants by merging the mode's base physics with the current vehicle's stats
+      const P = Object.assign({}, MODE_PHYSICS[vehicleMode], currentVehicle.stats);
+      const accel = P.accel;
+      const friction = vehicleMode === 'boat' ? P.friction : (isWetRoads(weatherCategory) ? P.friction * 0.8 : P.friction);
+      const turnRate = P.turnRate;
       // Vehicle physics — improved with exponential accel, proportional brake, speed-sensitive turning
       if (keys.up) {
-        // (1) Exponential acceleration ramp — slows as approaching MAX_SPEED
-        carSpeed += accel * dt * (1 - carSpeed / MAX_SPEED);
+        // (1) Exponential acceleration ramp — slows as approaching max speed
+        carSpeed += accel * dt * (1 - carSpeed / P.maxSpeed);
       } else if (keys.down) {
         if (carSpeed > 0) {
           // (2) Braking proportional to speed
-          const brakeForce = BRAKE * dt * (Math.abs(carSpeed) / MAX_SPEED + 0.3);
+          const brakeForce = P.brake * dt * (Math.abs(carSpeed) / P.maxSpeed + 0.3);
           carSpeed -= brakeForce;
         } else {
           // (7) Reverse — accelerate backwards at half rate
@@ -4366,12 +4488,12 @@
         if (carSpeed > 0) carSpeed -= frictionRate * dt;
         else if (carSpeed < 0) carSpeed += frictionRate * dt;
       }
-      carSpeed = Math.max(-20, Math.min(MAX_SPEED, carSpeed));
+      carSpeed = Math.max(-20, Math.min(P.maxSpeed, carSpeed));
       if (Math.abs(carSpeed) < 0.3) carSpeed = 0;
 
       // (3) Turning — turn rate inversely proportional to speed
       if (Math.abs(carSpeed) > 1) {
-        const turnFactor = turnRate * dt * (1 - Math.abs(carSpeed) / MAX_SPEED * 0.5);
+        const turnFactor = turnRate * dt * (1 - Math.abs(carSpeed) / P.maxSpeed * 0.5);
         const dir = carSpeed > 0 ? 1 : -1; // reverse steering when going backwards
         if (keys.left) carHeading += turnFactor * 3 * dir;
         if (keys.right) carHeading -= turnFactor * 3 * dir;
@@ -4380,7 +4502,7 @@
         // (4) Lateral momentum — on sharp turns, car slides slightly
         const turnInput = (keys.left ? 1 : 0) - (keys.right ? 1 : 0) - steerValue;
         const slideFactor = keys.handbrake ? 3.0 : 1.0; // handbrake increases slide
-        lateralVelocity += turnInput * Math.abs(carSpeed) / MAX_SPEED * dt * 8 * slideFactor;
+        lateralVelocity += turnInput * Math.abs(carSpeed) / P.maxSpeed * dt * 8 * slideFactor;
       }
       // Decay lateral velocity over time
       const lateralDecay = keys.handbrake ? 0.90 : 0.92; // handbrake = slower decay = more slide
@@ -4414,9 +4536,9 @@
 
       if (vehicleMode === 'fly') {
         // Plane: Cessna-like physics — constant forward momentum
-        // (1) Maintain minimum airspeed of 30 (auto-throttle if below)
-        if (carSpeed < 30) carSpeed += ACCEL * dt * 0.5; // auto-throttle to prevent stall
-        if (carSpeed > MAX_SPEED * 1.5) carSpeed = MAX_SPEED * 1.5; // planes can go faster
+        // (1) Maintain minimum airspeed (auto-throttle if below stall speed)
+        if (carSpeed < P.stallSpeed) carSpeed += P.accel * dt * 0.5; // auto-throttle to prevent stall
+        if (carSpeed > P.maxSpeed * 1.5) carSpeed = P.maxSpeed * 1.5; // planes can go faster
 
         // (8) Smooth takeoff: interpolate altitude from terrain+5 to 50 over 2 seconds
         if (planeTakeoffT < 1) {
@@ -4424,8 +4546,8 @@
           planeAlt = planeTakeoffStart + (planeTakeoffTarget - planeTakeoffStart) * planeTakeoffT;
         } else {
           // Altitude: up key = climb, down key = descend, auto-level when neutral
-          if (keys.up) planeAlt += 15 * dt;
-          else if (keys.down) planeAlt -= 15 * dt;
+          if (keys.up) planeAlt += P.climbRate * dt;
+          else if (keys.down) planeAlt -= P.climbRate * dt;
           else planeAlt += (50 - planeAlt) * dt * 0.5; // auto-level to 50m
         }
 
@@ -4518,7 +4640,7 @@
         carGroup.rotation.y = carHeading * Math.PI / 180;
         carGroup.rotation.x = 0;
         const tilt = (keys.left ? 0.05 : keys.right ? -0.05 : 0) - steerValue * 0.05;
-        carGroup.rotation.z = tilt * (Math.abs(carSpeed) / MAX_SPEED);
+        carGroup.rotation.z = tilt * (Math.abs(carSpeed) / P.maxSpeed);
       }
 
       // Traffic lights — update state machine (T-TRAFFIC-LIGHTS #11)
@@ -6752,6 +6874,93 @@
         if (!ui) setMenuOpen(false);
       }
     }, { passive: true });
+
+    // ====== GARAGE (T-GARAGE #23) ======
+    const garageBtn = document.getElementById('garage-btn');
+    const garageOverlay = document.getElementById('garage-overlay');
+    const garageCarousel = document.getElementById('garage-carousel');
+    let garageMode = 'drive';
+
+    function statBar(label, value, max) {
+      const pct = Math.max(0, Math.min(100, (value / max) * 100));
+      return `<div class="gc-stat"><span>${label}</span><div class="gc-bar"><i style="width:${pct}%"></i></div></div>`;
+    }
+
+    function renderGarage(mode) {
+      garageMode = mode;
+      const ids = VEHICLE_ORDER.filter(id => VEHICLES[id].mode === mode);
+      garageCarousel.innerHTML = ids.map(id => {
+        const v = VEHICLES[id];
+        const s = v.stats;
+        const selected = currentVehicle === v ? ' selected' : '';
+        const swatch = `background:${'#' + v.color.toString(16).padStart(6, '0')};`;
+        return `<div class="garage-card${selected}" data-vehicle="${id}">
+          <div class="gc-name">${v.label}</div>
+          <div class="gc-swatch" style="${swatch}"></div>
+          ${statBar('Speed', s.maxSpeed, 200)}
+          ${statBar('Accel', s.accel, 45)}
+          ${statBar('Grip', (s.grip || 1) * 100, 150)}
+        </div>`;
+      }).join('');
+    }
+
+    function openGarage() {
+      garageOverlay.classList.add('show');
+      garageBtn.classList.add('active');
+      renderGarage(garageMode);
+    }
+
+    function closeGarage() {
+      garageOverlay.classList.remove('show');
+      garageBtn.classList.remove('active');
+    }
+
+    function selectVehicle(id) {
+      const v = VEHICLES[id];
+      if (!v) return;
+      currentVehicle = v;
+      applyMode(v.mode);
+      renderGarage(garageMode);
+    }
+
+    if (garageBtn) garageBtn.addEventListener('click', (e) => {
+      e.preventDefault(); e.stopPropagation();
+      if (garageOverlay.classList.contains('show')) closeGarage();
+      else openGarage();
+    });
+    const garageClose = document.getElementById('garage-close');
+    if (garageClose) garageClose.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); closeGarage(); });
+    document.querySelectorAll('.garage-tab').forEach(tab => {
+      tab.addEventListener('click', (e) => {
+        e.preventDefault(); e.stopPropagation();
+        document.querySelectorAll('.garage-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        renderGarage(tab.dataset.mode);
+      });
+    });
+    garageCarousel.addEventListener('click', (e) => {
+      const card = e.target.closest('.garage-card');
+      if (card) selectVehicle(card.dataset.vehicle);
+    });
+    // Close garage when tapping the dimmed backdrop
+    garageOverlay.addEventListener('pointerdown', (e) => {
+      if (e.target === garageOverlay) closeGarage();
+    });
+
+    // ====== TEST HOOK (exposed for the test harness) ======
+    window.__vibe = {
+      get VEHICLES() { return VEHICLES; },
+      get currentVehicle() { return currentVehicle; },
+      get vehicleMode() { return vehicleMode; },
+      applyMode,
+      openGarage,
+      closeGarage,
+      selectVehicle,
+      isOnUI,
+      createCar,
+      createBoat,
+      createPlane,
+    };
 
     // Init camera label
     updateCamLabel();
