@@ -172,6 +172,68 @@ window.addEventListener('load', () => {
 
   }, 2000);
 });
+
+// Test 15: Garage system implementation (T-GARAGE #23)
+setTimeout(() => {
+  try {
+    const fw = document.getElementById('game-frame').contentWindow;
+    const fd = document.getElementById('game-frame').contentDocument;
+    const v = fw.__vibe;
+
+    // Registry exists with 9 vehicles
+    const vehicles = v.VEHICLES;
+    const all = Object.values(vehicles);
+    log(`VEHICLES registry has 9 vehicles`, all.length === 9 ? 'pass' : 'fail');
+
+    // 3 per mode
+    const byMode = mode => all.filter(x => x.mode === mode).length;
+    log(`3 cars (drive)`, byMode('drive') === 3 ? 'pass' : 'fail');
+    log(`3 boats`, byMode('boat') === 3 ? 'pass' : 'fail');
+    log(`3 planes (fly)`, byMode('fly') === 3 ? 'pass' : 'fail');
+
+    // Stat relationships
+    log(`sports faster than hatchback`, vehicles.sports.stats.maxSpeed > vehicles.hatchback.stats.maxSpeed ? 'pass' : 'fail');
+    log(`truck slower than hatchback`, vehicles.truck.stats.maxSpeed < vehicles.hatchback.stats.maxSpeed ? 'pass' : 'fail');
+    log(`jet fastest plane`, vehicles.jet.stats.maxSpeed > vehicles.cessna.stats.maxSpeed ? 'pass' : 'fail');
+    log(`speedboat faster than fishing`, vehicles.speedboat.stats.maxSpeed > vehicles.fishing.stats.maxSpeed ? 'pass' : 'fail');
+
+    // Default currentVehicle
+    log(`currentVehicle defaults to hatchback`, v.currentVehicle === vehicles.hatchback ? 'pass' : 'fail');
+
+    // Garage button + overlay exist
+    log(`Garage button exists`, !!fd.getElementById('garage-btn') ? 'pass' : 'fail');
+    log(`Garage overlay exists`, !!fd.getElementById('garage-overlay') ? 'pass' : 'fail');
+    log(`Garage tabs (3)`, fd.querySelectorAll('.garage-tab').length === 3 ? 'pass' : 'fail');
+
+    // Open garage renders carousel
+    v.openGarage();
+    const cards = fd.querySelectorAll('.garage-card');
+    log(`Garage opens with carousel cards`, cards.length >= 3 ? 'pass' : 'fail');
+
+    // Selecting a vehicle switches mode + currentVehicle
+    v.selectVehicle('sports');
+    log(`selectVehicle('sports') sets currentVehicle`, v.currentVehicle === vehicles.sports ? 'pass' : 'fail');
+    log(`selectVehicle('sports') switches to drive mode`, v.vehicleMode === 'drive' ? 'pass' : 'fail');
+
+    // isOnUI blocks garage taps
+    const cardEl = fd.querySelector('.garage-card');
+    log(`isOnUI blocks garage taps`, cardEl && v.isOnUI(cardEl) ? 'pass' : 'fail');
+
+    // Per-vehicle mesh: truck bigger than sports
+    const truckScale = v.createCar(vehicles.truck).scale.x;
+    const sportsScale = v.createCar(vehicles.sports).scale.x;
+    log(`truck mesh bigger than sports`, truckScale > sportsScale ? 'pass' : 'fail');
+
+    v.closeGarage();
+    log(`Garage closes`, !fd.getElementById('garage-overlay').classList.contains('show') ? 'pass' : 'fail');
+
+    // Restore default
+    v.selectVehicle('hatchback');
+  } catch(e) {
+    log(`Garage tests: ${e.message}`, 'fail');
+  }
+  updateSummary();
+}, 5000);
 </script>
 </body>
 </html>
