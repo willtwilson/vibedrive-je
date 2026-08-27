@@ -135,6 +135,33 @@ window.addEventListener('load', () => {
       updateSummary();
     });
 
+    // Test 14: Plane physics research doc (T-PHYS-RESEARCH-PLANE #19)
+    fetch('/research/PHYSICS-PLANE.md').then(r => r.text()).then(text => {
+      const required = [
+        'Current-State Audit',
+        'Proposed Model',
+        'PLANE_PHYSICS',
+        'Stall',
+        'Airspeed',
+        'Takeoff',
+        'Landing',
+        'Implementation Plan',
+        '60fps',
+        'stallSpeed',
+        'thrust',
+        'lift',
+        'climbRate',
+        'bankAngle'
+      ];
+      required.forEach(term => {
+        log(`Plane research doc mentions "${term}"`, text.includes(term) ? 'pass' : 'fail');
+      });
+      updateSummary();
+    }).catch(e => {
+      log(`Plane research doc fetch: ${e.message}`, 'fail');
+      updateSummary();
+    });
+
   }, 2000);
 });
 </script>
