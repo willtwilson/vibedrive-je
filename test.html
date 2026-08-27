@@ -10,6 +10,7 @@
 <h2>⚡ Vibe Drive Jersey 3D — Automated Tests</h2>
 <div id="results">Running tests...</div>
 <iframe id="game-frame" src="/index.html" style="display:none;"></iframe>
+<iframe id="retro-frame" src="/index-retro.html" style="display:none;"></iframe>
 <script>
 const results = [];
 let passCount = 0, failCount = 0;
@@ -350,6 +351,63 @@ window.addEventListener('load', () => {
       updateSummary();
     }
 
+  }, 2000);
+});
+
+// ====== RETRO MODE TESTS (T-RETRO-FORK #25) ======
+// index-retro.html must be a copy of index.html with Three.js/WebGL stripped
+// but all game logic preserved, plus a placeholder Canvas 2D renderer stub.
+window.addEventListener('load', () => {
+  const frame = document.getElementById('retro-frame');
+  setTimeout(() => {
+    const fw = frame.contentWindow;
+    const fd = frame.contentDocument;
+
+    // Test R1: index-retro.html loads without JS errors
+    try {
+      log(`[retro] Page loads`, fd ? 'pass' : 'fail');
+    } catch(e) { log(`[retro] Page loads: ${e.message}`, 'fail'); }
+
+    // Test R2: No Three.js import map
+    fetch('/index-retro.html').then(r => r.text()).then(text => {
+      log(`[retro] No import map with three`, !/importmap[\s\S]*"three"/.test(text) ? 'pass' : 'fail');
+      log(`[retro] No 'import * as THREE'`, !text.includes("import * as THREE from 'three'") ? 'pass' : 'fail');
+      log(`[retro] No three/addons imports`, !text.includes('three/addons') ? 'pass' : 'fail');
+      log(`[retro] No WebGLRenderer instantiation`, !/new THREE\.WebGLRenderer/.test(text) ? 'pass' : 'fail');
+      log(`[retro] Canvas 2D renderer stub present`, text.includes('retroRender') ? 'pass' : 'fail');
+      log(`[retro] Game logic preserved (PHYS)`, text.includes('const PHYS') || text.includes('PHYS =') ? 'pass' : 'fail');
+      log(`[retro] Game logic preserved (PLANE_PHYSICS)`, text.includes('PLANE_PHYSICS') ? 'pass' : 'fail');
+      log(`[retro] Game logic preserved (BOAT_PHYSICS)`, text.includes('BOAT_PHYSICS') ? 'pass' : 'fail');
+      log(`[retro] Game logic preserved (missions)`, text.includes('startMission') ? 'pass' : 'fail');
+      log(`[retro] Game logic preserved (wanted level)`, text.includes('setWantedLevel') ? 'pass' : 'fail');
+      log(`[retro] Game logic preserved (leaderboard)`, text.includes('fetchLeaderboard') ? 'pass' : 'fail');
+      log(`[retro] Road data loaded`, text.includes('jersey-roads.js') ? 'pass' : 'fail');
+      updateSummary();
+    }).catch(e => {
+      log(`[retro] Source fetch: ${e.message}`, 'fail');
+      updateSummary();
+    });
+
+    // Test R3: Runtime — game logic present + Canvas 2D stub active
+    try {
+      log(`[retro] THREE shim available`, typeof fw.THREE !== 'undefined' ? 'pass' : 'fail');
+      log(`[retro] Canvas is 2D`, (() => { const c = fd.getElementById('game-canvas'); return c && c.getContext('2d') ? 'pass' : 'fail'; })());
+      log(`[retro] retroRender defined`, typeof fw.retroRender === 'function' ? 'pass' : 'fail');
+      log(`[retro] PHYS preserved`, typeof fw.PHYS !== 'undefined' ? 'pass' : 'fail');
+      log(`[retro] PLANE_PHYSICS preserved`, typeof fw.PLANE_PHYSICS !== 'undefined' ? 'pass' : 'fail');
+      log(`[retro] BOAT_PHYSICS preserved`, typeof fw.BOAT_PHYSICS !== 'undefined' ? 'pass' : 'fail');
+      log(`[retro] Missions preserved`, typeof fw.startMission === 'function' ? 'pass' : 'fail');
+      log(`[retro] Wanted level preserved`, typeof fw.setWantedLevel === 'function' ? 'pass' : 'fail');
+      log(`[retro] HUD present`, !!fd.getElementById('hud') ? 'pass' : 'fail');
+      log(`[retro] Radar present`, !!fd.getElementById('radar-canvas') ? 'pass' : 'fail');
+      log(`[retro] Controls present`, !!fd.getElementById('controls') ? 'pass' : 'fail');
+      log(`[retro] Leaderboard present`, !!fd.getElementById('leaderboard-modal') ? 'pass' : 'fail');
+      log(`[retro] Road data present`, typeof fw.jerseyRoads !== 'undefined' && fw.jerseyRoads.length > 0 ? 'pass' : 'fail');
+      updateSummary();
+    } catch(e) {
+      log(`[retro] Runtime: ${e.message}`, 'fail');
+      updateSummary();
+    }
   }, 2000);
 });
 </script>
