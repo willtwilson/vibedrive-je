@@ -135,6 +135,155 @@ window.addEventListener('load', () => {
       updateSummary();
     });
 
+    // Test 14: Plane physics research doc (T-PHYS-RESEARCH-PLANE #19)
+    fetch('/research/PHYSICS-PLANE.md').then(r => r.text()).then(text => {
+      const required = [
+        'Current-State Audit',
+        'Proposed Model',
+        'PLANE_PHYSICS',
+        'Stall',
+        'Airspeed',
+        'Takeoff',
+        'Landing',
+        'Implementation Plan',
+        '60fps',
+        'stallSpeed',
+        'thrust',
+        'lift',
+        'climbRate',
+        'bankAngle'
+      ];
+      required.forEach(term => {
+        log(`Plane research doc mentions "${term}"`, text.includes(term) ? 'pass' : 'fail');
+      });
+      updateSummary();
+    }).catch(e => {
+      log(`Plane research doc fetch: ${e.message}`, 'fail');
+      updateSummary();
+    });
+
+    // Test 15: PLANE_PHYSICS constants object (T-PHYS-IMPLEMENT-PLANE #22)
+    try {
+      const pp = fw.PLANE_PHYSICS;
+      const requiredKeys = [
+        'maxSpeed', 'stallSpeed', 'thrust', 'dragLinear', 'dragQuadratic', 'idleThrottle',
+        'liftCoeff', 'stallNoseDrop', 'stallRecoverThrottle', 'stallRecoverRate',
+        'climbRate', 'climbThrottleFactor', 'maxClimbAngle', 'maxDescendAngle', 'autoLevelRate',
+        'bankRate', 'maxBankAngle', 'turnRadiusMin', 'turnRadiusMax', 'turnAltitudeLoss',
+        'groundRollSpeed', 'rotatePitch', 'climbOutAlt',
+        'approachAlt', 'approachSpeed', 'flareAlt', 'flarePitch', 'touchdownSpeed',
+        'gearDrag', 'goAroundThrottle'
+      ];
+      log(`PLANE_PHYSICS object exists`, !!pp ? 'pass' : 'fail');
+      requiredKeys.forEach(k => {
+        log(`PLANE_PHYSICS.${k} defined`, pp && typeof pp[k] === 'number' ? 'pass' : 'fail');
+      });
+      log(`PLANE_PHYSICS.gearDown is boolean`, pp && typeof pp.gearDown === 'boolean' ? 'pass' : 'fail');
+      // Sanity relationships
+      log(`stallSpeed < maxSpeed`, pp && pp.stallSpeed < pp.maxSpeed ? 'pass' : 'fail');
+      log(`groundRollSpeed < stallSpeed`, pp && pp.groundRollSpeed < pp.stallSpeed ? 'pass' : 'fail');
+      log(`climbRate > 0`, pp && pp.climbRate > 0 ? 'pass' : 'fail');
+      log(`maxClimbAngle in (0, π/2)`, pp && pp.maxClimbAngle > 0 && pp.maxClimbAngle < Math.PI / 2 ? 'pass' : 'fail');
+      log(`maxBankAngle in (0, π/2)`, pp && pp.maxBankAngle > 0 && pp.maxBankAngle < Math.PI / 2 ? 'pass' : 'fail');
+      log(`turnAltitudeLoss >= 0`, pp && pp.turnAltitudeLoss >= 0 ? 'pass' : 'fail');
+      log(`approachAlt > flareAlt > 0`, pp && pp.approachAlt > pp.flareAlt && pp.flareAlt > 0 ? 'pass' : 'fail');
+      log(`touchdownSpeed < stallSpeed`, pp && pp.touchdownSpeed < pp.stallSpeed ? 'pass' : 'fail');
+      updateSummary();
+    } catch(e) {
+      log(`PLANE_PHYSICS: ${e.message}`, 'fail');
+      updateSummary();
+    }
+
+    // Test 16: Plane state variables + takeoff phase (T-PHYS-IMPLEMENT-PLANE #22)
+    try {
+      log(`planePhase state var exists`, typeof fw.planePhase !== 'undefined' ? 'pass' : 'fail');
+      log(`planePhaseT state var exists`, typeof fw.planePhaseT !== 'undefined' ? 'pass' : 'fail');
+      log(`pitch state var exists`, typeof fw.pitch !== 'undefined' ? 'pass' : 'fail');
+      log(`bankAngle state var exists`, typeof fw.bankAngle !== 'undefined' ? 'pass' : 'fail');
+      log(`throttle state var exists`, typeof fw.throttle !== 'undefined' ? 'pass' : 'fail');
+      log(`old takeoff ramp removed (planeTakeoffT gone)`, typeof fw.planeTakeoffT === 'undefined' ? 'pass' : 'fail');
+      updateSummary();
+    } catch(e) {
+      log(`Plane state vars: ${e.message}`, 'fail');
+      updateSummary();
+    }
+
+    // Test 17: Plane physics branch still wired to terrain + shadow (T-PHYS-IMPLEMENT-PLANE #22)
+    try {
+      // Fetch the source to confirm the fly branch references terrain + shadow
+      fetch('/index.html').then(r => r.text()).then(text => {
+        const flyBlock = text.slice(text.indexOf("if (vehicleMode === 'fly')"));
+        log(`Fly branch references getTerrainHeight`, flyBlock.includes('getTerrainHeight') ? 'pass' : 'fail');
+        log(`Fly branch references planeShadow`, flyBlock.includes('planeShadow') ? 'pass' : 'fail');
+        log(`Fly branch references PLANE_PHYSICS`, flyBlock.includes('PLANE_PHYSICS') ? 'pass' : 'fail');
+        log(`Fly branch references planePhase`, flyBlock.includes('planePhase') ? 'pass' : 'fail');
+        log(`Fly branch references stall`, flyBlock.toLowerCase().includes('stall') ? 'pass' : 'fail');
+        log(`Fly branch references throttle`, flyBlock.includes('throttle') ? 'pass' : 'fail');
+        updateSummary();
+      }).catch(e => {
+        log(`Fly branch source: ${e.message}`, 'fail');
+        updateSummary();
+      });
+    } catch(e) {
+      log(`Fly branch: ${e.message}`, 'fail');
+      updateSummary();
+    }
+
+    // Test 18: BOAT_PHYSICS constants object (T-PHYS-IMPLEMENT-BOAT #21)
+    try {
+      const bp = fw.BOAT_PHYSICS;
+      const requiredKeys = [
+        'maxSpeed', 'accel', 'reverseAccel', 'planingSpeed', 'planingBoost',
+        'dragLinear', 'dragQuadratic', 'idleFriction',
+        'rudderRate', 'turnRadiusMin', 'turnRadiusMax', 'drift', 'driftDecay',
+        'waveBobAmp', 'waveBobSpeed', 'wavePitchAmp', 'waveRollAmp', 'waveResponse', 'waveSpeedScale',
+        'dockSpeed', 'dockRudderBoost', 'dockReverseBoost', 'fenderRange'
+      ];
+      log(`BOAT_PHYSICS object exists`, !!bp ? 'pass' : 'fail');
+      requiredKeys.forEach(k => {
+        log(`BOAT_PHYSICS.${k} defined`, bp && typeof bp[k] === 'number' ? 'pass' : 'fail');
+      });
+      // Sanity relationships
+      log(`boat maxSpeed < car MAX_SPEED (80)`, bp && bp.maxSpeed < 80 ? 'pass' : 'fail');
+      log(`reverseAccel < accel`, bp && bp.reverseAccel < bp.accel ? 'pass' : 'fail');
+      log(`planingSpeed < maxSpeed`, bp && bp.planingSpeed < bp.maxSpeed ? 'pass' : 'fail');
+      log(`planingBoost > 1`, bp && bp.planingBoost > 1 ? 'pass' : 'fail');
+      log(`dragQuadratic > 0`, bp && bp.dragQuadratic > 0 ? 'pass' : 'fail');
+      log(`dockRudderBoost > 1`, bp && bp.dockRudderBoost > 1 ? 'pass' : 'fail');
+      log(`dockReverseBoost > 1`, bp && bp.dockReverseBoost > 1 ? 'pass' : 'fail');
+      log(`waveResponse in [0,1]`, bp && bp.waveResponse >= 0 && bp.waveResponse <= 1 ? 'pass' : 'fail');
+      log(`drift in [0,1]`, bp && bp.drift >= 0 && bp.drift <= 1 ? 'pass' : 'fail');
+      log(`dockSpeed > 0`, bp && bp.dockSpeed > 0 ? 'pass' : 'fail');
+      log(`fenderRange > 0`, bp && bp.fenderRange > 0 ? 'pass' : 'fail');
+      updateSummary();
+    } catch(e) {
+      log(`BOAT_PHYSICS: ${e.message}`, 'fail');
+      updateSummary();
+    }
+
+    // Test 19: Boat physics branch wired to terrain, waves, docking (T-PHYS-IMPLEMENT-BOAT #21)
+    try {
+      fetch('/index.html').then(r => r.text()).then(text => {
+        const boatBlock = text.slice(text.indexOf("else if (vehicleMode === 'boat')"));
+        log(`Boat branch references getTerrainHeight`, boatBlock.includes('getTerrainHeight') ? 'pass' : 'fail');
+        log(`Boat branch references tideLevel`, boatBlock.includes('tideLevel') ? 'pass' : 'fail');
+        log(`Boat branch references BOAT_PHYSICS`, boatBlock.includes('BOAT_PHYSICS') ? 'pass' : 'fail');
+        log(`Boat branch references marinaBerths`, boatBlock.includes('marinaBerths') ? 'pass' : 'fail');
+        log(`Boat branch references wakeTrailLine`, boatBlock.includes('wakeTrailLine') ? 'pass' : 'fail');
+        log(`Boat branch has planing logic`, boatBlock.includes('planing') ? 'pass' : 'fail');
+        log(`Boat branch has docking logic`, boatBlock.includes('dock') ? 'pass' : 'fail');
+        log(`Boat branch has drag logic`, boatBlock.includes('drag') ? 'pass' : 'fail');
+        log(`Boat branch has rudder logic`, boatBlock.includes('rudder') ? 'pass' : 'fail');
+        updateSummary();
+      }).catch(e => {
+        log(`Boat branch source: ${e.message}`, 'fail');
+        updateSummary();
+      });
+    } catch(e) {
+      log(`Boat branch: ${e.message}`, 'fail');
+      updateSummary();
+    }
+
   }, 2000);
 });
 </script>
