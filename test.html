@@ -410,6 +410,92 @@ window.addEventListener('load', () => {
     }
   }, 2000);
 });
+
+// ====== RETRO RENDERER TESTS (T-RETRO-RENDERER #26) ======
+// Canvas 2D core renderer: camera (pan/zoom, speed-sensitive zoom), Jersey
+// roads as vector paths, 16-directional procedural car sprites, layer system,
+// player car following physics state, and a no-throw render pass.
+window.addEventListener('load', () => {
+  const frame = document.getElementById('retro-frame');
+  setTimeout(() => {
+    const fw = frame.contentWindow;
+    const fd = frame.contentDocument;
+
+    // Test R4: Canvas 2D camera with pan/zoom (speed-sensitive zoom)
+    try {
+      const retro = fw.retro;
+      log(`[renderer] retro namespace exists`, retro ? 'pass' : 'fail');
+      log(`[renderer] camera object exists`, retro && retro.cam ? 'pass' : 'fail');
+      log(`[renderer] camera pans with player (cam.x == player.x)`, retro && retro.cam && retro.player && Math.abs(retro.cam.x - retro.player.x) < 0.01 ? 'pass' : 'fail');
+      log(`[renderer] camera pans with player (cam.y == player.z)`, retro && retro.cam && retro.player && Math.abs(retro.cam.y - retro.player.z) < 0.01 ? 'pass' : 'fail');
+      log(`[renderer] targetZoom defined`, retro && typeof retro.targetZoom === 'function' ? 'pass' : 'fail');
+      log(`[renderer] zoom out at high speed (targetZoom(0) > targetZoom(80))`, retro && typeof retro.targetZoom === 'function' && retro.targetZoom(0) > retro.targetZoom(80) ? 'pass' : 'fail');
+      log(`[renderer] camera zoom clamped to sensible range`, retro && retro.cam && retro.cam.zoom > 0 && retro.cam.zoom < 3 ? 'pass' : 'fail');
+      log(`[renderer] worldToScreen defined`, retro && typeof retro.worldToScreen === 'function' ? 'pass' : 'fail');
+      updateSummary();
+    } catch(e) { log(`[renderer] camera: ${e.message}`, 'fail'); updateSummary(); }
+
+    // Test R5: Jersey road data rendered as vector paths
+    try {
+      const retro = fw.retro;
+      log(`[renderer] road segments built (${retro ? retro.roadSegments.length : 0})`, retro && retro.roadSegments.length > 0 ? 'pass' : 'fail');
+      fetch('/index-retro.html').then(r => r.text()).then(text => {
+        log(`[renderer] drawRoads uses beginPath`, /function drawRoads[\s\S]{0,1200}beginPath/.test(text) ? 'pass' : 'fail');
+        log(`[renderer] drawRoads uses lineTo`, /function drawRoads[\s\S]{0,1200}lineTo/.test(text) ? 'pass' : 'fail');
+        updateSummary();
+      }).catch(e => { log(`[renderer] roads source: ${e.message}`, 'fail'); updateSummary(); });
+    } catch(e) { log(`[renderer] roads: ${e.message}`, 'fail'); updateSummary(); }
+
+    // Test R6: Procedural car sprites with 16-directional rotation (ctx.rotate)
+    try {
+      const retro = fw.retro;
+      log(`[renderer] sprite cache has 16 directions`, retro && retro.spriteCount === 16 ? 'pass' : 'fail');
+      log(`[renderer] spriteForHeading returns a canvas`, retro && typeof retro.spriteForHeading === 'function' && retro.spriteForHeading(90) instanceof fw.HTMLCanvasElement ? 'pass' : 'fail');
+      fetch('/index-retro.html').then(r => r.text()).then(text => {
+        log(`[renderer] sprites built with ctx.rotate`, /ctx\.rotate/.test(text) ? 'pass' : 'fail');
+        updateSummary();
+      }).catch(e => { log(`[renderer] sprites source: ${e.message}`, 'fail'); updateSummary(); });
+    } catch(e) { log(`[renderer] sprites: ${e.message}`, 'fail'); updateSummary(); }
+
+    // Test R7: Layer system order — Ground → Buildings → Vehicles → Effects → HUD
+    try {
+      const retro = fw.retro;
+      const expected = ['ground','buildings','vehicles','effects','hud'];
+      const layers = retro ? retro.layers : [];
+      const ok = layers.length === expected.length && expected.every((l, i) => layers[i] === l);
+      log(`[renderer] layer system order (${layers.join(' -> ')})`, ok ? 'pass' : 'fail');
+      updateSummary();
+    } catch(e) { log(`[renderer] layers: ${e.message}`, 'fail'); updateSummary(); }
+
+    // Test R8: Player car renders and follows physics state
+    try {
+      const retro = fw.retro;
+      log(`[renderer] drawPlayer defined`, typeof retro.drawPlayer === 'function' ? 'pass' : 'fail');
+      fetch('/index-retro.html').then(r => r.text()).then(text => {
+        const block = text.slice(text.indexOf('drawPlayer'));
+        log(`[renderer] drawPlayer references carX`, block.includes('carX') ? 'pass' : 'fail');
+        log(`[renderer] drawPlayer references carZ`, block.includes('carZ') ? 'pass' : 'fail');
+        log(`[renderer] drawPlayer references carHeading`, block.includes('carHeading') ? 'pass' : 'fail');
+        updateSummary();
+      }).catch(e => { log(`[renderer] player source: ${e.message}`, 'fail'); updateSummary(); });
+    } catch(e) { log(`[renderer] player: ${e.message}`, 'fail'); updateSummary(); }
+
+    // Test R9: Render pass executes without throwing (no JS console errors)
+    try {
+      const retro = fw.retro;
+      const canvas = fd.getElementById('game-canvas');
+      // The retro iframe is display:none so its canvas has 0 size — give it a
+      // fixed working size so the render + pixel-read are meaningful.
+      canvas.width = 320; canvas.height = 240;
+      retro.render(canvas.width, canvas.height);
+      const c = canvas.getContext('2d');
+      const nonEmpty = c.getImageData(0, 0, 320, 240).data.some(v => v > 0);
+      log(`[renderer] retro.render() executes without throwing`, true ? 'pass' : 'fail');
+      log(`[renderer] render produces non-blank output`, nonEmpty ? 'pass' : 'fail');
+      updateSummary();
+    } catch(e) { log(`[renderer] render: ${e.message}`, 'fail'); updateSummary(); }
+  }, 2000);
+});
 </script>
 </body>
 </html>
