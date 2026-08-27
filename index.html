@@ -3462,6 +3462,20 @@
       // Cockpit
       const cockpit = new THREE.Mesh(new THREE.SphereGeometry(0.35, 8, 6, 0, Math.PI*2, 0, Math.PI/2), new THREE.MeshStandardMaterial({ color: 0x4488cc, transparent: true, opacity: 0.6, roughness: 0.1 }));
       cockpit.position.set(0.3, 0.4, 0); cockpit.scale.set(1, 0.8, 1.2); plane.add(cockpit);
+      // Landing gear — two struts + wheels (visual only; drag handled by PLANE_PHYSICS.gearDrag)
+      const gearMat = new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.6 });
+      const gearGroup = new THREE.Group();
+      const strutGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.5, 6);
+      const wheelGeo = new THREE.CylinderGeometry(0.12, 0.12, 0.08, 8);
+      [-0.8, 0.8].forEach(x => {
+        const strut = new THREE.Mesh(strutGeo, gearMat);
+        strut.position.set(x, -0.4, 0.2); gearGroup.add(strut);
+        const wheel = new THREE.Mesh(wheelGeo, gearMat);
+        wheel.rotation.z = Math.PI / 2;
+        wheel.position.set(x, -0.65, 0.2); gearGroup.add(wheel);
+      });
+      gearGroup.userData.isGear = true;
+      plane.add(gearGroup);
       return plane;
     }
 
@@ -3849,9 +3863,108 @@
     function markGameStarted(){ if(!gameStarted){ gameStarted = true; } }
     let lateralVelocity = 0; // lateral slide momentum for sharp turns
     let planeAlt = 0; // altitude for plane mode
-    let planeTakeoffT = 0, planeTakeoffStart = 0, planeTakeoffTarget = 50; // smooth takeoff interpolation
     let planeShadow = null; // flat dark circle shadow under the plane
+    // Enhanced plane physics state (T-PHYS-IMPLEMENT-PLANE #22)
+    let planePhase = 'ground'; // 'ground' | 'rotate' | 'climbout' | 'airborne' | 'approach' | 'flare'
+    let planePhaseT = 0; // phase timer (used during rotate)
+    let pitch = 0; // smoothed pitch angle (rad)
+    let bankAngle = 0; // smoothed bank angle (rad)
+    let throttle = 0.35; // current throttle fraction (0..1)
     const MAX_SPEED = 80, ACCEL = 30, BRAKE = 60, FRICTION = 10, TURN_RATE = 3.0;
+    // Tunable plane physics constants (T-PHYS-IMPLEMENT-PLANE #22)
+    const PLANE_PHYSICS = {
+      // Airspeed model
+      maxSpeed: 120,            // top airspeed (game units/s) — 1.5x the car's 80
+      stallSpeed: 30,           // airspeed below which the wing stops producing lift
+      thrust: 26,               // engine thrust (units/s^2) at full throttle
+      dragLinear: 0.35,         // linear air drag (per second)
+      dragQuadratic: 0.004,     // quadratic drag (per unit speed) — dominates at speed
+      idleThrottle: 0.35,       // cruise throttle fraction when no input (keeps airspeed up)
+
+      // Lift / stall
+      liftCoeff: 0.9,           // lift multiplier (how strongly the wing holds altitude)
+      stallNoseDrop: 0.5,       // nose-drop rate (rad/s) when stalled
+      stallRecoverThrottle: 0.6,// throttle fraction needed to begin stall recovery
+      stallRecoverRate: 0.8,    // how fast the nose comes back up on recovery
+
+      // Climb / descent
+      climbRate: 15,            // max climb rate (units/s) at full throttle
+      climbThrottleFactor: 1.0, // how much climb rate scales with throttle (0..1)
+      maxClimbAngle: 0.35,      // max pitch-up angle (rad) — ~20 degrees
+      maxDescendAngle: 0.25,    // max pitch-down angle (rad)
+      autoLevelRate: 0.5,       // how fast the plane auto-levels to cruise altitude
+
+      // Banking & turn
+      bankRate: 2.2,            // bank angle per unit of turn input (rad)
+      maxBankAngle: 0.9,        // max bank angle (rad) — ~50 degrees
+      turnRadiusMin: 0.5,       // turn-rate multiplier at high bank (tight turn)
+      turnRadiusMax: 1.0,       // turn-rate multiplier at low bank (wide turn)
+      turnAltitudeLoss: 0.4,    // altitude lost per second in a hard banked turn (units/s)
+
+      // Takeoff
+      groundRollSpeed: 18,      // airspeed at which the plane rotates (lifts off)
+      rotatePitch: 0.25,        // pitch-up angle during rotation (rad)
+      climbOutAlt: 50,          // target cruise altitude after climb-out (units)
+
+      // Landing
+      approachAlt: 30,          // target approach altitude (units)
+      approachSpeed: 40,        // target approach airspeed (units/s)
+      flareAlt: 6,              // altitude at which flare begins (units)
+      flarePitch: 0.12,         // nose-up pitch during flare (rad)
+      touchdownSpeed: 12,       // airspeed at which touchdown is considered complete
+      gearDown: true,           // whether landing gear is deployed (visual + drag)
+      gearDrag: 0.15,           // extra drag when gear is down
+      goAroundThrottle: 0.9,    // throttle for a go-around (overshoot)
+    };
+    // Tunable boat physics constants (T-PHYS-IMPLEMENT-BOAT #21)
+    const BOAT_PHYSICS = {
+      // Thrust / propulsion
+      maxSpeed: 45,            // top speed (game units/s) — ~half the car's 80
+      accel: 14,               // forward thrust (units/s^2)
+      reverseAccel: 8,         // reverse thrust (units/s^2) — slower than forward
+      planingSpeed: 18,        // speed above which hull "planes" (less drag, more speed)
+      planingBoost: 1.25,      // extra thrust multiplier above planingSpeed
+
+      // Hull drag / resistance
+      dragLinear: 0.6,         // linear water resistance (per second)
+      dragQuadratic: 0.02,     // quadratic resistance (per unit speed) — dominates at speed
+      idleFriction: 1.2,       // natural deceleration when no throttle (units/s^2)
+
+      // Steering / rudder
+      rudderRate: 1.5,         // base turn rate (deg/s per unit of input)
+      turnRadiusMin: 0.35,     // turn-rate multiplier at high speed (tighter feel)
+      turnRadiusMax: 1.0,      // turn-rate multiplier at low speed (more authority for docking)
+      drift: 0.35,             // lateral drift factor on water (0 = none, 1 = full slide)
+      driftDecay: 0.90,        // how fast lateral drift decays
+
+      // Wave response
+      waveBobAmp: 0.3,         // bobbing amplitude (units)
+      waveBobSpeed: 0.003,     // bobbing frequency
+      wavePitchAmp: 0.05,      // pitch amplitude (rad)
+      waveRollAmp: 0.05,       // roll amplitude (rad)
+      waveResponse: 0.6,       // how much wave motion scales with speed (0 = none, 1 = full)
+      waveSpeedScale: 0.02,    // speed multiplier on wave frequency (faster = choppier)
+
+      // Docking
+      dockSpeed: 6,            // speed below which "docking mode" engages (units/s)
+      dockRudderBoost: 1.6,    // rudder authority multiplier at/under dockSpeed
+      dockReverseBoost: 1.3,   // reverse authority multiplier at/under dockSpeed
+      fenderRange: 4,          // distance to a berth/pontoon that triggers fender feedback
+    };
+    // Marina berth anchor points (derived from Elizabeth Marina pontoon layout) — no new geometry
+    const marinaBerths = [
+      { x: 0, z: 80 }, { x: 6, z: 78 }, { x: -6, z: 78 },
+      { x: 12, z: 76 }, { x: -12, z: 76 }, { x: 0, z: 72 },
+    ];
+    // Expose for tests (module scope is not on window) — live getters so values stay in sync
+    window.PLANE_PHYSICS = PLANE_PHYSICS;
+    window.BOAT_PHYSICS = BOAT_PHYSICS;
+    window.marinaBerths = marinaBerths;
+    Object.defineProperty(window, 'planePhase', { get: () => planePhase, configurable: true });
+    Object.defineProperty(window, 'planePhaseT', { get: () => planePhaseT, configurable: true });
+    Object.defineProperty(window, 'pitch', { get: () => pitch, configurable: true });
+    Object.defineProperty(window, 'bankAngle', { get: () => bankAngle, configurable: true });
+    Object.defineProperty(window, 'throttle', { get: () => throttle, configurable: true });
     // Wake trail for boat mode
     let wakeTrailLine = null;
     let wakeTrailPoints = [];
@@ -3960,15 +4073,17 @@
         if (wakeTrailLine) { scene.remove(wakeTrailLine); wakeTrailLine = null; }
         carGroup = createPlane(0xcc2222);
         const terrainH = getTerrainHeight(carX, carZ);
-        carGroup.position.set(carX, terrainH + 5, carZ);
+        carGroup.position.set(carX, terrainH + 0.5, carZ);
         scene.add(carGroup);
         updateUsernameSprite();
-        // Smooth takeoff: start at terrain+5, rise to 50 over 2 seconds
-        planeAlt = terrainH + 5;
-        planeTakeoffTarget = 50;
-        planeTakeoffStart = planeAlt;
-        planeTakeoffT = 0;
-        carSpeed = 50; // Cessna — start moving immediately!
+        // Real takeoff: start on the runway at a standstill, ground roll -> rotate -> climb-out
+        planeAlt = terrainH + 0.5;
+        planePhase = 'ground';
+        planePhaseT = 0;
+        pitch = 0;
+        bankAngle = 0;
+        throttle = PLANE_PHYSICS.idleThrottle;
+        carSpeed = 0; // start from a standstill on the runway
         camMode = 'chase'; // ensure chase view behind the plane
         updateCamLabel();
         // Add shadow plane (flat dark circle on ground)
@@ -4343,11 +4458,12 @@
       water.position.y = tideLevel;
 
       // ====== VEHICLE PHYSICS ======
-      // Boat physics: ACCEL/2, wider turning (TURN_RATE*0.6), more momentum (FRICTION/2)
-      const accel = vehicleMode === 'boat' ? ACCEL / 2 : ACCEL;
-      const friction = vehicleMode === 'boat' ? FRICTION / 2 : (isWetRoads(weatherCategory) ? FRICTION * 0.8 : FRICTION);
-      const turnRate = vehicleMode === 'boat' ? TURN_RATE * 0.6 : TURN_RATE;
       // Vehicle physics — improved with exponential accel, proportional brake, speed-sensitive turning
+      // (Fly and Boat modes have their own physics branches below, so the car block only runs for drive)
+      const accel = ACCEL;
+      const friction = isWetRoads(weatherCategory) ? FRICTION * 0.8 : FRICTION;
+      const turnRate = TURN_RATE;
+      if (vehicleMode === 'drive') {
       if (keys.up) {
         // (1) Exponential acceleration ramp — slows as approaching MAX_SPEED
         carSpeed += accel * dt * (1 - carSpeed / MAX_SPEED);
@@ -4411,42 +4527,130 @@
         carX += Math.sin(latRad) * lateralVelocity * dt;
         carZ += Math.cos(latRad) * lateralVelocity * dt;
       }
+      }
 
       if (vehicleMode === 'fly') {
-        // Plane: Cessna-like physics — constant forward momentum
-        // (1) Maintain minimum airspeed of 30 (auto-throttle if below)
-        if (carSpeed < 30) carSpeed += ACCEL * dt * 0.5; // auto-throttle to prevent stall
-        if (carSpeed > MAX_SPEED * 1.5) carSpeed = MAX_SPEED * 1.5; // planes can go faster
+        // ====== ENHANCED PLANE PHYSICS (T-PHYS-IMPLEMENT-PLANE #22) ======
+        const P = PLANE_PHYSICS;
+        const groundH = getTerrainHeight(carX, carZ);
 
-        // (8) Smooth takeoff: interpolate altitude from terrain+5 to 50 over 2 seconds
-        if (planeTakeoffT < 1) {
-          planeTakeoffT = Math.min(1, planeTakeoffT + dt / 2); // 2-second ramp
-          planeAlt = planeTakeoffStart + (planeTakeoffTarget - planeTakeoffStart) * planeTakeoffT;
-        } else {
-          // Altitude: up key = climb, down key = descend, auto-level when neutral
-          if (keys.up) planeAlt += 15 * dt;
-          else if (keys.down) planeAlt -= 15 * dt;
-          else planeAlt += (50 - planeAlt) * dt * 0.5; // auto-level to 50m
+        // (1) Throttle input: up = full, down = brake/descend, neutral = cruise
+        if (keys.up) throttle = 1.0;
+        else if (keys.down) throttle = 0.0;
+        else throttle = P.idleThrottle;
+
+        // (2) Airspeed model — throttle + drag (quadratic dominates at speed)
+        const gearDrag = P.gearDown ? P.gearDrag : 0;
+        const drag = carSpeed * P.dragLinear
+                   + carSpeed * Math.abs(carSpeed) * P.dragQuadratic
+                   + gearDrag;
+        carSpeed += (P.thrust * throttle - drag) * dt;
+        carSpeed = Math.max(0, Math.min(P.maxSpeed, carSpeed));
+
+        // (3) Takeoff / landing state machine
+        if (planePhase === 'ground') {
+          // Ground roll: wheels on the runway, no lift yet
+          planeAlt = groundH + 0.5;
+          pitch = 0;
+          if (carSpeed >= P.groundRollSpeed) { planePhase = 'rotate'; planePhaseT = 0; }
+        } else if (planePhase === 'rotate') {
+          // Rotate nose up over ~1 second, then climb out
+          planePhaseT += dt;
+          pitch = -P.rotatePitch * Math.min(1, planePhaseT);
+          planeAlt += P.climbRate * 0.5 * dt;
+          if (planePhaseT >= 1) planePhase = 'climbout';
+        } else if (planePhase === 'climbout') {
+          // Climb to cruise altitude, then normal flight
+          pitch = -P.maxClimbAngle;
+          planeAlt += P.climbRate * throttle * dt;
+          if (planeAlt >= P.climbOutAlt) planePhase = 'airborne';
+        } else if (planePhase === 'airborne') {
+          // Normal flight: stall, climb/descend, banking
+          const stalled = carSpeed < P.stallSpeed;
+          if (stalled) {
+            // Nose drops, plane loses lift and altitude; sink scales with speed deficit
+            pitch += P.stallNoseDrop * dt;
+            planeAlt -= (P.stallSpeed - carSpeed) * dt * 0.8;
+            if (throttle >= P.stallRecoverThrottle) pitch -= P.stallRecoverRate * dt;
+          } else {
+            // Climb/descent: rate scales with throttle and pitch input
+            const pitchFactor = keys.up ? 1 : keys.down ? -1 : 0;
+            const climb = P.climbRate * throttle * pitchFactor;
+            planeAlt += climb * dt;
+            pitch = keys.up ? -P.maxClimbAngle : keys.down ? P.maxDescendAngle : 0;
+            // Auto-level when neutral: drift back toward cruise altitude
+            if (!keys.up && !keys.down) {
+              planeAlt += (P.climbOutAlt - planeAlt) * P.autoLevelRate * dt;
+            }
+          }
+          // Landing: descend below approach altitude -> approach phase
+          if (planeAlt <= P.approachAlt) planePhase = 'approach';
+        } else if (planePhase === 'approach') {
+          // Descend toward the runway, hold approach speed
+          pitch = P.maxDescendAngle;
+          planeAlt -= P.climbRate * 0.4 * dt;
+          if (planeAlt <= P.flareAlt) { planePhase = 'flare'; pitch = -P.flarePitch; }
+        } else if (planePhase === 'flare') {
+          // Flare: bleed speed, settle onto the runway
+          pitch = -P.flarePitch;
+          carSpeed *= 0.98;
+          planeAlt = Math.max(groundH + 0.5, planeAlt - P.climbRate * 0.3 * dt);
+          if (carSpeed <= P.touchdownSpeed) {
+            planePhase = 'ground'; // touched down — back to ground roll
+            pitch = 0;
+          }
+        }
+        // Go-around: throttle up hard during approach/flare aborts the landing
+        if ((planePhase === 'approach' || planePhase === 'flare') && throttle >= P.goAroundThrottle) {
+          planePhase = 'climbout';
         }
 
-        planeAlt = Math.max(getTerrainHeight(carX, carZ) + 5, Math.min(300, planeAlt));
+        // (4) Banking & coordinated turn — rate-limited roll, bank-scaled turn radius
+        const turnInput = (keys.left ? 1 : 0) - (keys.right ? 1 : 0) - steerValue;
+        const targetBank = THREE.MathUtils.clamp(turnInput * P.bankRate, -P.maxBankAngle, P.maxBankAngle);
+        bankAngle += (targetBank - bankAngle) * Math.min(1, dt * 3);
+        const bankRatio = Math.abs(bankAngle) / P.maxBankAngle;
+        const turnFactor = P.turnRadiusMin + (1 - bankRatio) * (P.turnRadiusMax - P.turnRadiusMin);
+        if (Math.abs(carSpeed) > 1) {
+          const dir = carSpeed > 0 ? 1 : -1;
+          if (keys.left) carHeading += turnFactor * 3 * dir * dt;
+          if (keys.right) carHeading -= turnFactor * 3 * dir * dt;
+          if (Math.abs(steerValue) > 0.05) carHeading -= steerValue * turnFactor * 5 * dir * dt;
+        }
+        // Altitude loss in a hard banked turn
+        planeAlt -= bankRatio * P.turnAltitudeLoss * dt;
 
+        // (5) Ground collision — relax +5 to +0.5 so the plane can sit on the runway
+        planeAlt = Math.max(groundH + 0.5, Math.min(300, planeAlt));
+
+        // (6) Movement — forward along heading
+        const rad = carHeading * Math.PI / 180;
+        if (Math.abs(carSpeed) > 0.1) {
+          const dist = carSpeed * 0.3 * dt;
+          carX += Math.sin(rad) * dist;
+          carZ += Math.cos(rad) * dist;
+        }
+
+        // (7) Apply transform
         carGroup.position.set(carX, planeAlt, carZ);
         carGroup.rotation.y = carHeading * Math.PI / 180;
-        // (5) Pitch: nose-up when climbing, nose-down when descending
-        carGroup.rotation.x = keys.up ? -0.2 : keys.down ? 0.15 : 0;
-        // (4) Bank: roll into turns based on turn input
-        const turnInput = (keys.left ? 1 : 0) - (keys.right ? 1 : 0) - steerValue;
-        const bankAngle = turnInput * 0.12;
+        carGroup.rotation.x = pitch;
         carGroup.rotation.z = bankAngle;
 
-        // (6) Spin propeller fast
+        // (8) Landing gear visual — retract once airborne above approach altitude
+        const gear = carGroup.children.find(c => c.userData && c.userData.isGear);
+        if (gear) {
+          const gearUp = planePhase === 'airborne' && planeAlt > P.approachAlt;
+          gear.visible = !gearUp;
+          P.gearDown = !gearUp;
+        }
+
+        // (9) Spin propeller fast
         const prop = carGroup.children.find(c => c.userData && c.userData.isProp);
         if (prop) prop.rotation.x += dt * 50;
 
-        // (7) Update shadow plane — flat dark circle at terrain height
+        // (10) Update shadow plane — flat dark circle at terrain height
         if (planeShadow) {
-          const groundH = getTerrainHeight(carX, carZ);
           planeShadow.position.set(carX, groundH + 0.5, carZ);
           // Scale shadow based on altitude (smaller when higher)
           const altRatio = Math.min(1, (planeAlt - groundH) / 100);
@@ -4455,7 +4659,8 @@
           planeShadow.material.opacity = 0.35 * (1 - altRatio * 0.5);
         }
       } else if (vehicleMode === 'boat') {
-        // Boat mode: stay on water surface, can't go on land
+        // ====== ENHANCED BOAT PHYSICS (T-PHYS-IMPLEMENT-BOAT #21) ======
+        const B = BOAT_PHYSICS;
         const terrainHeight = getTerrainHeight(carX, carZ);
         if (terrainHeight > tideLevel) {
           // Push boat back — can't go on land
@@ -4463,13 +4668,79 @@
           carX -= Math.sin(carHeading * Math.PI / 180) * 3;
           carZ -= Math.cos(carHeading * Math.PI / 180) * 3;
         }
-        // Wave bobbing
-        const bobY = Math.sin(now * 0.003) * 0.3;
+
+        // (1) Thrust — displacement + planing regimes, dedicated reverse
+        if (keys.up) {
+          const planing = carSpeed > B.planingSpeed ? B.planingBoost : 1;
+          carSpeed += B.accel * planing * dt * (1 - carSpeed / B.maxSpeed);
+        } else if (keys.down) {
+          if (carSpeed > 0) {
+            // Brake on water — slower than car braking, some momentum
+            carSpeed -= B.idleFriction * 2 * dt;
+          } else {
+            // Reverse — gentler curve, docking-grade authority
+            const revBoost = Math.abs(carSpeed) <= B.dockSpeed ? B.dockReverseBoost : 1;
+            carSpeed -= B.reverseAccel * revBoost * dt * (1 - Math.abs(carSpeed) / 12);
+          }
+        } else {
+          // Natural water friction when no throttle
+          if (carSpeed > 0) carSpeed -= B.idleFriction * dt;
+          else if (carSpeed < 0) carSpeed += B.idleFriction * dt;
+        }
+
+        // (2) Hull drag — quadratic water resistance + soft speed cap
+        const drag = carSpeed * B.dragLinear + carSpeed * Math.abs(carSpeed) * B.dragQuadratic;
+        carSpeed -= drag * dt;
+        carSpeed = Math.max(-12, Math.min(B.maxSpeed, carSpeed));
+        if (Math.abs(carSpeed) < 0.2) carSpeed = 0;
+
+        // (3) Rudder — speed-sensitive: more authority at low speed (docking), less at high speed (planing)
+        const speedRatio = Math.min(1, Math.abs(carSpeed) / B.maxSpeed);
+        const rudder = B.rudderRate * (B.turnRadiusMax - speedRatio * (B.turnRadiusMax - B.turnRadiusMin));
+        const dockBoost = Math.abs(carSpeed) <= B.dockSpeed ? B.dockRudderBoost : 1;
+        const turnFactor = rudder * dockBoost * dt;
+        const dir = carSpeed > 0 ? 1 : -1;
+        if (Math.abs(carSpeed) > 0.5) {
+          if (keys.left) carHeading += turnFactor * 3 * dir;
+          if (keys.right) carHeading -= turnFactor * 3 * dir;
+          if (Math.abs(steerValue) > 0.05) carHeading -= steerValue * turnFactor * 5 * dir;
+        }
+
+        // (4) Water drift — boats carry momentum sideways
+        const turnInput = (keys.left ? 1 : 0) - (keys.right ? 1 : 0) - steerValue;
+        lateralVelocity += turnInput * Math.abs(carSpeed) / B.maxSpeed * dt * 6 * B.drift;
+        lateralVelocity *= B.driftDecay;
+        if (Math.abs(lateralVelocity) < 0.01) lateralVelocity = 0;
+
+        // (5) Movement — forward + lateral slide
+        const rad = carHeading * Math.PI / 180;
+        if (Math.abs(carSpeed) > 0.1 || Math.abs(lateralVelocity) > 0.01) {
+          const dist = carSpeed * 0.3 * dt;
+          carX += Math.sin(rad) * dist;
+          carZ += Math.cos(rad) * dist;
+          const latRad = rad + Math.PI / 2;
+          carX += Math.sin(latRad) * lateralVelocity * dt;
+          carZ += Math.cos(latRad) * lateralVelocity * dt;
+        }
+
+        // (6) Docking — fender proximity to marina berths settles the boat into the berth
+        if (Math.abs(carSpeed) <= B.dockSpeed) {
+          const nearBerth = marinaBerths.some(b => {
+            const dx = carX - b.x, dz = carZ - b.z;
+            return Math.sqrt(dx * dx + dz * dz) < B.fenderRange;
+          });
+          if (nearBerth) carSpeed *= 0.9;
+        }
+
+        // (7) Wave response — bobbing/pitch/roll scale with speed (faster = choppier)
+        const speedFactor = Math.min(1, Math.abs(carSpeed) / B.maxSpeed);
+        const bobAmp = B.waveBobAmp * (1 + speedFactor * B.waveResponse);
+        const bobY = Math.sin(now * B.waveBobSpeed) * bobAmp;
         carGroup.position.set(carX, tideLevel + 1 + bobY, carZ);
         carGroup.rotation.y = carHeading * Math.PI / 180;
-        // Wave-induced pitch and roll
-        carGroup.rotation.x = Math.sin(now * 0.002) * 0.05;
-        carGroup.rotation.z = Math.sin(now * 0.0025 + 1) * 0.05;
+        const waveFreq = 1 + speedFactor * B.waveSpeedScale * 100;
+        carGroup.rotation.x = Math.sin(now * B.waveBobSpeed * waveFreq) * B.wavePitchAmp * (1 + speedFactor * B.waveResponse);
+        carGroup.rotation.z = Math.sin(now * B.waveBobSpeed * waveFreq + 1) * B.waveRollAmp * (1 + speedFactor * B.waveResponse);
         
         // Update wake trail line — follows boat path
         if (wakeTrailLine && Math.abs(carSpeed) > 1) {
