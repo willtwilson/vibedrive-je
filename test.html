@@ -284,6 +284,72 @@ window.addEventListener('load', () => {
       updateSummary();
     }
 
+    // Test 20: PHYS constants object (T-PHYS-IMPLEMENT-CAR #20)
+    try {
+      const ph = fw.PHYS;
+      const requiredKeys = [
+        'maxSpeed', 'accel', 'brake', 'reverseAccel', 'engineBrake',
+        'grip', 'corneringStiffness', 'maxSlipAngle',
+        'handbrakeGrip', 'driftFactor',
+        'weightTransfer', 'rollFactor',
+        'turnRate', 'speedSteerFalloff',
+        'springStiffness', 'springDamping', 'bodyRoll', 'bodyPitch'
+      ];
+      log(`PHYS object exists`, !!ph ? 'pass' : 'fail');
+      requiredKeys.forEach(k => {
+        log(`PHYS.${k} defined`, ph && typeof ph[k] === 'number' ? 'pass' : 'fail');
+      });
+      // Sanity relationships
+      log(`grip in (0,1]`, ph && ph.grip > 0 && ph.grip <= 1 ? 'pass' : 'fail');
+      log(`handbrakeGrip < grip`, ph && ph.handbrakeGrip < ph.grip ? 'pass' : 'fail');
+      log(`weightTransfer in (0,0.5)`, ph && ph.weightTransfer > 0 && ph.weightTransfer < 0.5 ? 'pass' : 'fail');
+      log(`maxSlipAngle > 0`, ph && ph.maxSlipAngle > 0 ? 'pass' : 'fail');
+      log(`corneringStiffness > 0`, ph && ph.corneringStiffness > 0 ? 'pass' : 'fail');
+      log(`springStiffness > 0`, ph && ph.springStiffness > 0 ? 'pass' : 'fail');
+      log(`springDamping > 0`, ph && ph.springDamping > 0 ? 'pass' : 'fail');
+      log(`bodyRoll > 0`, ph && ph.bodyRoll > 0 ? 'pass' : 'fail');
+      log(`bodyPitch > 0`, ph && ph.bodyPitch > 0 ? 'pass' : 'fail');
+      log(`maxSpeed == 80 (car top speed preserved)`, ph && ph.maxSpeed === 80 ? 'pass' : 'fail');
+      updateSummary();
+    } catch(e) {
+      log(`PHYS: ${e.message}`, 'fail');
+      updateSummary();
+    }
+
+    // Test 21: Car physics state variables (T-PHYS-IMPLEMENT-CAR #20)
+    try {
+      log(`vForward state var exists`, typeof fw.vForward !== 'undefined' ? 'pass' : 'fail');
+      log(`vLateral state var exists`, typeof fw.vLateral !== 'undefined' ? 'pass' : 'fail');
+      log(`carSpeed still exists (compat)`, typeof fw.carSpeed !== 'undefined' ? 'pass' : 'fail');
+      updateSummary();
+    } catch(e) {
+      log(`Car state vars: ${e.message}`, 'fail');
+      updateSummary();
+    }
+
+    // Test 22: Car physics branch wired to grip model (T-PHYS-IMPLEMENT-CAR #20)
+    try {
+      fetch('/index.html').then(r => r.text()).then(text => {
+        const driveBlock = text.slice(text.indexOf("if (vehicleMode === 'drive')"));
+        log(`Drive branch references PHYS`, driveBlock.includes('PHYS') ? 'pass' : 'fail');
+        log(`Drive branch references vForward`, driveBlock.includes('vForward') ? 'pass' : 'fail');
+        log(`Drive branch references vLateral`, driveBlock.includes('vLateral') ? 'pass' : 'fail');
+        log(`Drive branch has drift logic`, driveBlock.toLowerCase().includes('drift') ? 'pass' : 'fail');
+        log(`Drive branch has grip logic`, driveBlock.toLowerCase().includes('grip') ? 'pass' : 'fail');
+        log(`Drive branch has weight transfer`, driveBlock.toLowerCase().includes('weighttransfer') || driveBlock.toLowerCase().includes('weight transfer') ? 'pass' : 'fail');
+        log(`Drive branch has suspension logic`, driveBlock.toLowerCase().includes('suspension') ? 'pass' : 'fail');
+        log(`Drive branch has slip angle`, driveBlock.toLowerCase().includes('slip') ? 'pass' : 'fail');
+        log(`Drive branch has handbrake`, driveBlock.toLowerCase().includes('handbrake') ? 'pass' : 'fail');
+        updateSummary();
+      }).catch(e => {
+        log(`Drive branch source: ${e.message}`, 'fail');
+        updateSummary();
+      });
+    } catch(e) {
+      log(`Drive branch: ${e.message}`, 'fail');
+      updateSummary();
+    }
+
   }, 2000);
 });
 </script>
