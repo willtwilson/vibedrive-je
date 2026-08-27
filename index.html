@@ -3852,6 +3852,42 @@
     let planeTakeoffT = 0, planeTakeoffStart = 0, planeTakeoffTarget = 50; // smooth takeoff interpolation
     let planeShadow = null; // flat dark circle shadow under the plane
     const MAX_SPEED = 80, ACCEL = 30, BRAKE = 60, FRICTION = 10, TURN_RATE = 3.0;
+    // Enhanced boat physics — tunable constants (T-PHYS-BOAT #18)
+    const BOAT_PHYSICS = {
+      maxSpeed: 45,            // top speed (units/s) — ~half the car's 80
+      accel: 14,               // forward thrust (units/s^2)
+      reverseAccel: 8,         // reverse thrust (units/s^2) — slower than forward
+      planingSpeed: 18,        // speed above which hull "planes" (less drag, more speed)
+      planingBoost: 1.25,      // extra thrust multiplier above planingSpeed
+      dragLinear: 0.6,         // linear water resistance (per second)
+      dragQuadratic: 0.02,     // quadratic resistance (per unit speed) — dominates at speed
+      idleFriction: 1.2,       // natural deceleration when no throttle (units/s^2)
+      rudderRate: 1.5,         // base turn rate (deg/s per unit of input)
+      turnRadiusMin: 0.35,     // turn-rate multiplier at high speed (tighter feel)
+      turnRadiusMax: 1.0,      // turn-rate multiplier at low speed (more authority for docking)
+      drift: 0.35,             // lateral drift factor on water (0 = none, 1 = full slide)
+      driftDecay: 0.90,        // how fast lateral drift decays
+      waveBobAmp: 0.3,         // bobbing amplitude (units)
+      waveBobSpeed: 0.003,     // bobbing frequency
+      wavePitchAmp: 0.05,      // pitch amplitude (rad)
+      waveRollAmp: 0.05,       // roll amplitude (rad)
+      waveResponse: 0.6,       // how much wave motion scales with speed (0 = none, 1 = full)
+      waveSpeedScale: 0.02,    // speed multiplier on wave frequency (faster = choppier)
+      dockSpeed: 6,            // speed below which "docking mode" engages (units/s)
+      dockRudderBoost: 1.6,    // rudder authority multiplier at/under dockSpeed
+      dockReverseBoost: 1.3,   // reverse authority multiplier at/under dockSpeed
+      fenderRange: 4,          // distance to a berth/pontoon that triggers fender feedback
+    };
+    window.BOAT_PHYSICS = BOAT_PHYSICS;
+    // Marina berth anchors derived from Elizabeth Marina pontoon layout (line 2416)
+    const marinaBerths = [
+      { x: 43.4, z: -60.4 }, // horizontal pontoon (p1)
+      { x: 43.4, z: -56.4 }, // vertical pontoon stem (p2)
+      { x: 39.4, z: -57.4 }, // connector pontoon (p3)
+      { x: 43.4, z: -64.4 }, // 'Aura' berth
+      { x: 39.4, z: -55.4 }, // small boat berth
+      { x: 47.4, z: -55.4 }, // small boat berth
+    ];
     // Wake trail for boat mode
     let wakeTrailLine = null;
     let wakeTrailPoints = [];
@@ -4343,11 +4379,13 @@
       water.position.y = tideLevel;
 
       // ====== VEHICLE PHYSICS ======
-      // Boat physics: ACCEL/2, wider turning (TURN_RATE*0.6), more momentum (FRICTION/2)
-      const accel = vehicleMode === 'boat' ? ACCEL / 2 : ACCEL;
-      const friction = vehicleMode === 'boat' ? FRICTION / 2 : (isWetRoads(weatherCategory) ? FRICTION * 0.8 : FRICTION);
-      const turnRate = vehicleMode === 'boat' ? TURN_RATE * 0.6 : TURN_RATE;
+      // Boat physics: dedicated thrust/drag/rudder model (T-PHYS-BOAT #18)
+      const accel = vehicleMode === 'boat' ? BOAT_PHYSICS.accel : ACCEL;
+      const friction = vehicleMode === 'boat' ? BOAT_PHYSICS.idleFriction : (isWetRoads(weatherCategory) ? FRICTION * 0.8 : FRICTION);
+      const turnRate = vehicleMode === 'boat' ? BOAT_PHYSICS.rudderRate : TURN_RATE;
       // Vehicle physics — improved with exponential accel, proportional brake, speed-sensitive turning
+      // (Boats use their own thrust/drag/rudder model in the boat branch below)
+      if (vehicleMode !== 'boat') {
       if (keys.up) {
         // (1) Exponential acceleration ramp — slows as approaching MAX_SPEED
         carSpeed += accel * dt * (1 - carSpeed / MAX_SPEED);
@@ -4411,6 +4449,7 @@
         carX += Math.sin(latRad) * lateralVelocity * dt;
         carZ += Math.cos(latRad) * lateralVelocity * dt;
       }
+      }
 
       if (vehicleMode === 'fly') {
         // Plane: Cessna-like physics — constant forward momentum
@@ -4455,22 +4494,88 @@
           planeShadow.material.opacity = 0.35 * (1 - altRatio * 0.5);
         }
       } else if (vehicleMode === 'boat') {
-        // Boat mode: stay on water surface, can't go on land
+        // ====== ENHANCED BOAT PHYSICS (T-PHYS-BOAT #18) ======
+        // (1) Thrust — displacement + planing regimes, dedicated gentle reverse
+        if (keys.up) {
+          const planing = carSpeed > BOAT_PHYSICS.planingSpeed ? BOAT_PHYSICS.planingBoost : 1;
+          carSpeed += BOAT_PHYSICS.accel * planing * dt * (1 - carSpeed / BOAT_PHYSICS.maxSpeed);
+        } else if (keys.down) {
+          if (carSpeed > 0) {
+            // Brake on water — slower than car braking, some momentum
+            carSpeed -= BOAT_PHYSICS.idleFriction * 2 * dt;
+          } else {
+            // Reverse — gentler, docking-grade authority
+            const revBoost = Math.abs(carSpeed) <= BOAT_PHYSICS.dockSpeed ? BOAT_PHYSICS.dockReverseBoost : 1;
+            carSpeed -= BOAT_PHYSICS.reverseAccel * revBoost * dt * (1 - Math.abs(carSpeed) / 12);
+          }
+        } else {
+          // Natural water deceleration when no throttle
+          if (carSpeed > 0) carSpeed -= BOAT_PHYSICS.idleFriction * dt;
+          else if (carSpeed < 0) carSpeed += BOAT_PHYSICS.idleFriction * dt;
+        }
+
+        // (2) Hull drag — quadratic (realistic) + linear, naturally caps speed
+        const drag = carSpeed * BOAT_PHYSICS.dragLinear + carSpeed * Math.abs(carSpeed) * BOAT_PHYSICS.dragQuadratic;
+        carSpeed -= drag * dt;
+        // Soft cap — never exceed maxSpeed (or reverse limit)
+        carSpeed = Math.max(-12, Math.min(BOAT_PHYSICS.maxSpeed, carSpeed));
+        if (Math.abs(carSpeed) < 0.2) carSpeed = 0;
+
+        // (3) Steering — speed-sensitive rudder (more authority at low speed for docking)
+        const speedRatio = Math.min(1, Math.abs(carSpeed) / BOAT_PHYSICS.maxSpeed);
+        const rudder = BOAT_PHYSICS.rudderRate * (BOAT_PHYSICS.turnRadiusMax - speedRatio * (BOAT_PHYSICS.turnRadiusMax - BOAT_PHYSICS.turnRadiusMin));
+        const dockBoost = Math.abs(carSpeed) <= BOAT_PHYSICS.dockSpeed ? BOAT_PHYSICS.dockRudderBoost : 1;
+        const turnFactor = rudder * dockBoost * dt;
+        const dir = carSpeed > 0 ? 1 : -1;
+        if (keys.left) carHeading += turnFactor * 3 * dir;
+        if (keys.right) carHeading -= turnFactor * 3 * dir;
+        if (Math.abs(steerValue) > 0.05) carHeading -= steerValue * turnFactor * 5 * dir;
+
+        // (4) Drift on water — softer, more persistent slide than the car
+        const turnInput = (keys.left ? 1 : 0) - (keys.right ? 1 : 0) - steerValue;
+        lateralVelocity += turnInput * Math.abs(carSpeed) / BOAT_PHYSICS.maxSpeed * dt * 6 * BOAT_PHYSICS.drift;
+        lateralVelocity *= BOAT_PHYSICS.driftDecay;
+        if (Math.abs(lateralVelocity) < 0.01) lateralVelocity = 0;
+
+        // (5) Movement — forward + lateral drift
+        const boatRad = carHeading * Math.PI / 180;
+        if (Math.abs(carSpeed) > 0.1 || Math.abs(lateralVelocity) > 0.01) {
+          const dist = carSpeed * 0.3 * dt;
+          carX += Math.sin(boatRad) * dist;
+          carZ += Math.cos(boatRad) * dist;
+          const latRad = boatRad + Math.PI / 2;
+          carX += Math.sin(latRad) * lateralVelocity * dt;
+          carZ += Math.cos(latRad) * lateralVelocity * dt;
+        }
+
+        // (6) Land collision — stay on water surface, can't go on land
         const terrainHeight = getTerrainHeight(carX, carZ);
         if (terrainHeight > tideLevel) {
           // Push boat back — can't go on land
           carSpeed *= 0.3;
-          carX -= Math.sin(carHeading * Math.PI / 180) * 3;
-          carZ -= Math.cos(carHeading * Math.PI / 180) * 3;
+          carX -= Math.sin(boatRad) * 3;
+          carZ -= Math.cos(boatRad) * 3;
         }
-        // Wave bobbing
-        const bobY = Math.sin(now * 0.003) * 0.3;
+
+        // (7) Docking — fender feedback near marina berths (soft speed damp)
+        if (Math.abs(carSpeed) <= BOAT_PHYSICS.dockSpeed) {
+          const nearBerth = marinaBerths.some(b => {
+            const dx = carX - b.x, dz = carZ - b.z;
+            return Math.sqrt(dx*dx + dz*dz) < BOAT_PHYSICS.fenderRange;
+          });
+          if (nearBerth) carSpeed *= 0.9;
+        }
+
+        // (8) Wave response — bobbing/pitch/roll scale with speed (choppier when fast)
+        const speedFactor = Math.min(1, Math.abs(carSpeed) / BOAT_PHYSICS.maxSpeed);
+        const bobAmp = BOAT_PHYSICS.waveBobAmp * (1 + speedFactor * BOAT_PHYSICS.waveResponse);
+        const bobY = Math.sin(now * BOAT_PHYSICS.waveBobSpeed) * bobAmp;
         carGroup.position.set(carX, tideLevel + 1 + bobY, carZ);
         carGroup.rotation.y = carHeading * Math.PI / 180;
-        // Wave-induced pitch and roll
-        carGroup.rotation.x = Math.sin(now * 0.002) * 0.05;
-        carGroup.rotation.z = Math.sin(now * 0.0025 + 1) * 0.05;
-        
+        const waveFreq = 1 + speedFactor * BOAT_PHYSICS.waveSpeedScale * 100;
+        carGroup.rotation.x = Math.sin(now * BOAT_PHYSICS.waveBobSpeed * waveFreq) * BOAT_PHYSICS.wavePitchAmp * (1 + speedFactor * BOAT_PHYSICS.waveResponse);
+        carGroup.rotation.z = Math.sin(now * BOAT_PHYSICS.waveBobSpeed * waveFreq + 1) * BOAT_PHYSICS.waveRollAmp * (1 + speedFactor * BOAT_PHYSICS.waveResponse);
+
         // Update wake trail line — follows boat path
         if (wakeTrailLine && Math.abs(carSpeed) > 1) {
           wakeTrailPoints.push(new THREE.Vector3(carX, tideLevel + 0.2, carZ));
