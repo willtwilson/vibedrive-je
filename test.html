@@ -135,6 +135,41 @@ window.addEventListener('load', () => {
       updateSummary();
     });
 
+    // Test 14: Garage system research doc (T-GARAGE-RESEARCH #23)
+    fetch('/research/GARAGE.md').then(r => r.text()).then(text => {
+      const required = [
+        'Current-State Audit',
+        'Vehicle roster',
+        'Stat model',
+        'Garage UI',
+        'Persistence',
+        'Unlock',
+        'Tuning knobs',
+        'Implementation Plan',
+        '60fps',
+        'applyMode',
+        'createCar',
+        'createBoat',
+        'createPlane',
+        'hatchback',
+        'sports',
+        'truck',
+        'speedboat',
+        'cruiser',
+        'fishing',
+        'Cessna',
+        'stunt',
+        'jet'
+      ];
+      required.forEach(term => {
+        log(`Garage research doc mentions "${term}"`, text.includes(term) ? 'pass' : 'fail');
+      });
+      updateSummary();
+    }).catch(e => {
+      log(`Garage research doc fetch: ${e.message}`, 'fail');
+      updateSummary();
+    });
+
   }, 2000);
 });
 </script>
