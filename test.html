@@ -111,6 +111,30 @@ window.addEventListener('load', () => {
       updateSummary();
     }, 3000);
 
+    // Test 13: Boat physics research doc (T-PHYS-RESEARCH-BOAT #18)
+    fetch('/research/PHYSICS-BOAT.md').then(r => r.text()).then(text => {
+      const required = [
+        'Current-State Audit',
+        'Proposed Model',
+        'BOAT_PHYSICS',
+        'Docking',
+        'Implementation Plan',
+        '60fps',
+        'maxSpeed',
+        'dragQuadratic',
+        'rudderRate',
+        'waveResponse',
+        'dockSpeed'
+      ];
+      required.forEach(term => {
+        log(`Research doc mentions "${term}"`, text.includes(term) ? 'pass' : 'fail');
+      });
+      updateSummary();
+    }).catch(e => {
+      log(`Research doc fetch: ${e.message}`, 'fail');
+      updateSummary();
+    });
+
   }, 2000);
 });
 </script>
