@@ -1444,15 +1444,203 @@ window.mergeGeometries = window.THREE.mergeGeometries;
     renderer.setPixelRatio(deviceTier.pixelRatio);
     document.body.appendChild(renderer.domElement);
 
-    // ====== RETRO: placeholder Canvas 2D renderer stub ======
-    // Game state updates every frame; nothing is drawn yet. This is the hook
-    // where the GTA 1-style top-down renderer will draw in later components.
-    function retroRender() {
+    // ====== RETRO: Canvas 2D core renderer (T-RETRO-RENDERER #26) ======
+    // Pure Canvas 2D pipeline: a 2D camera (pan/zoom with speed-sensitive zoom),
+    // Jersey road data as vector paths, and procedural car sprites with
+    // 16-directional rotation (ctx.rotate, no external assets). Layered draw:
+    // Ground → Buildings → Vehicles → Effects → HUD.
+    window.retro = (function() {
+      const BASE_SCALE = 8;        // world units -> pixels at zoom 1
+      const SPRITE_DIRS = 16;      // 16-directional rotation
+
+      // ---- 2D camera (pan + speed-sensitive zoom) ----
+      const cam = { x: 0, y: 0, zoom: 1 };
+
+      // Live read-only view of the physics state (player car follows this).
+      const player = {
+        get x() { return carX; },
+        get z() { return carZ; },
+        get heading() { return carHeading; },
+        get speed() { return Math.abs(carSpeed); }
+      };
+
+      // Zoom OUT (smaller zoom) at high speed so the player sees more ahead.
+      function targetZoom(speed) {
+        return THREE.MathUtils.clamp(1.5 - speed * 0.012, 0.55, 1.5);
+      }
+
+      function updateCamera(dt) {
+        const target = targetZoom(player.speed);
+        cam.zoom += (target - cam.zoom) * Math.min(1, dt * 3);
+        cam.x = player.x;
+        cam.y = player.z;
+      }
+
+      function worldToScreen(x, z, w, h) {
+        return {
+          x: (x - cam.x) * cam.zoom * BASE_SCALE + w / 2,
+          y: (z - cam.y) * cam.zoom * BASE_SCALE + h / 2
+        };
+      }
+
+      // ---- Layer system ----
+      const layers = ['ground', 'buildings', 'vehicles', 'effects', 'hud'];
+
+      // ---- Jersey road data as vector segments ----
+      const roadSegments = [];
+      if (typeof jerseyRoads !== 'undefined' && Array.isArray(jerseyRoads)) {
+        for (let ri = 0; ri < jerseyRoads.length; ri++) {
+          const rd = jerseyRoads[ri];
+          const pts = rd.p;
+          for (let i = 0; i < pts.length - 1; i++) {
+            const x1 = pts[i][0], z1 = pts[i][1];
+            const x2 = pts[i + 1][0], z2 = pts[i + 1][1];
+            if (Math.hypot(x2 - x1, z2 - z1) < 0.5) continue;
+            roadSegments.push({ x1, z1, x2, z2, width: rd.w, type: rd.t });
+          }
+        }
+      }
+
+      // ---- Procedural car sprites: 16 pre-rendered rotations (ctx.rotate) ----
+      const spriteCache = [];
+      function buildCarSprites() {
+        const size = 48;
+        for (let i = 0; i < SPRITE_DIRS; i++) {
+          const ang = i * (2 * Math.PI / SPRITE_DIRS);
+          const c = document.createElement('canvas');
+          c.width = size; c.height = size;
+          const g = c.getContext('2d');
+          g.translate(size / 2, size / 2);
+          g.rotate(ang);
+          // Body (nose points up / -y at angle 0)
+          g.fillStyle = '#E63946';
+          g.beginPath();
+          g.moveTo(0, -13);
+          g.lineTo(6, -6);
+          g.lineTo(7, 10);
+          g.lineTo(-7, 10);
+          g.lineTo(-6, -6);
+          g.closePath();
+          g.fill();
+          // Cabin
+          g.fillStyle = '#1A2B52';
+          g.fillRect(-4, -4, 8, 11);
+          // Wheels
+          g.fillStyle = '#111111';
+          g.fillRect(-8, -12, 3, 6);
+          g.fillRect(5, -12, 3, 6);
+          g.fillRect(-8, 6, 3, 6);
+          g.fillRect(5, 6, 3, 6);
+          // Headlights (front = -y)
+          g.fillStyle = '#FFD60A';
+          g.fillRect(-5, -12, 2, 2);
+          g.fillRect(3, -12, 2, 2);
+          // Taillights
+          g.fillStyle = '#FFFFFF';
+          g.fillRect(-5, 9, 2, 2);
+          g.fillRect(3, 9, 2, 2);
+          spriteCache.push(c);
+        }
+      }
+      buildCarSprites();
+
+      function spriteForHeading(headingDeg) {
+        const idx = Math.round(headingDeg * SPRITE_DIRS / 360);
+        const norm = ((idx % SPRITE_DIRS) + SPRITE_DIRS) % SPRITE_DIRS;
+        return spriteCache[norm];
+      }
+
+      // ---- Layer draw functions ----
+      function drawGround(ctx, w, h) {
+        ctx.fillStyle = '#1f5f2a';
+        ctx.fillRect(0, 0, w, h);
+      }
+
+      function drawBuildings(ctx, w, h) {
+        // Reserved layer — no building meshes in retro yet.
+      }
+
+      function colorForRoadType(type) {
+        switch (type) {
+          case 'trunk': return '#33333a';
+          case 'primary': return '#3b3b44';
+          case 'secondary': return '#45454f';
+          case 'tertiary': return '#4b4b56';
+          default: return '#565660';
+        }
+      }
+
+      function drawRoads(ctx, w, h) {
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        const px = cam.zoom * BASE_SCALE;
+        for (let i = 0; i < roadSegments.length; i++) {
+          const seg = roadSegments[i];
+          const a = worldToScreen(seg.x1, seg.z1, w, h);
+          const b = worldToScreen(seg.x2, seg.z2, w, h);
+          // Cull segments far outside the viewport.
+          const rad = Math.max(16, Math.abs(a.x - b.x), Math.abs(a.y - b.y));
+          const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+          if (mx < -rad || mx > w + rad || my < -rad || my > h + rad) continue;
+          ctx.strokeStyle = colorForRoadType(seg.type);
+          ctx.lineWidth = Math.max(1, seg.width * px);
+          ctx.beginPath();
+          ctx.moveTo(a.x, a.y);
+          ctx.lineTo(b.x, b.y);
+          ctx.stroke();
+        }
+      }
+
+      function drawPlayer(ctx, w, h) {
+        // Player car renders at and rotates to the live physics state.
+        const s = worldToScreen(carX, carZ, w, h);
+        const sprite = spriteForHeading(carHeading);
+        const size = 48 * cam.zoom;
+        ctx.drawImage(sprite, s.x - size / 2, s.y - size / 2, size, size);
+      }
+
+      function drawVehicles(ctx, w, h) {
+        drawPlayer(ctx, w, h);
+      }
+
+      function drawEffects(ctx, w, h) {
+        // Reserved layer — particles/fx land here.
+      }
+
+      function drawHUD(ctx, w, h) {
+        // HUD is DOM overlay; reserved layer.
+      }
+
+      // ---- Layered render pass ----
+      function render(w, h) {
+        const canvas = document.getElementById('game-canvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        ctx.save();
+        ctx.clearRect(0, 0, w, h);
+        drawGround(ctx, w, h);
+        drawRoads(ctx, w, h);
+        drawBuildings(ctx, w, h);
+        drawVehicles(ctx, w, h);
+        drawEffects(ctx, w, h);
+        drawHUD(ctx, w, h);
+        ctx.restore();
+      }
+
+      return {
+        cam, player, layers, roadSegments,
+        spriteCount: SPRITE_DIRS, spriteCache, spriteForHeading,
+        targetZoom, updateCamera, worldToScreen,
+        drawGround, drawBuildings, drawRoads, drawPlayer, drawVehicles, drawEffects, drawHUD,
+        render
+      };
+    })();
+
+    function retroRender(dt) {
       const ctx = renderer._ctx;
       if (!ctx) return;
-      // Placeholder: clear to a flat colour so the canvas is visibly alive.
-      ctx.fillStyle = '#0a1a3f';
-      ctx.fillRect(0, 0, renderer.domElement.width, renderer.domElement.height);
+      retro.updateCamera(dt || 0.016);
+      retro.render(renderer.domElement.width, renderer.domElement.height);
     }
 
     // ====== PMREM ENVIRONMENT MAP (procedural sky for IBL) ======
@@ -5588,7 +5776,7 @@ window.mergeGeometries = window.THREE.mergeGeometries;
       updateLightning(now);
 
       drawRadar();
-      retroRender();
+      retroRender(dt);
       requestAnimationFrame(animate);
     }
 
