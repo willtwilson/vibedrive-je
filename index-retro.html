@@ -1550,23 +1550,252 @@ window.mergeGeometries = window.THREE.mergeGeometries;
         return spriteCache[norm];
       }
 
+      // ---- T-RETRO-ENV #27: City & environment (buildings, trees, water,
+      // British road markings/signs, left-hand driving, Jersey character,
+      // muted Channel Islands palette). Everything is pre-generated once at
+      // boot into typed arrays so the per-frame draw pass stays light (60fps).
+
+      // British roads drive on the left — road layout & markings match.
+      const LEFT_HAND = true;
+
+      // Muted Channel Islands colour palette (stone, granite, Atlantic grey-blue,
+      // muted meadow green, terracotta Norman roofs, Jèrriais street accents).
+      const PALETTE = {
+        water: '#5E7A94',
+        waterShallow: '#6E8AA6',
+        land: '#8FA37E',
+        landDark: '#7E9070',
+        sand: '#C9BD9A',
+        road: { trunk: '#4E5156', primary: '#575A60', secondary: '#61646B', tertiary: '#6B6E76', local: '#757881' },
+        centreLine: '#E4E2D8',
+        doubleYellow: '#DFB84A',
+        granite: '#A79E92',
+        graniteDark: '#8C8478',
+        roof: ['#A98F7E', '#9E8775', '#8F8B7F', '#A68973', '#938A80'],
+        tree: ['#6C7D5B', '#5F7450', '#788A63'],
+        redSign: '#B93A2E',
+        signWhite: '#F2EFE6'
+      };
+
+      // Deterministic PRNG so the generated city is stable frame-to-frame.
+      function mulberry32(seed) {
+        let a = seed | 0;
+        return function () {
+          a = a + 0x6D2B79F5 | 0;
+          let t = Math.imul(a ^ a >>> 15, 1 | a);
+          t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+          return ((t ^ t >>> 14) >>> 0) / 4294967296;
+        };
+      }
+
+      // Jersey coastline ring (world coords) for water vs land tests.
+      const coastline = (typeof jerseyCoastline !== 'undefined' && jerseyCoastline.length)
+        ? jerseyCoastline[0] : null;
+
+      // Ray-casting point-in-polygon against the island ring.
+      function pointInPolygon(x, z, poly) {
+        if (!poly) return false;
+        let inside = false;
+        for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+          const xi = poly[i][0], zi = poly[i][1];
+          const xj = poly[j][0], zj = poly[j][1];
+          if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) inside = !inside;
+        }
+        return inside;
+      }
+      function isWater(x, z) {
+        if (!coastline) return false;
+        return !pointInPolygon(x, z, coastline);
+      }
+
+      function distToNearestRoad(x, z) {
+        let best = Infinity;
+        for (let i = 0; i < roadSegments.length; i++) {
+          const s = roadSegments[i];
+          const dx = s.x2 - s.x1, dz = s.z2 - s.z1;
+          const len2 = dx * dx + dz * dz;
+          let t = len2 > 0 ? ((x - s.x1) * dx + (z - s.z1) * dz) / len2 : 0;
+          t = t < 0 ? 0 : (t > 1 ? 1 : t);
+          const d = Math.hypot(x - (s.x1 + dx * t), z - (s.z1 + dz * t));
+          if (d < best) best = d;
+        }
+        return best;
+      }
+
+      // ---- Pre-generated environment data ----
+      const buildings = [];   // tile-based city beside roads
+      const trees = [];       // vegetation scattered on land
+      const signs = [];       // British road signs (red triangle / speed roundel)
+      const crossings = [];   // zebra crossings across major roads
+      const roundels = [];    // mini roundabouts at junctions
+
+      // Jerriais (Jèrriais) street accents — e.g. granite wall signs / bilingual
+      // road names used by the Norman architecture dressing on select buildings.
+      const JERRIALS = true;
+
+      function buildEnvironment() {
+        const rng = mulberry32(20260827);
+        const MAX_B = 1100, MAX_T = 850, MAX_S = 240;
+
+        // Buildings: the road data is sub-divided into dense tiny ~0.5-unit
+        // segments, so set a block back off either side of each segment (thin out
+        // by ~50%) to build up the tile-based city along every street.
+        for (let i = 0; i < roadSegments.length && buildings.length < MAX_B; i++) {
+          const s = roadSegments[i];
+          if (s.width < 4) continue;
+          if (rng() < 0.5) continue;
+          const dx = s.x2 - s.x1, dz = s.z2 - s.z1;
+          const len = Math.hypot(dx, dz) || 1;
+          const nx = -dz / len, nz = dx / len;
+          const side = rng() < 0.5 ? 1 : -1;
+          const off = s.width / 2 + 2.5 + rng() * 7;
+          const cx = (s.x1 + s.x2) / 2, cz = (s.z1 + s.z2) / 2;
+          const bx = cx + nx * off * side, bz = cz + nz * off * side;
+          if (isWater(bx, bz)) continue;
+          buildings.push({
+            x: bx, z: bz,
+            w: 3 + rng() * 5, h: 3 + rng() * 5,
+            rot: Math.atan2(dz, dx),
+            roof: PALETTE.roof[(rng() * PALETTE.roof.length) | 0],
+            granite: rng() < 0.5 // Norman granite walls
+          });
+        }
+
+        // Trees: scattered on land, clear of roads.
+        if (coastline) {
+          let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+          for (let i = 0; i < coastline.length; i++) {
+            const px = coastline[i][0], pz = coastline[i][1];
+            if (px < minX) minX = px; if (px > maxX) maxX = px;
+            if (pz < minZ) minZ = pz; if (pz > maxZ) maxZ = pz;
+          }
+          let placed = 0, guard = 0;
+          while (placed < MAX_T && guard < MAX_T * 25) {
+            guard++;
+            const x = minX + rng() * (maxX - minX);
+            const z = minZ + rng() * (maxZ - minZ);
+            if (isWater(x, z)) continue;
+            if (distToNearestRoad(x, z) < 5.5) continue;
+            trees.push({ x, z, r: 1.1 + rng() * 1.7, c: PALETTE.tree[(rng() * PALETTE.tree.length) | 0] });
+            placed++;
+          }
+        }
+
+        // Junctions from the road network — for mini roundels + road signs.
+        const nodeMap = new Map();
+        const nkey = (x, z) => Math.round(x * 2) + ',' + Math.round(z * 2);
+        for (let i = 0; i < roadSegments.length; i++) {
+          const s = roadSegments[i];
+          const k1 = nkey(s.x1, s.z1), k2 = nkey(s.x2, s.z2);
+          if (!nodeMap.has(k1)) nodeMap.set(k1, { x: s.x1, z: s.z1, count: 0 });
+          if (!nodeMap.has(k2)) nodeMap.set(k2, { x: s.x2, z: s.z2, count: 0 });
+          nodeMap.get(k1).count++; nodeMap.get(k2).count++;
+        }
+        for (const n of nodeMap.values()) {
+          if (n.count >= 4 && roundels.length < 200 && rng() < 0.35) {
+            roundels.push({ x: n.x, z: n.z, r: 2.2 + rng() * 1.5 });
+          }
+        }
+
+        // Zebra crossings on major roads (wide segments — draw stripes across).
+        for (let i = 0; i < roadSegments.length && crossings.length < 240; i++) {
+          const s = roadSegments[i];
+          if (s.width < 7) continue;
+          if (rng() > 0.04) continue;
+          const dx = s.x2 - s.x1, dz = s.z2 - s.z1;
+          crossings.push({ x: (s.x1 + s.x2) / 2, z: (s.z1 + s.z2) / 2, ang: Math.atan2(dz, dx), w: s.width });
+        }
+
+        // British road signs: red triangle warnings + speed-limit roundels.
+        for (const n of nodeMap.values()) {
+          if (signs.length >= MAX_S) break;
+          if (n.count < 3) continue;
+          if (rng() < 0.5) signs.push({ x: n.x + 2.5, z: n.z + 2.5, kind: 'warning' });
+          else if (rng() < 0.6) signs.push({ x: n.x - 2.5, z: n.z - 2.5, kind: 'speed' });
+        }
+      }
+      buildEnvironment();
+
       // ---- Layer draw functions ----
-      function drawGround(ctx, w, h) {
-        ctx.fillStyle = '#1f5f2a';
+      function drawWater(ctx, w, h) {
+        // Open Atlantic around the island.
+        ctx.fillStyle = PALETTE.water;
         ctx.fillRect(0, 0, w, h);
+        if (coastline) {
+          // Shallow coastal fringe for a hint of depth.
+          ctx.strokeStyle = PALETTE.waterShallow;
+          ctx.lineWidth = 6;
+          ctx.beginPath();
+          const a0 = worldToScreen(coastline[0][0], coastline[0][1], w, h);
+          ctx.moveTo(a0.x, a0.y);
+          for (let i = 1; i < coastline.length; i++) {
+            const p = worldToScreen(coastline[i][0], coastline[i][1], w, h);
+            ctx.lineTo(p.x, p.y);
+          }
+          ctx.closePath();
+          ctx.stroke();
+        }
+      }
+
+      function drawGround(ctx, w, h) {
+        // Land = muted meadow green over the water base.
+        ctx.fillStyle = PALETTE.land;
+        if (coastline) {
+          ctx.beginPath();
+          const a0 = worldToScreen(coastline[0][0], coastline[0][1], w, h);
+          ctx.moveTo(a0.x, a0.y);
+          for (let i = 1; i < coastline.length; i++) {
+            const p = worldToScreen(coastline[i][0], coastline[i][1], w, h);
+            ctx.lineTo(p.x, p.y);
+          }
+          ctx.closePath();
+          ctx.fill();
+        } else {
+          ctx.fillRect(0, 0, w, h);
+        }
       }
 
       function drawBuildings(ctx, w, h) {
-        // Reserved layer — no building meshes in retro yet.
+        const px = cam.zoom * BASE_SCALE;
+        for (let i = 0; i < buildings.length; i++) {
+          const b = buildings[i];
+          const p = worldToScreen(b.x, b.z, w, h);
+          const bw = Math.max(2, b.w * px), bh = Math.max(2, b.h * px);
+          if (p.x < -bw || p.x > w + bw || p.y < -bh || p.y > h + bh) continue;
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate(b.rot);
+          ctx.fillStyle = b.roof;
+          ctx.fillRect(-bw / 2, -bh / 2, bw, bh);
+          if (b.granite) {
+            ctx.fillStyle = PALETTE.granite;
+            ctx.fillRect(-bw / 2, -bh / 2, bw, Math.max(1, bh * 0.12));
+          }
+          ctx.restore();
+        }
+      }
+
+      function drawTrees(ctx, w, h) {
+        const px = cam.zoom * BASE_SCALE;
+        for (let i = 0; i < trees.length; i++) {
+          const t = trees[i];
+          const p = worldToScreen(t.x, t.z, w, h);
+          const r = Math.max(1.5, t.r * px);
+          if (p.x < -r || p.x > w + r || p.y < -r || p.y > h + r) continue;
+          ctx.fillStyle = t.c;
+          ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = 'rgba(0,0,0,0.16)';
+          ctx.beginPath(); ctx.arc(p.x + r * 0.35, p.y + r * 0.35, r * 0.7, 0, Math.PI * 2); ctx.fill();
+        }
       }
 
       function colorForRoadType(type) {
         switch (type) {
-          case 'trunk': return '#33333a';
-          case 'primary': return '#3b3b44';
-          case 'secondary': return '#45454f';
-          case 'tertiary': return '#4b4b56';
-          default: return '#565660';
+          case 'trunk': return PALETTE.road.trunk;
+          case 'primary': return PALETTE.road.primary;
+          case 'secondary': return PALETTE.road.secondary;
+          case 'tertiary': return PALETTE.road.tertiary;
+          default: return PALETTE.road.local;
         }
       }
 
@@ -1588,6 +1817,109 @@ window.mergeGeometries = window.THREE.mergeGeometries;
           ctx.moveTo(a.x, a.y);
           ctx.lineTo(b.x, b.y);
           ctx.stroke();
+        }
+      }
+
+      // ---- British road markings: dashed centre, double yellow, zebra, roundels.
+      function drawMarkings(ctx, w, h) {
+        const px = cam.zoom * BASE_SCALE;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        for (let i = 0; i < roadSegments.length; i++) {
+          const seg = roadSegments[i];
+          if (seg.width < 6) continue; // only marked roads
+          const a = worldToScreen(seg.x1, seg.z1, w, h);
+          const b = worldToScreen(seg.x2, seg.z2, w, h);
+          const rad = Math.max(16, Math.abs(a.x - b.x), Math.abs(a.y - b.y));
+          const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+          if (mx < -rad || mx > w + rad || my < -rad || my > h + rad) continue;
+
+          // Broken white centre line.
+          ctx.strokeStyle = PALETTE.centreLine;
+          ctx.lineWidth = Math.max(1, seg.width * px * 0.09);
+          ctx.setLineDash([6, 9]);
+          ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+          ctx.setLineDash([]);
+
+          // Double yellow lines on major roads (keep-left side edge).
+          if (seg.width >= 7) {
+            const dx = b.x - a.x, dy = b.y - a.y, len = Math.hypot(dx, dy) || 1;
+            const nx = -dy / len, ny = dx / len;
+            const off = seg.width * px * 0.38;
+            ctx.strokeStyle = PALETTE.doubleYellow;
+            ctx.lineWidth = Math.max(1, seg.width * px * 0.07);
+            ctx.beginPath();
+            ctx.moveTo(a.x + nx * off, a.y + ny * off);
+            ctx.lineTo(b.x + nx * off, b.y + ny * off);
+            ctx.moveTo(a.x + nx * (off + seg.width * px * 0.11), a.y + ny * (off + seg.width * px * 0.11));
+            ctx.lineTo(b.x + nx * (off + seg.width * px * 0.11), b.y + ny * (off + seg.width * px * 0.11));
+            ctx.stroke();
+          }
+        }
+
+        // Zebra crossings — white stripes across the road.
+        for (let i = 0; i < crossings.length; i++) {
+          const z = crossings[i];
+          const p = worldToScreen(z.x, z.z, w, h);
+          const r = z.w * px * 0.9;
+          if (p.x < -r || p.x > w + r || p.y < -r || p.y > h + r) continue;
+          const ca = Math.cos(z.ang), sa = Math.sin(z.ang);
+          ctx.strokeStyle = PALETTE.signWhite;
+          ctx.lineWidth = Math.max(1, z.w * px * 0.14);
+          const wpx = z.w * px;
+          for (let k = -3; k <= 3; k++) {
+            const ox = ca * k * wpx * 0.22, oy = sa * k * wpx * 0.22;
+            ctx.beginPath();
+            ctx.moveTo(p.x - sa * wpx * 0.5 + ox, p.y + ca * wpx * 0.5 + oy);
+            ctx.lineTo(p.x + sa * wpx * 0.5 + ox, p.y - ca * wpx * 0.5 + oy);
+            ctx.stroke();
+          }
+        }
+
+        // Mini roundabouts.
+        for (let i = 0; i < roundels.length; i++) {
+          const rnd = roundels[i];
+          const p = worldToScreen(rnd.x, rnd.z, w, h);
+          const r = Math.max(3, rnd.r * px);
+          if (p.x < -r || p.x > w + r || p.y < -r || p.y > h + r) continue;
+          ctx.fillStyle = 'rgba(255,255,255,0.25)';
+          ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI * 2); ctx.fill();
+          ctx.strokeStyle = PALETTE.signWhite;
+          ctx.lineWidth = Math.max(1, r * 0.18);
+          ctx.beginPath(); ctx.arc(p.x, p.y, r * 0.4, 0, Math.PI * 2); ctx.stroke();
+        }
+      }
+
+      // ---- British road signs: red triangle warnings + speed-limit roundels.
+      function drawSigns(ctx, w, h) {
+        const px = cam.zoom * BASE_SCALE;
+        for (let i = 0; i < signs.length; i++) {
+          const s = signs[i];
+          const p = worldToScreen(s.x, s.z, w, h);
+          const r = Math.max(4, 1.7 * px);
+          if (p.x < -r || p.x > w + r || p.y < -r || p.y > h + r) continue;
+          if (s.kind === 'speed') {
+            // Speed-limit roundel: white disc, red ring.
+            ctx.fillStyle = PALETTE.signWhite;
+            ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI * 2); ctx.fill();
+            ctx.strokeStyle = PALETTE.redSign;
+            ctx.lineWidth = Math.max(1, r * 0.3);
+            ctx.beginPath(); ctx.arc(p.x, p.y, r * 0.72, 0, Math.PI * 2); ctx.stroke();
+          } else {
+            // Red triangle warning sign.
+            ctx.fillStyle = PALETTE.redSign;
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y - r);
+            ctx.lineTo(p.x - r * 0.9, p.y + r * 0.7);
+            ctx.lineTo(p.x + r * 0.9, p.y + r * 0.7);
+            ctx.closePath(); ctx.fill();
+            ctx.fillStyle = PALETTE.signWhite;
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y - r * 0.45);
+            ctx.lineTo(p.x - r * 0.42, p.y + r * 0.32);
+            ctx.lineTo(p.x + r * 0.42, p.y + r * 0.32);
+            ctx.closePath(); ctx.fill();
+          }
         }
       }
 
@@ -1618,9 +1950,13 @@ window.mergeGeometries = window.THREE.mergeGeometries;
         const ctx = canvas.getContext('2d');
         ctx.save();
         ctx.clearRect(0, 0, w, h);
+        drawWater(ctx, w, h);
         drawGround(ctx, w, h);
         drawRoads(ctx, w, h);
+        drawMarkings(ctx, w, h);
         drawBuildings(ctx, w, h);
+        drawTrees(ctx, w, h);
+        drawSigns(ctx, w, h);
         drawVehicles(ctx, w, h);
         drawEffects(ctx, w, h);
         drawHUD(ctx, w, h);
@@ -1631,7 +1967,10 @@ window.mergeGeometries = window.THREE.mergeGeometries;
         cam, player, layers, roadSegments,
         spriteCount: SPRITE_DIRS, spriteCache, spriteForHeading,
         targetZoom, updateCamera, worldToScreen,
-        drawGround, drawBuildings, drawRoads, drawPlayer, drawVehicles, drawEffects, drawHUD,
+        PALETTE, LEFT_HAND, isWater, pointInPolygon,
+        buildings, trees, signs, crossings, roundels,
+        drawWater, drawGround, drawBuildings, drawTrees, drawMarkings, drawSigns,
+        drawRoads, drawPlayer, drawVehicles, drawEffects, drawHUD,
         render
       };
     })();
