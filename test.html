@@ -170,6 +170,59 @@ window.addEventListener('load', () => {
       updateSummary();
     });
 
+    // Test 15: Vehicle roster + stat model (T-GARAGE-ROSTER #30)
+    try {
+      const V = fw.VEHICLES;
+      log(`VEHICLES registry exists`, !!V ? 'pass' : 'fail');
+      if (V) {
+        const ids = Object.keys(V);
+        log(`VEHICLES has 9 vehicles`, ids.length === 9 ? 'pass' : `fail (${ids.length})`);
+
+        const byMode = { drive: [], boat: [], fly: [] };
+        ids.forEach(id => { const v = V[id]; if (v && byMode[v.mode]) byMode[v.mode].push(id); });
+        log(`3 vehicles per mode (drive)`, byMode.drive.length === 3 ? 'pass' : `fail (${byMode.drive.length})`);
+        log(`3 vehicles per mode (boat)`, byMode.boat.length === 3 ? 'pass' : `fail (${byMode.boat.length})`);
+        log(`3 vehicles per mode (fly)`, byMode.fly.length === 3 ? 'pass' : `fail (${byMode.fly.length})`);
+
+        const hasConfig = ids.every(id => V[id] && V[id].mode && V[id].name && V[id].color !== undefined && V[id].stats && typeof V[id].stats === 'object');
+        log(`Every vehicle has mode/name/color/stats`, hasConfig ? 'pass' : 'fail');
+
+        // Stat relationships — distinct profiles
+        const h = V.hatchback, s = V.sports, t = V.truck;
+        log(`sports faster than hatchback`, s.stats.maxSpeed > h.stats.maxSpeed ? 'pass' : 'fail');
+        log(`truck slower than hatchback`, t.stats.maxSpeed < h.stats.maxSpeed ? 'pass' : 'fail');
+        log(`truck heavier than hatchback`, t.stats.weight > h.stats.weight ? 'pass' : 'fail');
+        log(`sports drifts more than hatchback`, s.stats.drift > h.stats.drift ? 'pass' : 'fail');
+        log(`sports lower grip than hatchback`, s.stats.grip < h.stats.grip ? 'pass' : 'fail');
+
+        const c = V.cruiser, sp = V.speedboat, f = V.fishing;
+        log(`speedboat faster than cruiser`, sp.stats.maxSpeed > c.stats.maxSpeed ? 'pass' : 'fail');
+        log(`fishing slower than cruiser`, f.stats.maxSpeed < c.stats.maxSpeed ? 'pass' : 'fail');
+
+        const ce = V.cessna, st = V.stunt, j = V.jet;
+        log(`jet faster than cessna`, j.stats.maxSpeed > ce.stats.maxSpeed ? 'pass' : 'fail');
+        log(`stunt lower stall than cessna`, st.stats.stallSpeed < ce.stats.stallSpeed ? 'pass' : 'fail');
+
+        // Defaults match current constants (behaviour preserved)
+        log(`hatchback maxSpeed matches current (80)`, h.stats.maxSpeed === 80 ? 'pass' : `fail (${h.stats.maxSpeed})`);
+        log(`hatchback accel matches current (30)`, h.stats.accel === 30 ? 'pass' : `fail (${h.stats.accel})`);
+        log(`hatchback turnRate matches current (3.0)`, h.stats.turnRate === 3.0 ? 'pass' : `fail (${h.stats.turnRate})`);
+
+        // resolveVehicleStats — default preserves behaviour
+        const P = fw.resolveVehicleStats('drive');
+        log(`resolveVehicleStats('drive') returns maxSpeed 80`, P.maxSpeed === 80 ? 'pass' : `fail (${P.maxSpeed})`);
+        log(`resolveVehicleStats('drive') returns accel 30`, P.accel === 30 ? 'pass' : `fail (${P.accel})`);
+
+        // resolveVehicleStats reflects currentVehicle override
+        const prev = fw.currentVehicle;
+        fw.currentVehicle = V.sports;
+        const Ps = fw.resolveVehicleStats('drive');
+        log(`resolveVehicleStats reflects sports override (maxSpeed 110)`, Ps.maxSpeed === 110 ? 'pass' : `fail (${Ps.maxSpeed})`);
+        fw.currentVehicle = prev;
+      }
+    } catch(e) { log(`Vehicle roster: ${e.message}`, 'fail'); }
+    updateSummary();
+
   }, 2000);
 });
 </script>
