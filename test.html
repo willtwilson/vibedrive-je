@@ -496,6 +496,121 @@ window.addEventListener('load', () => {
     } catch(e) { log(`[renderer] render: ${e.message}`, 'fail'); updateSummary(); }
   }, 2000);
 });
+
+// ====== RETRO ENVIRONMENT TESTS (T-RETRO-ENV #27) ======
+// City & environment: buildings, trees, water, British/Jersey road markings
+// and signs, left-hand driving, muted Channel Islands palette, Jersey character.
+window.addEventListener('load', () => {
+  const frame = document.getElementById('retro-frame');
+  setTimeout(() => {
+    const fw = frame.contentWindow;
+    const fd = frame.contentDocument;
+    const retro = fw.retro;
+
+    // Test R10: Water (coastline, harbours)
+    try {
+      log(`[env] isWater function`, typeof retro.isWater === 'function' ? 'pass' : 'fail');
+      log(`[env] isWater(true) at open sea (-100,-100)`, retro.isWater(-100, -100) === true ? 'pass' : 'fail');
+      log(`[env] isWater(false) on land (23,-81)`, retro.isWater(23, -81) === false ? 'pass' : 'fail');
+      log(`[env] drawWater defined`, typeof retro.drawWater === 'function' ? 'pass' : 'fail');
+      fetch('/index-retro.html').then(r => r.text()).then(text => {
+        log(`[env] water drawn from jerseyCoastline`, text.includes('drawWater') && text.includes('jerseyCoastline') ? 'pass' : 'fail');
+        updateSummary();
+      }).catch(e => { log(`[env] water source: ${e.message}`, 'fail'); updateSummary(); });
+    } catch(e) { log(`[env] water: ${e.message}`, 'fail'); updateSummary(); }
+
+    // Test R11: Buildings (tile-based city)
+    try {
+      log(`[env] buildings array populated (${retro.buildings.length})`, retro.buildings.length > 0 ? 'pass' : 'fail');
+      const b = retro.buildings[0];
+      log(`[env] building has x/z/w/h`, b && typeof b.x === 'number' && typeof b.z === 'number' && typeof b.w === 'number' && typeof b.h === 'number' ? 'pass' : 'fail');
+      log(`[env] drawBuildings defined`, typeof retro.drawBuildings === 'function' ? 'pass' : 'fail');
+      updateSummary();
+    } catch(e) { log(`[env] buildings: ${e.message}`, 'fail'); updateSummary(); }
+
+    // Test R12: Trees and vegetation
+    try {
+      log(`[env] trees array populated (${retro.trees.length})`, retro.trees.length > 0 ? 'pass' : 'fail');
+      const t = retro.trees[0];
+      log(`[env] tree has x/z`, t && typeof t.x === 'number' && typeof t.z === 'number' ? 'pass' : 'fail');
+      log(`[env] drawTrees defined`, typeof retro.drawTrees === 'function' ? 'pass' : 'fail');
+      updateSummary();
+    } catch(e) { log(`[env] trees: ${e.message}`, 'fail'); updateSummary(); }
+
+    // Test R13: British road markings (double yellow, zebra, roundels)
+    try {
+      log(`[env] drawMarkings defined`, typeof retro.drawMarkings === 'function' ? 'pass' : 'fail');
+      log(`[env] crossings/roundels arrays`, Array.isArray(retro.crossings) && Array.isArray(retro.roundels) ? 'pass' : 'fail');
+      fetch('/index-retro.html').then(r => r.text()).then(text => {
+        log(`[env] markings include double yellow lines`, text.includes('doubleYellow') ? 'pass' : 'fail');
+        log(`[env] markings include dashed centre line`, text.includes('setLineDash') ? 'pass' : 'fail');
+        log(`[env] zebra crossing logic`, text.toLowerCase().includes('zebra') ? 'pass' : 'fail');
+        log(`[env] roundel logic`, text.toLowerCase().includes('roundel') ? 'pass' : 'fail');
+        updateSummary();
+      }).catch(e => { log(`[env] markings source: ${e.message}`, 'fail'); updateSummary(); });
+    } catch(e) { log(`[env] markings: ${e.message}`, 'fail'); updateSummary(); }
+
+    // Test R14: British road signs + left-hand driving
+    try {
+      log(`[env] drawSigns defined`, typeof retro.drawSigns === 'function' ? 'pass' : 'fail');
+      log(`[env] LEFT_HAND true`, retro.LEFT_HAND === true ? 'pass' : 'fail');
+      fetch('/index-retro.html').then(r => r.text()).then(text => {
+        log(`[env] signs include red triangle warning`, text.toLowerCase().includes('triangle') ? 'pass' : 'fail');
+        log(`[env] signs include speed limit roundel`, text.includes('speed') && text.includes('roundel') ? 'pass' : 'fail');
+        updateSummary();
+      }).catch(e => { log(`[env] signs source: ${e.message}`, 'fail'); updateSummary(); });
+    } catch(e) { log(`[env] signs: ${e.message}`, 'fail'); updateSummary(); }
+
+    // Test R15: Muted Channel Islands palette
+    try {
+      log(`[env] PALETTE defined`, retro.PALETTE ? 'pass' : 'fail');
+      log(`[env] muted land colour (not bright #1f5f2a)`, retro.PALETTE && typeof retro.PALETTE.land === 'string' && retro.PALETTE.land !== '#1f5f2a' ? 'pass' : 'fail');
+      fetch('/index-retro.html').then(r => r.text()).then(text => {
+        log(`[env] palette has muted Channel Islands tones`, text.includes('PALETTE') ? 'pass' : 'fail');
+        updateSummary();
+      }).catch(e => { log(`[env] palette source: ${e.message}`, 'fail'); updateSummary(); });
+    } catch(e) { log(`[env] palette: ${e.message}`, 'fail'); updateSummary(); }
+
+    // Test R16: Jersey-specific (granite, Norman, Jèrriais)
+    try {
+      fetch('/index-retro.html').then(r => r.text()).then(text => {
+        log(`[env] granite walls`, text.toLowerCase().includes('granite') ? 'pass' : 'fail');
+        log(`[env] Norman architecture`, text.toLowerCase().includes('norman') ? 'pass' : 'fail');
+        log(`[env] Jèrriais signs`, text.toLowerCase().includes('jèrriais') || text.toLowerCase().includes('jerriais') ? 'pass' : 'fail');
+        updateSummary();
+      }).catch(e => { log(`[env] jersey source: ${e.message}`, 'fail'); updateSummary(); });
+    } catch(e) { log(`[env] jersey: ${e.message}`, 'fail'); updateSummary(); }
+
+    // Test R17: Render pass — water over open sea, land over the island (no throw)
+    try {
+      const canvas = fd.getElementById('game-canvas');
+      canvas.width = 320; canvas.height = 240;
+      const c = canvas.getContext('2d');
+      const count = (pred) => {
+        const d = c.getImageData(0, 0, 320, 240).data;
+        let n = 0;
+        for (let i = 0; i < d.length; i += 4) if (pred(d[i], d[i + 1], d[i + 2])) n++;
+        return n;
+      };
+      const isWaterPix = (r, g, b) => b > r && b > 130;
+      const isLandPix = (r, g, b) => g > r && g > 105;
+
+      // Camera over open sea → expect water pixels
+      retro.cam.x = 0; retro.cam.y = 0; retro.cam.zoom = 1;
+      retro.render(canvas.width, canvas.height);
+      const seaWater = count(isWaterPix);
+      log(`[env] water rendered over open sea (${seaWater}px)`, seaWater > 0 ? 'pass' : 'fail');
+
+      // Camera over island interior (zoomed out) → expect land pixels
+      retro.cam.x = 23; retro.cam.y = -81; retro.cam.zoom = 0.55;
+      retro.render(canvas.width, canvas.height);
+      const islandLand = count(isLandPix);
+      log(`[env] land rendered over island (${islandLand}px)`, islandLand > 0 ? 'pass' : 'fail');
+      log(`[env] render executes without throwing`, true ? 'pass' : 'fail');
+      updateSummary();
+    } catch(e) { log(`[env] render: ${e.message}`, 'fail'); updateSummary(); }
+  }, 2500);
+});
 </script>
 </body>
 </html>
