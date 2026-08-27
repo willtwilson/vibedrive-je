@@ -229,6 +229,61 @@ window.addEventListener('load', () => {
       updateSummary();
     }
 
+    // Test 18: BOAT_PHYSICS constants object (T-PHYS-IMPLEMENT-BOAT #21)
+    try {
+      const bp = fw.BOAT_PHYSICS;
+      const requiredKeys = [
+        'maxSpeed', 'accel', 'reverseAccel', 'planingSpeed', 'planingBoost',
+        'dragLinear', 'dragQuadratic', 'idleFriction',
+        'rudderRate', 'turnRadiusMin', 'turnRadiusMax', 'drift', 'driftDecay',
+        'waveBobAmp', 'waveBobSpeed', 'wavePitchAmp', 'waveRollAmp', 'waveResponse', 'waveSpeedScale',
+        'dockSpeed', 'dockRudderBoost', 'dockReverseBoost', 'fenderRange'
+      ];
+      log(`BOAT_PHYSICS object exists`, !!bp ? 'pass' : 'fail');
+      requiredKeys.forEach(k => {
+        log(`BOAT_PHYSICS.${k} defined`, bp && typeof bp[k] === 'number' ? 'pass' : 'fail');
+      });
+      // Sanity relationships
+      log(`boat maxSpeed < car MAX_SPEED (80)`, bp && bp.maxSpeed < 80 ? 'pass' : 'fail');
+      log(`reverseAccel < accel`, bp && bp.reverseAccel < bp.accel ? 'pass' : 'fail');
+      log(`planingSpeed < maxSpeed`, bp && bp.planingSpeed < bp.maxSpeed ? 'pass' : 'fail');
+      log(`planingBoost > 1`, bp && bp.planingBoost > 1 ? 'pass' : 'fail');
+      log(`dragQuadratic > 0`, bp && bp.dragQuadratic > 0 ? 'pass' : 'fail');
+      log(`dockRudderBoost > 1`, bp && bp.dockRudderBoost > 1 ? 'pass' : 'fail');
+      log(`dockReverseBoost > 1`, bp && bp.dockReverseBoost > 1 ? 'pass' : 'fail');
+      log(`waveResponse in [0,1]`, bp && bp.waveResponse >= 0 && bp.waveResponse <= 1 ? 'pass' : 'fail');
+      log(`drift in [0,1]`, bp && bp.drift >= 0 && bp.drift <= 1 ? 'pass' : 'fail');
+      log(`dockSpeed > 0`, bp && bp.dockSpeed > 0 ? 'pass' : 'fail');
+      log(`fenderRange > 0`, bp && bp.fenderRange > 0 ? 'pass' : 'fail');
+      updateSummary();
+    } catch(e) {
+      log(`BOAT_PHYSICS: ${e.message}`, 'fail');
+      updateSummary();
+    }
+
+    // Test 19: Boat physics branch wired to terrain, waves, docking (T-PHYS-IMPLEMENT-BOAT #21)
+    try {
+      fetch('/index.html').then(r => r.text()).then(text => {
+        const boatBlock = text.slice(text.indexOf("else if (vehicleMode === 'boat')"));
+        log(`Boat branch references getTerrainHeight`, boatBlock.includes('getTerrainHeight') ? 'pass' : 'fail');
+        log(`Boat branch references tideLevel`, boatBlock.includes('tideLevel') ? 'pass' : 'fail');
+        log(`Boat branch references BOAT_PHYSICS`, boatBlock.includes('BOAT_PHYSICS') ? 'pass' : 'fail');
+        log(`Boat branch references marinaBerths`, boatBlock.includes('marinaBerths') ? 'pass' : 'fail');
+        log(`Boat branch references wakeTrailLine`, boatBlock.includes('wakeTrailLine') ? 'pass' : 'fail');
+        log(`Boat branch has planing logic`, boatBlock.includes('planing') ? 'pass' : 'fail');
+        log(`Boat branch has docking logic`, boatBlock.includes('dock') ? 'pass' : 'fail');
+        log(`Boat branch has drag logic`, boatBlock.includes('drag') ? 'pass' : 'fail');
+        log(`Boat branch has rudder logic`, boatBlock.includes('rudder') ? 'pass' : 'fail');
+        updateSummary();
+      }).catch(e => {
+        log(`Boat branch source: ${e.message}`, 'fail');
+        updateSummary();
+      });
+    } catch(e) {
+      log(`Boat branch: ${e.message}`, 'fail');
+      updateSummary();
+    }
+
   }, 2000);
 });
 </script>
