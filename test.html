@@ -1464,6 +1464,94 @@ window.addEventListener('load', () => {
     } catch(e) { log(`[mode-default] taxi item: ${e.message}`, 'fail'); }
   }, 3000);
 });
+
+// ====== AIRPORT BOARD (T-BUG-AIRPORT #38) ======
+// The board renders blank on iPad Safari because the live feed ships space-separated
+// date-times ("2026-08-28 07:00") which iOS Date does not parse, so every flight is
+// filtered out. It is also fetched directly from an Azure blob with CORS disabled, so
+// the browser blocks it and the board never populates. Both causes must be fixed.
+const AIRPORT_FIXTURE = {
+  Updated: '28 Aug 2026 12:20',
+  FlightArrivalDetails: [
+    { Flightnumber: 'BA001', From: 'London Heathrow', Scheduled: '10:30', Status: 'As scheduled',       display: true,  Date: '2026-08-28 10:30' },
+    { Flightnumber: 'BA002', From: 'Guernsey',       Scheduled: '11:00', Status: 'Landed at 10:55',      display: false, Date: '2026-08-28 11:00' },
+    { Flightnumber: 'BA003', From: 'Paris',          Scheduled: '13:00', Status: 'Delayed 1h',          display: true,  Date: '2026-08-28 13:00' },
+    { Flightnumber: 'BA004', From: 'Geneva',         Scheduled: '14:00', Status: 'As scheduled',        display: true,  Date: '2026-08-28 14:00' }
+  ],
+  FlightDepartureDetails: [
+    { Flightnumber: 'EZY001', To: 'London Gatwick', Scheduled: '11:15', Status: 'As scheduled',         display: true,  Date: '2026-08-28 11:15' },
+    { Flightnumber: 'EZY002', To: 'Amsterdam',      Scheduled: '11:30', Status: 'Airborne at 11:28',    display: false, Date: '2026-08-28 11:30' },
+    { Flightnumber: 'EZY003', To: 'Bristol',        Scheduled: '15:00', Status: 'Check-in as advised', display: true,  Date: '2026-08-28 15:00' }
+  ]
+};
+
+window.addEventListener('load', () => {
+  const frame = document.getElementById('game-frame');
+  setTimeout(() => {
+    const fw = frame.contentWindow;
+
+    // T38.1 — Date normaliser exposed; space-separated -> ISO 8601 (fixes iPad blank board).
+    try {
+      log(`[airport] normalizeAirportDate exposed`, typeof fw.normalizeAirportDate === 'function' ? 'pass' : 'fail');
+      if (typeof fw.normalizeAirportDate === 'function') {
+        log(`[airport] '2026-08-28 07:00' normalised to ISO`, fw.normalizeAirportDate('2026-08-28 07:00') === '2026-08-28T07:00' ? 'pass' : 'fail');
+        log(`[airport] already-ISO date left intact`, fw.normalizeAirportDate('2026-08-28T07:00') === '2026-08-28T07:00' ? 'pass' : 'fail');
+        log(`[airport] non-date string left intact`, fw.normalizeAirportDate('n/a') === 'n/a' ? 'pass' : 'fail');
+        log(`[airport] human date '28 Aug 2026 12:20' handled`, /2026/.test(fw.normalizeAirportDate('28 Aug 2026 12:20')) ? 'pass' : 'fail');
+      }
+    } catch(e) { log(`[airport] normalizeAirportDate: ${e.message}`, 'fail'); }
+
+    // T38.2 — Board parser exposed and returns a shape.
+    try {
+      log(`[airport] parseAirportBoard exposed`, typeof fw.parseAirportBoard === 'function' ? 'pass' : 'fail');
+      if (typeof fw.parseAirportBoard === 'function') {
+        const r = fw.parseAirportBoard(AIRPORT_FIXTURE, new Date('2026-08-28 10:00'));
+        log(`[airport] parseAirportBoard returns arrivals + departures`, r && Array.isArray(r.arrivals) && Array.isArray(r.departures) ? 'pass' : 'fail');
+
+        // T38.3 — display:false flights are excluded (old/airborne/landed flights off the board).
+        const fns = r.arrivals.map(x => x.fn);
+        log(`[airport] excludes display:false arrivals (BA002)`, !fns.includes('BA002') ? 'pass' : 'fail');
+        const depFns = r.departures.map(x => x.fn);
+        log(`[airport] excludes display:false departures (EZY002)`, !depFns.includes('EZY002') ? 'pass' : 'fail');
+
+        // T38.4 — Sorted by scheduled time ascending (space-separated dates still parse).
+        log(`[airport] arrivals sorted ascending (BA001 then BA003 then BA004)`, fns[0] === 'BA001' && fns[1] === 'BA003' && fns[2] === 'BA004' ? 'pass' : 'fail');
+        log(`[airport] arrivals count after filter (3)`, fns.length === 3 ? 'pass' : `fail (${fns.length})`);
+        log(`[airport] departures count after filter (2)`, depFns.length === 2 ? 'pass' : `fail (${depFns.length})`);
+
+        // T38.5 — delayed status detection.
+        const delayed = r.arrivals.find(x => x.fn === 'BA003');
+        const ok = r.arrivals.find(x => x.fn === 'BA001');
+        log(`[airport] delayed flag on "Delayed 1h" is true`, delayed && delayed.delayed === true ? 'pass' : 'fail');
+        log(`[airport] delayed flag on "As scheduled" is false`, ok && ok.delayed === false ? 'pass' : 'fail');
+      }
+    } catch(e) { log(`[airport] parseAirportBoard: ${e.message}`, 'fail'); }
+
+    // T38.6 — Board is capped at 5 entries per section.
+    try {
+      if (typeof fw.parseAirportBoard === 'function') {
+        const many = { FlightArrivalDetails: [], FlightDepartureDetails: [] };
+        for (let i = 0; i < 9; i++) {
+          many.FlightArrivalDetails.push({ Flightnumber: 'AA' + i, From: 'X', Scheduled: '12:00', Status: 'As scheduled', display: true, Date: '2026-08-28 12:0' + i });
+        }
+        const r = fw.parseAirportBoard(many, new Date('2026-08-28 10:00'));
+        log(`[airport] results capped at 5`, r.arrivals.length === 5 ? 'pass' : `fail (${r.arrivals.length})`);
+      }
+    } catch(e) { log(`[airport] cap: ${e.message}`, 'fail'); }
+
+    // T38.7 — Live fetch is CORS-safe: routed through the game's same-origin proxy
+    // (the Azure blob has CORS disabled, so a direct cross-origin fetch is blocked
+    // by the browser and the board stays blank). Source check.
+    fetch('/index.html').then(r => r.text()).then(text => {
+      const flightsBlock = text.slice(text.indexOf('function fetchAirportBoard'), text.indexOf('function fetchAirportBoard') + 900);
+      log(`[airport] fetch prefers same-origin /flights/ proxy path`, flightsBlock.includes('/flights/airportArrivals48h.json') ? 'pass' : 'fail');
+      log(`[airport] fetch keeps CDN fallback`, flightsBlock.includes('pojcdn.blob.core.windows.net') ? 'pass' : 'fail');
+      updateSummary();
+    }).catch(e => { log(`[airport] source: ${e.message}`, 'fail'); updateSummary(); });
+
+    updateSummary();
+  }, 3200);
+});
 </script>
 </body>
 </html>
