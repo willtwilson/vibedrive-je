@@ -13,6 +13,8 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
         if self.path.startswith("/supabase/"):
             self.proxy_to_supabase("GET")
+        elif self.path.startswith("/flights/"):
+            self.proxy_flights(self.path[len("/flights/"):])
         else:
             super().do_GET()
 
@@ -46,6 +48,27 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
         self.send_header("Access-Control-Allow-Methods", "GET, POST, PATCH, PUT, DELETE, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "apikey, authorization, content-type, prefer, x-client-info")
         self.end_headers()
+
+    def proxy_flights(self, path):
+        # The live flight feed (Azure blob) has CORS disabled, so the browser blocks a
+        # direct cross-origin fetch and the Airport Board renders blank. Proxy it through
+        # the game's own origin so the page can load it without CORS.
+        url = f"https://pojcdn.blob.core.windows.net/data/{path}"
+        try:
+            with urllib.request.urlopen(url, timeout=30) as resp:
+                body = resp.read()
+                self.send_response(resp.status)
+                self.send_header("Content-Type", resp.headers.get("Content-Type", "application/json"))
+                self.send_header("Access-Control-Allow-Origin", "*")
+                self.end_headers()
+                self.wfile.write(body)
+        except Exception as e:
+            self.send_response(502)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.end_headers()
+            self.wfile.write(json.dumps({"error": str(e)}).encode())
+
 
     def proxy_to_supabase(self, method):
         # Strip /supabase/ prefix and forward to Supabase
