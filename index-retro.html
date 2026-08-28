@@ -5056,7 +5056,7 @@ window.addEventListener('unhandledrejection', (e) => { window.__testErrors.push(
     })();
 
     // ---- Create 15 AI traffic cars ----
-    const NUM_AI_CARS = 15;
+    const NUM_AI_CARS = 0; // NPC traffic disabled for now (Will)
     for (let i = 0; i < NUM_AI_CARS; i++) {
       const color = aiColors[i % aiColors.length];
       const aiCar = createCar(color);
