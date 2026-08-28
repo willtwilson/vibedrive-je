@@ -1665,6 +1665,68 @@ window.addEventListener('load', () => {
       updateSummary();
     }).catch(e => { log(`[airport] source: ${e.message}`, 'fail'); updateSummary(); });
 
+    // ====== SETTINGS PANE EXPANSION (T-SETTINGS #39) ======
+    // The settings pane used to offer only a username field. It must now expose
+    // a graphics quality tier (auto/high/medium/low — the quality/particle knobs
+    // from #34) plus a sound toggle, all driven by testable functions.
+    const fd = frame.contentDocument;
+    try {
+      const qSel = fd.getElementById('settings-quality');
+      log(`[settings] panel has #settings-quality select`, !!qSel ? 'pass' : 'fail');
+      if (qSel) {
+        const opts = Array.from(qSel.options).map(o => o.value);
+        log(`[settings] quality select offers auto/high/medium/low`, ['auto','high','medium','low'].every(v => opts.includes(v)) ? 'pass' : `fail (${opts.join(',')})`);
+      }
+      const sBtn = fd.getElementById('settings-sound');
+      log(`[settings] panel has #settings-sound toggle`, !!sBtn ? 'pass' : 'fail');
+    } catch(e) { log(`[settings] panel controls: ${e.message}`, 'fail'); }
+
+    try {
+      log(`[settings] setQualityTier exposed`, typeof fw.setQualityTier === 'function' ? 'pass' : 'fail');
+      log(`[settings] getQualityTier exposed`, typeof fw.getQualityTier === 'function' ? 'pass' : 'fail');
+      log(`[settings] getQualityOptions exposed`, typeof fw.getQualityOptions === 'function' ? 'pass' : 'fail');
+    } catch(e) { log(`[settings] quality fns: ${e.message}`, 'fail'); }
+
+    try {
+      if (typeof fw.setQualityTier === 'function') {
+        const q = fw.setQualityTier('low');
+        log(`[settings] setQualityTier('low') returns 'low'`, q === 'low' ? 'pass' : `fail (${q})`);
+        log(`[settings] deviceTier.quality becomes low`, fw.deviceTier && fw.deviceTier.quality === 'low' ? 'pass' : 'fail');
+        log(`[settings] deviceTier.particleScale becomes 0.25`, fw.deviceTier && fw.deviceTier.particleScale === 0.25 ? 'pass' : `fail (${fw.deviceTier && fw.deviceTier.particleScale})`);
+        const b = fw.particleBudget(1000);
+        log(`[settings] particleBudget(1000) scales to 250 on low`, b === 250 ? 'pass' : `fail (${b})`);
+        log(`[settings] choice persisted to localStorage`, fw.localStorage.getItem('vibedrive_quality') === 'low' ? 'pass' : 'fail');
+
+        const m = fw.setQualityTier('medium');
+        log(`[settings] medium sets particleScale 0.5`, m === 'medium' && fw.deviceTier.particleScale === 0.5 ? 'pass' : 'fail');
+
+        const h = fw.setQualityTier('high');
+        log(`[settings] high sets particleScale 1`, h === 'high' && fw.deviceTier.particleScale === 1 ? 'pass' : 'fail');
+
+        fw.setQualityTier('auto');
+        log(`[settings] auto restores device default`, fw.getQualityTier() === 'auto' ? 'pass' : 'fail');
+      } else { log(`[settings] setQualityTier call skipped`, 'fail'); }
+    } catch(e) { log(`[settings] quality apply: ${e.message}`, 'fail'); }
+
+    try {
+      log(`[settings] setSoundEnabled exposed`, typeof fw.setSoundEnabled === 'function' ? 'pass' : 'fail');
+      log(`[settings] isSoundEnabled exposed`, typeof fw.isSoundEnabled === 'function' ? 'pass' : 'fail');
+      if (typeof fw.setSoundEnabled === 'function') {
+        const r = fw.setSoundEnabled(false);
+        log(`[settings] setSoundEnabled(false) returns false`, r === false ? 'pass' : 'fail');
+        log(`[settings] isSoundEnabled() false after off`, fw.isSoundEnabled() === false ? 'pass' : 'fail');
+        fw.setSoundEnabled(true);
+        log(`[settings] setSoundEnabled(true) re-enables`, fw.isSoundEnabled() === true ? 'pass' : 'fail');
+      }
+    } catch(e) { log(`[settings] sound: ${e.message}`, 'fail'); }
+
+    fetch('/index.html').then(r => r.text()).then(text => {
+      const panelBlock = text.slice(text.indexOf('id="settings-panel"'), text.indexOf('id="settings-panel"') + 900);
+      log(`[settings] panel has quality select markup`, panelBlock.includes('settings-quality') ? 'pass' : 'fail');
+      log(`[settings] panel has sound toggle markup`, panelBlock.includes('settings-sound') ? 'pass' : 'fail');
+      updateSummary();
+    }).catch(e => { log(`[settings] source: ${e.message}`, 'fail'); updateSummary(); });
+
     updateSummary();
   }, 3200);
 });
