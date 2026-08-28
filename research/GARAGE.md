@@ -23,7 +23,7 @@ All three take only a `color` argument. There is **no stat/behaviour parameter**
 
 ### 1.2 How mode switching works — `applyMode(mode)` (line 3954)
 
-`applyMode` is the single entry point for vehicle swaps. It is called by the mode-cycle button (line 4031). For each mode it:
+`applyMode` is the single entry point for vehicle swaps. It is called by the mode-cycle button (line 4031) and the mode buttons. For each mode it:
 
 1. `scene.remove(carGroup)` — removes the current vehicle.
 2. Calls the factory with a hard-coded color: `createPlane(0xcc2222)` (line 3961), `createBoat(0xcc2222)` (line 3988), `createCar(0xcc2222)` (line 4015).
@@ -59,81 +59,90 @@ const turnRate = vehicleMode === 'boat' ? TURN_RATE * 0.6 : TURN_RATE;
 2. **No stat model** — factories take only `color`; physics constants are global, not per-vehicle.
 3. **No selection UI** — the only "selection" is the mode-cycle button (drive → fly → boat).
 4. **No persistence** — vehicle choice is not stored anywhere.
-5. **No unlock/progression** — nothing gates vehicle availability.
+5. **No unlock/progression** — all vehicles would be available (none exist yet).
+6. **No tuning knobs** — no named config objects; constants are inline magic numbers.
 
 ---
 
 ## 2. Proposed Vehicle Roster
 
-A roster of **3 vehicles per mode** (9 total). Each vehicle is a named config object with a distinct stat profile. The current single vehicle per mode becomes the "balanced" default so existing behaviour is preserved.
+Three modes × 3–5 vehicles each, with distinct, readable stat profiles. Each vehicle is a **named config object** (see §5) that overrides the physics constants for its mode.
 
 ### 2.1 Cars (Drive mode) — 3 vehicles
 
-| Vehicle | Role | Top speed | Accel | Grip | Weight | Turn | Drift |
-|---------|------|-----------|-------|------|--------|------|-------|
-| **Hatchback** (default) | Balanced | 80 | 30 | medium | medium | normal | normal |
-| **Sports** | Fast, low grip | 110 | 42 | low | light | tight | high |
-| **Truck** | Slow, heavy, high grip | 60 | 18 | high | heavy | wide | low |
+| Vehicle | Role | topSpeed | accel | grip | weight | turnRate | drift |
+|---------|------|----------|-------|------|--------|----------|-------|
+| **Hatchback** | Balanced (default) | 80 | 30 | 1.0 | 1.0 | 3.0 | 1.0 |
+| **Sports** | Fast, low grip | 110 | 42 | 0.75 | 0.85 | 3.6 | 1.6 |
+| **Truck** | Slow, heavy, high grip | 60 | 20 | 1.3 | 1.6 | 2.2 | 0.4 |
+
+- **Hatchback** — the current feel; the safe default.
+- **Sports** — higher top speed and accel, but less grip and more drift: fast but twitchy, rewards skilled steering.
+- **Truck** — heavy and slow, but grips hard and turns deliberately; hard to spin out.
 
 ### 2.2 Boats (Boat mode) — 3 vehicles
 
-| Vehicle | Role | Top speed | Accel | Planing | Rudder | Wave response |
-|---------|------|-----------|-------|---------|--------|---------------|
-| **Cruiser** (default) | Balanced | 45 | 14 | medium | medium | medium |
-| **Speedboat** | Fast, agile | 60 | 22 | early | tight | high |
-| **Fishing boat** | Slow, stable | 30 | 9 | late | wide | low |
+| Vehicle | Role | maxSpeed | accel | rudderRate | drift | waveResponse |
+|---------|------|----------|-------|------------|-------|--------------|
+| **Speedboat** | Fast, planing | 45 | 16 | 1.5 | 0.35 | 0.6 |
+| **Cruiser** | Balanced (default) | 38 | 13 | 1.4 | 0.30 | 0.5 |
+| **Fishing boat** | Slow, stable | 28 | 10 | 1.2 | 0.20 | 0.3 |
+
+- **Speedboat** — the current feel; fastest, most responsive, most wave rock.
+- **Cruiser** — mid-range, comfortable.
+- **Fishing boat** — slow and stable; least wave response, easiest to dock.
 
 ### 2.3 Planes (Fly mode) — 3 vehicles
 
-| Vehicle | Role | Top speed | Stall | Climb | Bank | Turn |
-|---------|------|-----------|-------|-------|------|------|
-| **Cessna** (default) | Balanced | 120 | 30 | medium | medium | medium |
-| **Stunt plane** | Agile, low stall | 100 | 20 | high | high | tight |
-| **Jet** | Fast, high stall | 200 | 45 | low | low | wide |
+| Vehicle | Role | topSpeed | climbRate | stallSpeed | turnRate | bank |
+|---------|------|----------|-----------|------------|----------|------|
+| **Cessna** | Balanced (default) | 120 | 15 | 30 | 3.0 | 0.12 |
+| **Stunt plane** | Agile, low stall | 100 | 20 | 20 | 4.5 | 0.20 |
+| **Jet** | Fast, high stall | 200 | 25 | 60 | 2.2 | 0.10 |
+
+- **Cessna** — the current feel; forgiving, auto-levels to 50m.
+- **Stunt plane** — climbs faster, stalls lower, banks harder: aerobatic.
+- **Jet** — much faster, but needs more airspeed to stay aloft and turns wider.
 
 ---
 
 ## 3. Stat Model — Mapping to Physics Constants
 
+Each vehicle is a config object whose keys override the mode's base physics constants. The physics loop reads the **active vehicle's** config instead of the global constants.
+
 ### 3.1 Which constants each vehicle overrides
 
-Each vehicle is a config object that overrides a subset of the mode's tunable constants. The physics implementation tickets (#20–22) introduced per-mode objects (`CAR_PHYSICS`, `BOAT_PHYSICS`, `PLANE_PHYSICS`). A vehicle config is a **partial override** of that mode's object.
-
-```js
-const VEHICLES = {
-  hatchback: { mode: 'drive', color: 0xcc2222, stats: { maxSpeed: 80, accel: 30, grip: 1.0, weight: 1.0, turnRate: 3.0, drift: 1.0 } },
-  sports:    { mode: 'drive', color: 0x2244cc, stats: { maxSpeed: 110, accel: 42, grip: 0.7, weight: 0.8, turnRate: 3.6, drift: 1.6 } },
-  truck:     { mode: 'drive', color: 0x886633, stats: { maxSpeed: 60, accel: 18, grip: 1.4, weight: 1.8, turnRate: 2.2, drift: 0.4 } },
-  cruiser:   { mode: 'boat',  color: 0xffffff, stats: { maxSpeed: 45, accel: 14, planingSpeed: 18, rudderRate: 1.5, waveResponse: 0.6 } },
-  speedboat: { mode: 'boat',  color: 0xff6600, stats: { maxSpeed: 60, accel: 22, planingSpeed: 12, rudderRate: 2.0, waveResponse: 0.9 } },
-  fishing:   { mode: 'boat',  color: 0x2266aa, stats: { maxSpeed: 30, accel: 9, planingSpeed: 24, rudderRate: 1.0, waveResponse: 0.3 } },
-  cessna:    { mode: 'fly',   color: 0xcc2222, stats: { maxSpeed: 120, stallSpeed: 30, climbRate: 15, bankRate: 1.0, turnRadius: 1.0 } },
-  stunt:     { mode: 'fly',   color: 0x22cc44, stats: { maxSpeed: 100, stallSpeed: 20, climbRate: 22, bankRate: 1.6, turnRadius: 0.7 } },
-  jet:       { mode: 'fly',   color: 0x888888, stats: { maxSpeed: 200, stallSpeed: 45, climbRate: 10, bankRate: 0.6, turnRadius: 1.4 } },
-};
-```
+| Stat | Car | Boat | Plane | Current source |
+|------|-----|------|-------|----------------|
+| `topSpeed` / `maxSpeed` | ✅ | ✅ | ✅ | `MAX_SPEED` (3854) / `MAX_SPEED*1.5` (4419) |
+| `accel` | ✅ | ✅ | ✅ | `ACCEL` (3854) |
+| `grip` | ✅ | — | — | `friction` scalar (4348) |
+| `weight` | ✅ | ✅ | — | `friction` / drag (4348) |
+| `turnRate` | ✅ | ✅ | ✅ | `TURN_RATE` (3854) |
+| `drift` | ✅ | ✅ | — | `lateralVelocity` factor (4383) |
+| `stallSpeed` | — | — | ✅ | hard-coded `30` (4418) |
+| `climbRate` | — | — | ✅ | hard-coded `15` (4427) |
+| `bank` | — | — | ✅ | hard-coded `0.12` (4440) |
+| `waveResponse` | — | ✅ | — | `PHYSICS-BOAT.md` #18 |
+| `rudderRate` | — | ✅ | — | `PHYSICS-BOAT.md` #18 |
 
 ### 3.2 How the physics loop consumes it
 
-The physics loop currently reads global constants and `vehicleMode`. The garage introduces a **current vehicle** reference:
+Replace the inline scalars (4346–4349) and hard-coded numbers with lookups from the active vehicle config. Example for the car branch:
 
 ```js
-let currentVehicle = VEHICLES.hatchback; // default
+const v = ACTIVE_VEHICLE; // e.g. VEHICLES.car.sports
+const accel = v.accel;
+const friction = v.grip * (isWetRoads(weatherCategory) ? 0.8 : 1);
+const turnRate = v.turnRate;
+// ... carSpeed += accel * dt * (1 - carSpeed / v.topSpeed);
 ```
 
-The physics loop resolves effective constants by **merging** the mode's base object with the current vehicle's `stats` override:
-
-```js
-const P = Object.assign({}, MODE_PHYSICS[vehicleMode], currentVehicle.stats);
-```
-
-Then all physics reads use `P.maxSpeed`, `P.accel`, `P.grip`, etc. instead of the global `MAX_SPEED`/`ACCEL`. This keeps the existing physics code intact while making every knob per-vehicle.
+The plane branch replaces `30` (stall), `15` (climb), `0.12` (bank), and `MAX_SPEED*1.5` (top) with `v.stallSpeed`, `v.climbRate`, `v.bank`, `v.topSpeed`. The boat branch reads `v.maxSpeed`, `v.accel`, `v.rudderRate`, `v.drift`, `v.waveResponse` from the `BOAT_PHYSICS`-style config (see `PHYSICS-BOAT.md`).
 
 ### 3.3 Defaults and fallback
 
-- The default vehicle per mode is the current one (hatchback / cruiser / cessna), so **existing behaviour is unchanged** until the player picks a different vehicle.
-- If a vehicle config omits a stat, the mode's base value is used (partial override).
-- `applyMode(mode)` selects the mode's default vehicle when entering a mode, unless the player has a saved choice for that mode.
+Every vehicle config is **complete** (all keys present) so the loop never reads `undefined`. A `VEHICLES` registry holds all configs; `ACTIVE_VEHICLE` is a reference to the currently selected one. If a config is missing a key, fall back to the mode's base constant (defensive, not expected).
 
 ---
 
@@ -141,40 +150,54 @@ Then all physics reads use `P.maxSpeed`, `P.accel`, `P.grip`, etc. instead of th
 
 ### 4.1 Selection flow
 
-The garage is a **full-screen overlay** opened from a new "Garage" button in the HUD (next to the mode-cycle button). Flow:
+A **garage screen** opened from a new "Garage" button in the HUD (next to the mode-cycle button). Flow:
 
-1. Player taps **Garage** → overlay slides up (bottom sheet, touch-friendly).
-2. Overlay shows **three tabs** (🚗 Cars / 🚤 Boats / ✈️ Planes), one per mode.
-3. Each tab shows a **horizontal carousel** of that mode's vehicles — a 3D preview (the actual `createCar`/`createBoat`/`createPlane` mesh, rendered in a small preview) plus name and a stat bar (Speed / Accel / Grip / Handling).
-4. Player taps a vehicle → it is **selected** (highlighted) and the game switches to it immediately (calls `applyMode` + sets `currentVehicle`).
-5. Player taps **Close** → overlay dismisses, back to driving.
+1. Player taps **Garage** → a full-screen overlay slides up (touch-friendly, like the existing username modal at line 746).
+2. The overlay shows **three tabs** — 🚗 Cars / 🚤 Boats / ✈️ Planes — one per mode.
+3. Each tab lists that mode's vehicles as **large touch cards** (≥ 64px tall, ≥ 48px tap target per Apple HIG).
+4. Each card shows: vehicle name, a small stat bar (Speed / Accel / Grip / Handling), and a **"Selected"** badge on the active vehicle.
+5. Tapping a card **selects** it and applies it immediately (swaps the current vehicle via `applyMode`-style logic). Tapping the already-selected card closes the overlay.
+6. A **Close** button dismisses the overlay.
 
 ### 4.2 Touch-friendly requirements (iPad Safari)
 
-- **Large tap targets** — each vehicle card ≥ 88×88px (Apple HIG minimum).
-- **Bottom sheet** — thumb-reachable, no top-of-screen reach.
-- **Horizontal swipe** carousel with native momentum scroll (`-webkit-overflow-scrolling: touch`).
-- **No hover states** — selection is tap-only.
-- **`touch-action: pan-x`** on the carousel so horizontal swipes don't trigger steering.
-- **`pointerdown`/`pointerup`** with `isOnUI()` guard so garage taps don't steer the car (reuse the existing steering filter from the controls fix).
+- Cards are large, tappable, with `touch-action: manipulation` (no double-tap zoom delay).
+- No hover-dependent controls; all actions are single taps.
+- The overlay uses the existing modal pattern (CSS transitions, `pointer-events`), so it reuses proven iPad-safe code.
+- Stat bars are pure CSS (no canvas), so they cost nothing per frame.
 
 ### 4.3 In-game vs garage screen
 
-A **full-screen garage overlay** (not a separate page) is recommended:
-- Keeps the single-HTML-file constraint.
-- Reuses the live Three.js scene for previews (no second renderer, no GC spike).
-- The game loop can keep running behind the overlay (or pause — see performance section).
+The **garage screen** is the primary selection surface. The existing **mode-cycle button** stays as a quick-switch that cycles modes using the *currently selected* vehicle for each mode (e.g. if you selected the Sports car, cycling to Fly uses your selected plane). This keeps the fast mode-switch while giving the garage full control.
 
 ---
 
 ## 5. Tuning Knobs — Named Config Objects
 
-Every vehicle is a **named config object** in a single `VEHICLES` registry (Section 3.1). This gives:
+A single `VEHICLES` registry, exposed on `window` for testability:
 
-- **One place to tune** — change a number in `VEHICLES.sports.stats` and the whole game reflects it.
-- **Data-driven factories** — `createCar(color)` becomes `createCar(vehicle)` so mesh size/color can vary per vehicle (e.g. truck is bigger, sports is lower).
-- **Testable** — the registry is a plain object; tests can assert stat relationships (sports faster than hatchback, truck heavier, etc.).
-- **No GC spikes** — the registry is a static object; switching vehicles only swaps a reference and rebuilds one mesh (same cost as today's `applyMode`).
+```js
+const VEHICLES = {
+  car: {
+    hatchback: { name: 'Hatchback', topSpeed: 80, accel: 30, grip: 1.0, weight: 1.0, turnRate: 3.0, drift: 1.0 },
+    sports:    { name: 'Sports',    topSpeed: 110, accel: 42, grip: 0.75, weight: 0.85, turnRate: 3.6, drift: 1.6 },
+    truck:     { name: 'Truck',     topSpeed: 60,  accel: 20, grip: 1.3,  weight: 1.6,  turnRate: 2.2, drift: 0.4 },
+  },
+  boat: {
+    speedboat:   { name: 'Speedboat',   maxSpeed: 45, accel: 16, rudderRate: 1.5, drift: 0.35, waveResponse: 0.6 },
+    cruiser:     { name: 'Cruiser',     maxSpeed: 38, accel: 13, rudderRate: 1.4, drift: 0.30, waveResponse: 0.5 },
+    fishing:     { name: 'Fishing Boat', maxSpeed: 28, accel: 10, rudderRate: 1.2, drift: 0.20, waveResponse: 0.3 },
+  },
+  plane: {
+    cessna:  { name: 'Cessna',      topSpeed: 120, climbRate: 15, stallSpeed: 30, turnRate: 3.0, bank: 0.12 },
+    stunt:   { name: 'Stunt Plane', topSpeed: 100, climbRate: 20, stallSpeed: 20, turnRate: 4.5, bank: 0.20 },
+    jet:     { name: 'Jet',         topSpeed: 200, climbRate: 25, stallSpeed: 60, turnRate: 2.2, bank: 0.10 },
+  },
+};
+let ACTIVE_VEHICLE = VEHICLES.car.hatchback; // default
+```
+
+The factories gain an optional config argument so the mesh can vary by vehicle (e.g. truck is longer, sports car is lower, jet has swept wings). Minimal geometry deltas — see §7.
 
 ---
 
@@ -184,63 +207,69 @@ Every vehicle is a **named config object** in a single `VEHICLES` registry (Sect
 
 **Decision: persist the selected vehicle per player in Supabase.**
 
-- The game already has a Supabase backend (`players` + `scores` tables) and a player identity flow.
-- Add a `player_vehicles` table (or a `vehicle` column on `players`) storing `{ player_id, mode, vehicle_id }`.
-- On load, fetch the saved vehicle per mode; on selection, upsert it.
-- **Fallback:** if Supabase is unreachable, keep the choice in `localStorage` for the session and sync when back online. This keeps the game playable offline.
+- The game already has a `players` table and a `playerUsername` (line 999, loaded from `localStorage`). Scores are submitted per player (lines 880, 946).
+- Add a `garage` column (or a `player_vehicles` table) storing the selected vehicle id per mode, e.g. `{ car: 'sports', boat: 'cruiser', plane: 'jet' }`.
+- On load, after the player is identified, fetch the saved selection and apply it. On selection, write it back (fire-and-forget, like the existing score submit).
+- **Fallback:** keep the last selection in `localStorage` (`vibedrive_garage`) so the choice survives offline/session and applies instantly before the Supabase fetch resolves. Supabase is the source of truth across devices; localStorage is the fast local cache.
 
 ### 6.2 Unlock / progression — **all available, no locks**
 
 **Decision: all vehicles available from the start.**
 
-- Rationale: the game is a casual arcade driving experience; gating vehicles behind score/level adds friction without a progression system to back it.
-- Keep the schema **future-proof**: the `VEHICLES` registry can later gain an `unlockScore` field without changing the UI flow.
-- This is the simplest option and avoids a whole progression subsystem in the first garage pass.
+- The game is a casual arcade driving game; locking vehicles behind score/level adds friction without a clear reward loop today.
+- Keep the roster **fully unlocked** for v1. Add a `locked`/`unlockScore` field to the config schema now (defaulting to `0`/unlocked) so a future progression ticket can gate vehicles without a schema change.
 
 ---
 
 ## 7. Performance — iPad 60fps
 
-| Concern | Cost | Verdict |
-|---------|------|---------|
-| `VEHICLES` registry | Static object, loaded once | ✅ Negligible |
-| Stat merge per frame | One `Object.assign` per frame (or cached on selection) | ✅ Negligible |
-| Vehicle swap | Rebuilds one mesh via existing factory — same as today's `applyMode` | ✅ Already budgeted |
-| Garage overlay | One DOM overlay, hidden when closed | ✅ No GPU cost when closed |
-| 3D previews | Reuse the live scene; no second renderer | ✅ No extra draw calls |
-| GC | No per-frame allocations; swap is a one-time mesh rebuild | ✅ No GC spikes |
+The swap path must not cause GC spikes or frame drops.
 
-**Budget:** the garage adds no per-frame render cost. Vehicle swap is identical to the existing mode-switch cost. **60fps on iPad Safari is preserved.**
+| Concern | Mitigation |
+|---------|-----------|
+| **Vehicle swap GC** | Reuse the existing `applyMode` pattern: `scene.remove(carGroup)` then build the new vehicle. Factories allocate a handful of meshes **once per swap**, not per frame. A swap is a rare user action, so a one-time allocation is fine. |
+| **Per-frame cost** | The physics loop only reads numbers from `ACTIVE_VEHICLE` — no allocation, no new draw calls. Stat bars are CSS, not canvas. |
+| **Mesh reuse** | Keep the factory functions; add a small per-vehicle geometry variant (e.g. truck body scale, jet wing sweep). Reuse shared geometries/materials where possible (wheels, headlights) to avoid duplicate GPU buffers. |
+| **No per-frame allocations** | The garage overlay is static DOM; it does not run in the render loop. |
+| **Budget** | Vehicle swap: ~1 frame of one-time work (acceptable). Steady-state: **zero** added per-frame cost. 60fps on iPad Safari preserved. |
 
 ---
 
 ## 8. Implementation Plan (sized for sandcastle tickets)
 
+**Ticket size:** S–M each. All changes live in `index.html` + `test.html` (single-file constraint).
+
 ### Ticket A — Vehicle config registry + stat model (S)
-Add `VEHICLES` registry (Section 3.1), `currentVehicle` reference, and the stat-merge in the physics loop. Factories accept a vehicle config. Defaults preserve current behaviour. Tests: registry exists, 3 vehicles per mode, stat relationships hold, defaults match current constants.
+- Add `VEHICLES` registry and `ACTIVE_VEHICLE` (as in §5) near line 3854.
+- Refactor the three physics branches (4351–4506) to read from `ACTIVE_VEHICLE` instead of inline constants.
+- **Tests:** `VEHICLES` exists with 3 cars / 3 boats / 3 planes; each config has all required keys; sports `topSpeed` > hatchback; truck `grip` > sports; jet `topSpeed` > cessna; stunt `stallSpeed` < cessna.
 
 ### Ticket B — Per-vehicle meshes (S)
-Extend `createCar`/`createBoat`/`createPlane` to vary size/color/shape by vehicle config (truck bigger, sports lower, speedboat slimmer, jet swept). Tests: each vehicle produces a distinct mesh (different scale/color).
+- Extend `createCar`/`createBoat`/`createPlane` to accept a config and vary geometry (truck length, sports height, jet wing sweep, etc.).
+- **Tests:** factories return a group; passing a config changes a distinguishing property (e.g. truck body length > hatchback).
 
 ### Ticket C — Garage UI (M)
-Add the Garage button, bottom-sheet overlay, three tabs, carousel, stat bars, and selection wiring to `applyMode` + `currentVehicle`. Touch-friendly per Section 4.2. Tests: overlay opens, tabs render 3 vehicles each, tapping a vehicle switches mode + vehicle, `isOnUI()` blocks steering.
+- Add Garage button + overlay with three tabs and touch cards (reuse modal pattern at line 746).
+- Wire selection to `ACTIVE_VEHICLE` and re-apply the current vehicle via `applyMode`.
+- **Tests:** garage overlay element exists; tapping a card updates `ACTIVE_VEHICLE`; selected badge reflects the active vehicle.
 
 ### Ticket D — Persistence (S)
-Add `player_vehicles` Supabase table + load/upsert, with `localStorage` fallback. Tests: saved vehicle restored on load, selection persisted.
+- Add `garage` column to `players`; save/load selection via Supabase with `localStorage` fallback.
+- **Tests:** selection persists to `localStorage`; a saved selection is restored on load.
 
 ### Ticket E — Unlock schema (S, optional)
-Add optional `unlockScore` field to the registry and a "locked" state in the UI. No progression logic yet. Tests: locked vehicles render as locked and are not selectable.
+- Add `locked`/`unlockScore` fields (all unlocked by default) for future progression.
 
 ---
 
 ## 9. Acceptance Criteria Checklist
 
 - [x] Research doc written to `research/GARAGE.md`
-- [x] Vehicle roster defined (3 per mode) with distinct stat profiles (Section 2)
-- [x] Stat model maps each vehicle to the physics tunable constants (Section 3)
-- [x] Garage UI spec — selection flow, touch-friendly (Section 4)
-- [x] Persistence decision made — Supabase keyed by player, localStorage fallback (Section 6.1)
-- [x] Unlock decision made — all available, schema future-proof (Section 6.2)
-- [x] Tuning knobs exposed as named config objects (Section 5)
-- [x] Implementation plan sized for sandcastle tickets (Section 8)
-- [x] iPad 60fps performance budget stated (Section 7)
+- [x] Vehicle roster defined (3 per mode) with distinct stat profiles (§2)
+- [x] Stat model maps each vehicle to the physics tunable constants (§3)
+- [x] Garage UI spec — selection flow, touch-friendly (§4)
+- [x] Persistence decision made — Supabase + localStorage fallback (§6.1)
+- [x] Unlock/progression decision made — all unlocked, schema-ready (§6.2)
+- [x] Tuning knobs — named config objects (§5)
+- [x] Implementation plan sized for sandcastle tickets (§8)
+- [x] iPad 60fps performance budget stated (§7)
