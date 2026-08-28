@@ -1462,6 +1462,70 @@ window.addEventListener('load', () => {
         }, 200);
       }
     } catch(e) { log(`[mode-default] taxi item: ${e.message}`, 'fail'); }
+
+    // ===== T37: BUS STOP LABEL STAGGERING (T-BUG-BUS-OVERLAY #37) =====
+    // Overlapping bus-stop info panels on load: stops that share a small grid
+    // cell ("same tile") must have their label pills staggered apart so they
+    // don't render stacked on top of each other.
+    const BUS_CELL = 4;       // grid cell size (must match index.html STOP_STAGGER_CELL)
+    const BUS_MIN_SEP = 3.0;  // minimum horizontal label separation (must match)
+    const busCellKey = (x, z) => Math.floor(x / BUS_CELL) + ',' + Math.floor(z / BUS_CELL);
+
+    // T37.1 — Source: a pure helper computes staggered stop-label offsets.
+    fetch('/index.html').then(r => r.text()).then(text => {
+      const hasHelper = text.includes('computeBusStopLabelOffsets');
+      log(`[bus] source defines computeBusStopLabelOffsets`, hasHelper ? 'pass' : 'fail');
+      const hasCell = text.includes('STOP_STAGGER_CELL');
+      log(`[bus] source staggers labels via STOP_STAGGER_CELL grid`, hasCell ? 'pass' : 'fail');
+      updateSummary();
+    }).catch(e => {
+      log(`[bus] source fetch: ${e.message}`, 'fail');
+      updateSummary();
+    });
+
+    // T37.2 — Runtime (pure): helper separates labels that share a grid cell.
+    try {
+      const fn = fw.__computeBusStopLabelOffsets;
+      const synthetic = [[10, 10], [10.5, 10.2], [30, 30]]; // two in one cell, one isolated
+      const offs = fn(synthetic, { cell: BUS_CELL });
+      // Pair (0,1) share a cell -> must be separated by >= BUS_MIN_SEP.
+      const dx = offs[0].x - offs[1].x, dz = offs[0].z - offs[1].z;
+      const sep = Math.hypot(dx, dz);
+      log(`[bus] helper separates same-cell labels (sep=${sep.toFixed(2)})`, sep >= BUS_MIN_SEP ? 'pass' : 'fail');
+      // Isolated stop keeps its own position (offset 0).
+      const iso = Math.hypot(offs[2].x - synthetic[2][0], offs[2].z - synthetic[2][1]);
+      log(`[bus] helper leaves isolated stop at its own position`, iso < 0.001 ? 'pass' : 'fail');
+      updateSummary();
+    } catch(e) { log(`[bus] helper: ${e.message}`, 'fail'); updateSummary(); }
+
+    // T37.3 — Runtime (integration): rendered stop labels don't overlap within a cell.
+    try {
+      const sms = fw.__busSystem && fw.__busSystem.stopMeshes;
+      log(`[bus] bus system exposes stopMeshes`, !!sms && sms.length > 0 ? 'pass' : 'fail');
+      if (sms && sms.length) {
+        const onIsland = sms.filter(sm => sm.baseY >= 0); // markers placed on land
+        const byCell = {};
+        let bad = 0, checked = 0;
+        for (const sm of onIsland) {
+          const key = busCellKey(sm.x, sm.z);
+          (byCell[key] = byCell[key] || []).push(sm);
+        }
+        for (const key of Object.keys(byCell)) {
+          const list = byCell[key];
+          if (list.length < 2) continue;
+          for (let i = 0; i < list.length; i++) {
+            for (let j = i + 1; j < list.length; j++) {
+              const a = list[i].label.position, b = list[j].label.position;
+              const sep = Math.hypot(a.x - b.x, a.z - b.z);
+              checked++;
+              if (sep < BUS_MIN_SEP) bad++;
+            }
+          }
+        }
+        log(`[bus] same-cell stop labels separated (${checked} pairs, ${bad} bad)`, bad === 0 ? 'pass' : 'fail');
+      }
+      updateSummary();
+    } catch(e) { log(`[bus] integration: ${e.message}`, 'fail'); updateSummary(); }
   }, 3000);
 });
 </script>

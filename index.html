@@ -6771,6 +6771,63 @@
       const STOP_LABEL_RADIUS = 60;   // show labels within this radius...
       const MAX_STOP_LABELS = 12;     // ...but at most this many at once
 
+      // --- 0. STOP LABEL STAGGERING (T-BUG-BUS-OVERLAY #37) ---
+      // Stops that share a small grid cell ("the same tile") used to pile their
+      // route-number label pills on top of each other when the game loads —
+      // every stop in a dense St Helier interchange rendered a 12u-wide sprite
+      // at the same spot, so the "bus info panels" collided. Fix: stagger the
+      // labels within each cell onto a small ring around the cell centre so
+      // same-cell labels are always >= STOP_STAGGER_MIN_SEP apart. Isolated
+      // stops keep their own position. The yellow markers stay at their true
+      // OSM locations — only the label sprites spread, so nothing overlaps.
+      const STOP_STAGGER_CELL = 4;
+      const STOP_STAGGER_MIN_SEP = 3.0;
+      const STOP_STAGGER_BASE_RING = 2.0;
+      const STOP_STAGGER_RING_STEP = 0.55;
+
+      // Pure helper: returns, per stop, the absolute (x, z) position for its
+      // label. Deterministic (stable hash phase per cell) and bounded ring
+      // radius, so labels never launch across the island regardless of density.
+      function computeBusStopLabelOffsets(stops, opts) {
+        const cell = (opts && opts.cell) || STOP_STAGGER_CELL;
+        const baseRing = (opts && opts.baseRing) || STOP_STAGGER_BASE_RING;
+        const ringStep = (opts && opts.ringStep) || STOP_STAGGER_RING_STEP;
+        const out = new Array(stops.length);
+        const cells = new Map();
+        for (let i = 0; i < stops.length; i++) {
+          const s = stops[i];
+          const key = Math.floor(s[0] / cell) + ',' + Math.floor(s[1] / cell);
+          if (!cells.has(key)) cells.set(key, []);
+          cells.get(key).push(i);
+        }
+        for (const key of cells.keys()) {
+          const idxs = cells.get(key);
+          if (idxs.length < 2) {
+            out[idxs[0]] = { x: stops[idxs[0]][0], z: stops[idxs[0]][1] };
+            continue;
+          }
+          const n = idxs.length;
+          const r = Math.max(baseRing, n * ringStep);
+          // Deterministic phase per cell keeps the spread stable frame-to-frame.
+          let h = 0;
+          for (let c = 0; c < key.length; c++) h = (h * 31 + key.charCodeAt(c)) >>> 0;
+          const phase = (h % 360) * Math.PI / 180;
+          const parts = key.split(',');
+          const ccx = (parseInt(parts[0], 10) + 0.5) * cell;
+          const ccz = (parseInt(parts[1], 10) + 0.5) * cell;
+          idxs.sort((a, b) => a - b);
+          for (let k = 0; k < n; k++) {
+            const ang = phase + (2 * Math.PI * k) / n;
+            out[idxs[k]] = {
+              x: Math.round((ccx + Math.cos(ang) * r) * 100) / 100,
+              z: Math.round((ccz + Math.sin(ang) * r) * 100) / 100
+            };
+          }
+        }
+        return out;
+      }
+      window.__computeBusStopLabelOffsets = computeBusStopLabelOffsets;
+
       // --- 1. BUS STOP MARKERS ---
       // Yellow cylinders with a label that shows the route numbers serving the
       // stop when the player approaches. All 744 markers share one InstancedMesh
@@ -6842,12 +6899,18 @@
         tex.needsUpdate = true;
       }
 
+      const labelOffsets = computeBusStopLabelOffsets(stopData);
       const dummy = new THREE.Object3D();
       for (let si = 0; si < stopData.length; si++) {
         const s = stopData[si];
         const x = s[0], z = s[1], name = s[2];
         const onIsland = islandMask(x, z) > 0.1;
         const h = onIsland ? getTerrainHeight(x, z) : -5;
+
+        // Stagger the label away from its marker only when it shares a tile
+        // with other stops; isolated / off-island stops keep their own spot.
+        const lx = onIsland ? labelOffsets[si].x : x;
+        const lz = onIsland ? labelOffsets[si].z : z;
 
         // Instance matrix: park off-island stops below the sea so they render
         // as nothing, and let the single InstancedMesh carry the draw call.
@@ -6856,7 +6919,7 @@
         stopInstMesh.setMatrixAt(si, dummy.matrix);
 
         const label = createStopLabel();
-        label.position.set(x, h + 3, z);
+        label.position.set(lx, h + 3, lz);
         label.visible = false;
         group.add(label);
 
