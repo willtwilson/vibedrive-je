@@ -4521,7 +4521,7 @@
       if (!btn) return;
       const press = (e) => { e.preventDefault(); e.stopPropagation(); keys[key] = true; btn.classList.add('pressed'); markGameStarted(); };
       const release = (e) => { e.preventDefault(); e.stopPropagation(); keys[key] = false; btn.classList.remove('pressed'); };
-      addEventListener('pointerdown', press, { passive: false });
+      btn.addEventListener('pointerdown', press, { passive: false });
       btn.addEventListener('pointerup', release, { passive: false });
       btn.addEventListener('pointercancel', release, { passive: false });
       btn.addEventListener('pointerleave', release, { passive: false });
