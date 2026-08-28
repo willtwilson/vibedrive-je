@@ -1387,6 +1387,12 @@ window.addEventListener('load', () => {
       log(`[ui] collectible-counter + live indicator stacked (both right-anchored)`, ccRight && liveRight ? 'pass' : 'fail');
 
       log(`[ui] CSS collapses .hud-optional rows`, /#hud\.collapsed\s+\.hud-optional[\s\S]{0,40}display:\s*none/.test(text) ? 'pass' : 'fail');
+
+      // Regression (#35): at small viewports the dashboard must not collide with the right-anchored
+      // collectible counter. The HUD's max-width is constrained in the small-screen media query so a
+      // 320px dashboard cannot reach the counter (this rule only exists inside that media query).
+      const hudWidthConstrained = /#hud\s*\{[^}]*max-width:\s*calc\(100%\s*-\s*150px\)[^}]*}/.test(text);
+      log(`[ui] small-screen #hud max-width constrained (no 320px counter collision)`, hudWidthConstrained ? 'pass' : 'fail');
       updateSummary();
     }).catch(e => { log(`[ui] source: ${e.message}`, 'fail'); updateSummary(); });
     updateSummary();
