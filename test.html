@@ -911,6 +911,105 @@ window.addEventListener('load', () => {
   }, 2500);
 });
 
+// ====== RETRO DRIVE RULES TESTS (T-RETRO-DRIVE-RULES #42) ======
+// British NPC rules (left, red lights, roundabout give-way) + player
+// transgression (red-light run, pavement mount, near-miss) tracked by a
+// visible chaos meter with screen pulse at high chaos — no police spawn.
+window.addEventListener('load', () => {
+  const frame = document.getElementById('retro-frame');
+  setTimeout(() => {
+    const fw = frame.contentWindow;
+    const fd = frame.contentDocument;
+    const retro = fw.retro;
+
+    // Test R30: Chaos meter state + HUD
+    try {
+      log(`[rules] chaosLevel state`, typeof fw.chaosLevel !== 'undefined' ? 'pass' : 'fail');
+      log(`[rules] addChaos function`, retro && typeof retro.addChaos === 'function' ? 'pass' : 'fail');
+      log(`[rules] updateChaos function`, retro && typeof retro.updateChaos === 'function' ? 'pass' : 'fail');
+      const before = fw.chaosLevel;
+      retro.addChaos(30);
+      log(`[rules] addChaos(30) raises chaosLevel`, fw.chaosLevel === before + 30 ? 'pass' : 'fail');
+      retro.addChaos(1000);
+      log(`[rules] addChaos clamps to 100`, fw.chaosLevel === 100 ? 'pass' : 'fail');
+      retro.updateChaos(1, 0);
+      log(`[rules] updateChaos decays chaosLevel`, fw.chaosLevel < 100 ? 'pass' : 'fail');
+      log(`[rules] #chaos-meter element`, !!fd.getElementById('chaos-meter') ? 'pass' : 'fail');
+      log(`[rules] #chaos-fill element`, !!fd.getElementById('chaos-fill') ? 'pass' : 'fail');
+      log(`[rules] #chaos-border element`, !!fd.getElementById('chaos-border') ? 'pass' : 'fail');
+      updateSummary();
+    } catch(e) { log(`[rules] chaos: ${e.message}`, 'fail'); updateSummary(); }
+
+    // Test R31: Transgression detection — red-light run + pavement mount
+    try {
+      log(`[rules] isRunningRedLight function`, retro && typeof retro.isRunningRedLight === 'function' ? 'pass' : 'fail');
+      log(`[rules] isOnPavement function`, retro && typeof retro.isOnPavement === 'function' ? 'pass' : 'fail');
+      // isOnPavement returns false on a road (scan road segments)
+      let foundRoad = false;
+      for (const s of retro.roadSegments) {
+        const mx = (s.x1 + s.x2) / 2, mz = (s.z1 + s.z2) / 2;
+        if (retro.isOnPavement(mx, mz) === false) { foundRoad = true; break; }
+      }
+      log(`[rules] isOnPavement false on road`, foundRoad ? 'pass' : 'fail');
+      // isOnPavement returns true on a pavement strip (off-road, near a road)
+      let foundPavement = false;
+      for (let gx = 20; gx < 70 && !foundPavement; gx += 2) {
+        for (let gz = -90; gz < -40 && !foundPavement; gz += 2) {
+          if (retro.isOnPavement(gx, gz)) { foundPavement = true; }
+        }
+      }
+      log(`[rules] isOnPavement true on pavement`, foundPavement ? 'pass' : 'fail');
+      // pavement mount damages the car (source check: isOnPavement wired to applyDamage)
+      fetch('/index-retro.html').then(r => r.text()).then(text => {
+        log(`[rules] pavement mount damages car`, /isOnPavement[\s\S]{0,400}applyDamage/.test(text) ? 'pass' : 'fail');
+        updateSummary();
+      }).catch(e => { log(`[rules] pavement source: ${e.message}`, 'fail'); updateSummary(); });
+    } catch(e) { log(`[rules] transgression: ${e.message}`, 'fail'); updateSummary(); }
+
+    // Test R32: Roundabout give-way for AI traffic
+    try {
+      log(`[rules] checkRoundaboutGiveWay function`, retro && typeof retro.checkRoundaboutGiveWay === 'function' ? 'pass' : 'fail');
+      const g = retro.giveWays[0];
+      if (g) {
+        let rnd = null;
+        for (const r of retro.roundels) {
+          if (Math.hypot(r.x - g.x, r.z - g.z) < r.r + 3) { rnd = r; break; }
+        }
+        if (rnd) {
+          const ang = g.ang;
+          const fwdX = Math.sin(ang), fwdZ = Math.cos(ang);
+          const x = g.x - fwdX * 4, z = g.z - fwdZ * 4;
+          log(`[rules] give-way Infinity when roundabout clear`, retro.checkRoundaboutGiveWay(x, z, fwdX, fwdZ, []) === Infinity ? 'pass' : 'fail');
+          const fakeCar = { x: rnd.x, z: rnd.z, mesh: {} };
+          const d = retro.checkRoundaboutGiveWay(x, z, fwdX, fwdZ, [fakeCar]);
+          log(`[rules] give-way finite with circulating car`, isFinite(d) ? 'pass' : 'fail');
+        } else {
+          log(`[rules] give-way Infinity when roundabout clear`, false ? 'pass' : 'fail');
+          log(`[rules] give-way finite with circulating car`, false ? 'pass' : 'fail');
+        }
+      } else {
+        log(`[rules] give-way Infinity when roundabout clear`, false ? 'pass' : 'fail');
+        log(`[rules] give-way finite with circulating car`, false ? 'pass' : 'fail');
+      }
+      // AI update loop uses give-way (source check)
+      fetch('/index-retro.html').then(r => r.text()).then(text => {
+        log(`[rules] AI loop uses checkRoundaboutGiveWay`, text.includes('checkRoundaboutGiveWay') ? 'pass' : 'fail');
+        updateSummary();
+      }).catch(e => { log(`[rules] giveway source: ${e.message}`, 'fail'); updateSummary(); });
+    } catch(e) { log(`[rules] giveway: ${e.message}`, 'fail'); updateSummary(); }
+
+    // Test R33: No police spawn — chaos replaces the wanted trigger
+    try {
+      fetch('/index-retro.html').then(r => r.text()).then(text => {
+        log(`[rules] reckless path feeds chaos (addChaos)`, /isReckless[\s\S]{0,600}addChaos/.test(text) ? 'pass' : 'fail');
+        log(`[rules] setWantedLevel still defined`, text.includes('function setWantedLevel') ? 'pass' : 'fail');
+        log(`[rules] chaos-border flash at high chaos`, /function updateChaosHUD[\s\S]{0,300}chaosLevel\s*>=\s*70/.test(text) && /function updateChaosHUD[\s\S]{0,300}flash/.test(text) ? 'pass' : 'fail');
+        updateSummary();
+      }).catch(e => { log(`[rules] nopolice source: ${e.message}`, 'fail'); updateSummary(); });
+    } catch(e) { log(`[rules] nopolice: ${e.message}`, 'fail'); updateSummary(); }
+  }, 2500);
+});
+
 // ====== RETRO INTEGRATION TESTS (T-RETRO-INTEGRATE #29) ======
 // Landing-page toggle between "3D Mode" and "Retro Mode", retro default for
 // mobile, Supabase leaderboard wired into retro, and no console errors.
