@@ -223,7 +223,7 @@ window.addEventListener('load', () => {
         const flyBlock = text.slice(text.indexOf("if (vehicleMode === 'fly')"));
         log(`Fly branch references getTerrainHeight`, flyBlock.includes('getTerrainHeight') ? 'pass' : 'fail');
         log(`Fly branch references planeShadow`, flyBlock.includes('planeShadow') ? 'pass' : 'fail');
-        log(`Fly branch references PLANE_PHYSICS`, flyBlock.includes('PLANE_PHYSICS') ? 'pass' : 'fail');
+        log(`Fly branch wired to per-vehicle stats`, flyBlock.includes("resolveVehicleStats('fly')") ? 'pass' : 'fail');
         log(`Fly branch references planePhase`, flyBlock.includes('planePhase') ? 'pass' : 'fail');
         log(`Fly branch references stall`, flyBlock.toLowerCase().includes('stall') ? 'pass' : 'fail');
         log(`Fly branch references throttle`, flyBlock.includes('throttle') ? 'pass' : 'fail');
@@ -275,7 +275,7 @@ window.addEventListener('load', () => {
         const boatBlock = text.slice(text.indexOf("else if (vehicleMode === 'boat')"));
         log(`Boat branch references getTerrainHeight`, boatBlock.includes('getTerrainHeight') ? 'pass' : 'fail');
         log(`Boat branch references tideLevel`, boatBlock.includes('tideLevel') ? 'pass' : 'fail');
-        log(`Boat branch references BOAT_PHYSICS`, boatBlock.includes('BOAT_PHYSICS') ? 'pass' : 'fail');
+        log(`Boat branch wired to per-vehicle stats`, boatBlock.includes("resolveVehicleStats('boat')") ? 'pass' : 'fail');
         log(`Boat branch references marinaBerths`, boatBlock.includes('marinaBerths') ? 'pass' : 'fail');
         log(`Boat branch references wakeTrailLine`, boatBlock.includes('wakeTrailLine') ? 'pass' : 'fail');
         log(`Boat branch has planing logic`, boatBlock.includes('planing') ? 'pass' : 'fail');
@@ -562,6 +562,56 @@ window.addEventListener('load', () => {
         log(`selectGarageVehicle exposed`, 'fail');
       }
     } catch(e) { log(`Garage swap/persist: ${e.message}`, 'fail'); }
+
+    // Test 18b: Garage stats flow into the LIVE physics knobs (T-GARAGE-IMPLEMENT #24)
+    // The physics branch must read per-vehicle resolved stats, so swapping a vehicle
+    // actually changes handling — not just the mesh/color.
+    try {
+      const V = fw.VEHICLES;
+
+      // resolveVehicleStats must return a COMPLETE physics object for each mode — every
+      // key the live branch reads — so wiring it into the loop cannot produce NaN.
+      const Pd = fw.resolveVehicleStats('drive');
+      const driveComplete = ['reverseAccel','engineBrake','grip','corneringStiffness','maxSlipAngle','handbrakeGrip','driftFactor','weightTransfer','rollFactor','turnRate','speedSteerFalloff'].every(k => Pd[k] !== undefined);
+      log(`drive resolved stats complete (no NaN keys)`, driveComplete ? 'pass' : 'fail');
+
+      const Pb = fw.resolveVehicleStats('boat');
+      const boatComplete = ['maxSpeed','accel','reverseAccel','planingSpeed','planingBoost','dragLinear','dragQuadratic','idleFriction','rudderRate','drift','waveResponse','dockSpeed'].every(k => Pb[k] !== undefined);
+      log(`boat resolved stats complete (no NaN keys)`, boatComplete ? 'pass' : 'fail');
+
+      const Pf = fw.resolveVehicleStats('fly');
+      const flyComplete = ['maxSpeed','stallSpeed','thrust','dragLinear','dragQuadratic','climbRate','bankRate','maxBankAngle','turnRadiusMin','turnRadiusMax'].every(k => Pf[k] !== undefined);
+      log(`fly resolved stats complete (no NaN keys)`, flyComplete ? 'pass' : 'fail');
+
+      // Default vehicle reproduces the tuned base exactly (behaviour preserved).
+      // Clear any currentVehicle left by earlier tests so activeVehicle falls back
+      // to the per-mode default selection.
+      const prev = fw.currentVehicle;
+      fw.currentVehicle = null;
+      log(`default drive = hatchback maxSpeed 80`, fw.resolveVehicleStats('drive').maxSpeed === 80 ? 'pass' : `fail (${fw.resolveVehicleStats('drive').maxSpeed})`);
+      log(`default boat = cruiser maxSpeed 45`, fw.resolveVehicleStats('boat').maxSpeed === 45 ? 'pass' : `fail (${fw.resolveVehicleStats('boat').maxSpeed})`);
+      log(`default fly = cessna maxSpeed 120`, fw.resolveVehicleStats('fly').maxSpeed === 120 ? 'pass' : `fail (${fw.resolveVehicleStats('fly').maxSpeed})`);
+
+      // Simplified stat knobs translate to the real physics knobs the branch reads.
+      fw.currentVehicle = V.sports;
+      const Ps = fw.resolveVehicleStats('drive');
+      log(`sports maxSpeed 110`, Ps.maxSpeed === 110 ? 'pass' : `fail (${Ps.maxSpeed})`);
+      log(`sports accel 42`, Ps.accel === 42 ? 'pass' : `fail (${Ps.accel})`);
+      log(`sports drift -> driftFactor 1.6`, Ps.driftFactor === 1.6 ? 'pass' : `fail (${Ps.driftFactor})`);
+      log(`sports weight -> weightTransfer 0.144`, Math.abs(Ps.weightTransfer - 0.144) < 1e-6 ? 'pass' : `fail (${Ps.weightTransfer})`);
+      log(`sports turnRate 3.6`, Ps.turnRate === 3.6 ? 'pass' : `fail (${Ps.turnRate})`);
+
+      fw.currentVehicle = V.stunt;
+      const Pst = fw.resolveVehicleStats('fly');
+      log(`stunt bankRate 3.5 (more agile)`, Pst.bankRate === 3.5 ? 'pass' : `fail (${Pst.bankRate})`);
+      log(`stunt turnRadiusMax 0.7 (tighter)`, Pst.turnRadiusMax === 0.7 ? 'pass' : `fail (${Pst.turnRadiusMax})`);
+
+      fw.currentVehicle = V.speedboat;
+      const Pb2 = fw.resolveVehicleStats('boat');
+      log(`speedboat maxSpeed 100`, Pb2.maxSpeed === 100 ? 'pass' : `fail (${Pb2.maxSpeed})`);
+      log(`speedboat rudderRate 2.0 (tighter)`, Pb2.rudderRate === 2.0 ? 'pass' : `fail (${Pb2.rudderRate})`);
+      fw.currentVehicle = prev;
+    } catch(e) { log(`Garage stats wiring: ${e.message}`, 'fail'); }
     updateSummary();
 
   }, 2000);
