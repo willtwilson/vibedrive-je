@@ -1463,8 +1463,13 @@ window.addEventListener('unhandledrejection', (e) => { window.__testErrors.push(
       const isAppleSilicon = isIPad && maxTexSize >= 4096;
       let tier = 'desktop';
       if (isMobile) tier = isAppleSilicon ? 'mobile-high' : 'mobile';
+      // Quality tier + particle budget — cap effects on lower-power devices (T-BUG-PERF #34).
+      const quality = (tier === 'desktop' || tier === 'mobile-high') ? 'high' : tier === 'mobile' ? 'medium' : 'low';
+      const particleScale = quality === 'high' ? 1 : quality === 'medium' ? 0.5 : 0.25;
       return {
         tier,
+        quality,
+        particleScale,
         isMobile, isIPad, maxTexSize, dpr,
         pixelRatio: tier === 'desktop' ? Math.min(dpr, 2) : Math.min(dpr, 1.5),
         shadowMapSize: tier === 'desktop' ? 2048 : 1024,
@@ -1473,6 +1478,14 @@ window.addEventListener('unhandledrejection', (e) => { window.__testErrors.push(
       };
     }
     const deviceTier = detectDeviceTier();
+    window.deviceTier = deviceTier;
+
+    // Scale a base particle count by the device tier's quality budget (T-BUG-PERF #34).
+    function particleBudget(base) {
+      const scale = (deviceTier && deviceTier.particleScale) || 1;
+      return Math.max(1, Math.round(base * scale));
+    }
+    window.particleBudget = particleBudget;
 
     // ====== RETRO: Canvas 2D renderer stub (no WebGL) ======
     const renderer = new THREE.Canvas2DRenderer();
@@ -2258,10 +2271,13 @@ window.addEventListener('unhandledrejection', (e) => { window.__testErrors.push(
       // Smoke, fire, explosions, skid marks and crash debris. Particles are
       // stored in a plain array and drawn in the effects layer each frame.
       const particles = [];
+      // Cap live particles per device tier to bound per-frame draw cost (T-BUG-PERF #34).
+      const maxLiveParticles = particleBudget(400);
 
       function spawnParticles(x, z, opts) {
         const count = opts.count || 10;
         for (let i = 0; i < count; i++) {
+          if (particles.length >= maxLiveParticles) return;
           particles.push({
             x, z,
             vx: (Math.random() - 0.5) * (opts.spread || 2),
@@ -2276,19 +2292,19 @@ window.addEventListener('unhandledrejection', (e) => { window.__testErrors.push(
       }
 
       function spawnSmoke(x, z) {
-        spawnParticles(x, z, { count: 8, color: '#9a9a9a', life: 1.5, size: 4, spread: 1.5, type: 'smoke' });
+        spawnParticles(x, z, { count: particleBudget(8), color: '#9a9a9a', life: 1.5, size: 4, spread: 1.5, type: 'smoke' });
       }
       function spawnFire(x, z) {
-        spawnParticles(x, z, { count: 10, color: '#ff6600', life: 0.8, size: 3, spread: 1, type: 'fire' });
+        spawnParticles(x, z, { count: particleBudget(10), color: '#ff6600', life: 0.8, size: 3, spread: 1, type: 'fire' });
       }
       function spawnExplosion(x, z) {
-        spawnParticles(x, z, { count: 30, color: '#ff4400', life: 1.2, size: 6, spread: 6, type: 'explosion' });
+        spawnParticles(x, z, { count: particleBudget(30), color: '#ff4400', life: 1.2, size: 6, spread: 6, type: 'explosion' });
       }
       function spawnSkid(x, z) {
-        spawnParticles(x, z, { count: 4, color: '#222222', life: 2, size: 2, spread: 0.5, type: 'skid' });
+        spawnParticles(x, z, { count: particleBudget(4), color: '#222222', life: 2, size: 2, spread: 0.5, type: 'skid' });
       }
       function spawnDebris(x, z) {
-        spawnParticles(x, z, { count: 12, color: '#555555', life: 1, size: 2, spread: 4, type: 'debris' });
+        spawnParticles(x, z, { count: particleBudget(12), color: '#555555', life: 1, size: 2, spread: 4, type: 'debris' });
       }
 
       function updateParticles(dt) {
