@@ -700,6 +700,61 @@ window.addEventListener('load', () => {
     } catch(e) { log(`[polish] daynight: ${e.message}`, 'fail'); updateSummary(); }
   }, 2500);
 });
+
+// ====== RETRO PHYSICS TESTS (T-RETRO-PHYSICS #40) ======
+// Arcade drift, speed-sensitive steering curve, damage→speed degradation.
+window.addEventListener('load', () => {
+  const frame = document.getElementById('retro-frame');
+  setTimeout(() => {
+    const fw = frame.contentWindow;
+    const retro = fw.retro;
+    const PHYS = fw.PHYS;
+
+    // Test R22: Named tuning params exposed (driftFactor, steeringCurve, damageSpeedLoss)
+    try {
+      log(`[phys] PHYS.driftFactor defined`, PHYS && typeof PHYS.driftFactor === 'number' ? 'pass' : 'fail');
+      log(`[phys] PHYS.steeringCurve defined`, PHYS && typeof PHYS.steeringCurve === 'number' ? 'pass' : 'fail');
+      log(`[phys] PHYS.damageSpeedLoss defined`, PHYS && typeof PHYS.damageSpeedLoss === 'number' ? 'pass' : 'fail');
+      log(`[phys] steeringCurve > 1 (non-linear curve)`, PHYS && PHYS.steeringCurve > 1 ? 'pass' : 'fail');
+      log(`[phys] damageSpeedLoss in [0,1]`, PHYS && PHYS.damageSpeedLoss >= 0 && PHYS.damageSpeedLoss <= 1 ? 'pass' : 'fail');
+      updateSummary();
+    } catch(e) { log(`[phys] params: ${e.message}`, 'fail'); updateSummary(); }
+
+    // Test R23: Speed-sensitive steering curve (sharp low, wide high)
+    try {
+      log(`[phys] steeringAuthority function`, retro && typeof retro.steeringAuthority === 'function' ? 'pass' : 'fail');
+      const low = retro.steeringAuthority(0);
+      const high = retro.steeringAuthority(1);
+      log(`[phys] sharp at low speed (authority(0) == turnRate)`, Math.abs(low - PHYS.turnRate) < 1e-6 ? 'pass' : 'fail');
+      log(`[phys] wide at high speed (authority(1) < authority(0))`, high < low ? 'pass' : 'fail');
+      log(`[phys] monotonic decrease`, retro.steeringAuthority(0.5) > high && retro.steeringAuthority(0.5) < low ? 'pass' : 'fail');
+      updateSummary();
+    } catch(e) { log(`[phys] steering: ${e.message}`, 'fail'); updateSummary(); }
+
+    // Test R24: Damage → speed degradation
+    try {
+      log(`[phys] damageSpeedFactor function`, retro && typeof retro.damageSpeedFactor === 'function' ? 'pass' : 'fail');
+      log(`[phys] pristine (100) → factor 1`, retro.damageSpeedFactor(100) === 1 ? 'pass' : 'fail');
+      log(`[phys] wrecked (0) → factor 0`, retro.damageSpeedFactor(0) === 0 ? 'pass' : 'fail');
+      const f100 = retro.damageSpeedFactor(100), f60 = retro.damageSpeedFactor(60), f30 = retro.damageSpeedFactor(30), f0 = retro.damageSpeedFactor(0);
+      log(`[phys] factor decreases with damage`, f100 > f60 && f60 > f30 && f30 > f0 ? 'pass' : 'fail');
+      log(`[phys] heavy damage reduces speed (factor(30) < 1)`, f30 < 1 ? 'pass' : 'fail');
+      updateSummary();
+    } catch(e) { log(`[phys] damage: ${e.message}`, 'fail'); updateSummary(); }
+
+    // Test R25: Drive branch wired to new physics (source check)
+    try {
+      fetch('/index-retro.html').then(r => r.text()).then(text => {
+        const driveBlock = text.slice(text.indexOf("if (vehicleMode === 'drive')"));
+        log(`[phys] drive branch uses steeringAuthority (curve)`, driveBlock.includes('steeringAuthority') ? 'pass' : 'fail');
+        log(`[phys] drive branch uses damageSpeedFactor`, driveBlock.includes('damageSpeedFactor') ? 'pass' : 'fail');
+        log(`[phys] drive branch spawns skid marks when drifting`, driveBlock.includes('spawnSkid') ? 'pass' : 'fail');
+        log(`[phys] drive branch has counter-steer (yawFromSlip)`, driveBlock.includes('yawFromSlip') ? 'pass' : 'fail');
+        updateSummary();
+      }).catch(e => { log(`[phys] source: ${e.message}`, 'fail'); updateSummary(); });
+    } catch(e) { log(`[phys] source: ${e.message}`, 'fail'); updateSummary(); }
+  }, 2500);
+});
 </script>
 </body>
 </html>

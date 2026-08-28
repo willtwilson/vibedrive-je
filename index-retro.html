@@ -1469,6 +1469,23 @@ window.mergeGeometries = window.THREE.mergeGeometries;
         return THREE.MathUtils.clamp(1.5 - speed * 0.012, 0.55, 1.5);
       }
 
+      // ---- T-RETRO-PHYSICS #40: speed-sensitive steering curve ----
+      // GTA 1 "bicycle vs boat": sharp at low speed, wider arc at high speed.
+      // speedRatio in [0,1]; returns the yaw authority (units/s of heading).
+      function steeringAuthority(speedRatio) {
+        return PHYS.turnRate * Math.pow(1 - speedRatio * PHYS.speedSteerFalloff, PHYS.steeringCurve);
+      }
+
+      // ---- T-RETRO-PHYSICS #40: damage → speed degradation ----
+      // Returns a [0,1] multiplier on top speed AND acceleration from the
+      // #28 damage model. Pristine = 1, Wrecked = 0, scaled by damageSpeedLoss.
+      function damageSpeedFactor(health) {
+        const stage = getDamageStage(health);
+        if (stage === 'wrecked') return 0;
+        const stageLoss = stage === 'heavy' ? 0.5 : stage === 'light' ? 0.2 : 0;
+        return 1 - stageLoss * PHYS.damageSpeedLoss;
+      }
+
       function updateCamera(dt) {
         const target = targetZoom(player.speed);
         cam.zoom += (target - cam.zoom) * Math.min(1, dt * 3);
@@ -2176,6 +2193,7 @@ window.mergeGeometries = window.THREE.mergeGeometries;
         cam, player, layers, roadSegments,
         spriteCount: SPRITE_DIRS, spriteCache, spriteForHeading,
         targetZoom, updateCamera, worldToScreen,
+        steeringAuthority, damageSpeedFactor,
         PALETTE, LEFT_HAND, isWater, pointInPolygon,
         buildings, trees, signs, crossings, roundels,
         getDamageStage, applyDamage,
@@ -4903,7 +4921,7 @@ window.mergeGeometries = window.THREE.mergeGeometries;
       maxSlipAngle: 0.5,       // rad — beyond this the tyre is fully sliding
 
       // Drift
-      handbrakeGrip: 0.35,     // rear grip multiplier when handbrake held
+      handbrakeGrip: 0.25,     // rear grip multiplier when handbrake held (low = more slide)
       driftFactor: 1.0,        // overall drift intensity
 
       // Weight transfer
@@ -4913,6 +4931,10 @@ window.mergeGeometries = window.THREE.mergeGeometries;
       // Steering
       turnRate: 3.0,           // base yaw rate
       speedSteerFalloff: 0.5,   // how much steering shrinks at high speed
+      steeringCurve: 1.6,       // GTA 1 "bicycle vs boat": >1 = sharper low-speed, wider high-speed
+
+      // Damage → performance (T-RETRO-PHYSICS #40)
+      damageSpeedLoss: 0.5,     // top speed/accel loss at full damage (0 = none, 1 = full)
 
       // Suspension (visual)
       springStiffness: 60,
@@ -5520,10 +5542,12 @@ window.mergeGeometries = window.THREE.mergeGeometries;
         // threshold, weight transfer (pitch/roll load split), and handbrake rear-grip cut.
         const P = PHYS;
         const gripScale = isWetRoads(weatherCategory) ? 0.7 : 1.0; // wet roads cut lateral + longitudinal grip
+        // T-RETRO-PHYSICS #40: damage degrades top speed AND acceleration.
+        const dmgFactor = retro.damageSpeedFactor(carHealth);
 
         // (1) Longitudinal force — throttle/brake/reverse/engine-brake
         if (keys.up) {
-          vForward += P.accel * dt * (1 - vForward / P.maxSpeed);
+          vForward += P.accel * dmgFactor * dt * (1 - vForward / P.maxSpeed);
         } else if (keys.down) {
           if (vForward > 0) {
             const brakeForce = P.brake * dt * (Math.abs(vForward) / P.maxSpeed + 0.3);
@@ -5542,7 +5566,8 @@ window.mergeGeometries = window.THREE.mergeGeometries;
         // (2) Steering input — keys + touch steerValue, speed-sensitive authority
         const steer = (keys.left ? 1 : 0) - (keys.right ? 1 : 0) - steerValue;
         const speedRatio = Math.min(1, Math.abs(vForward) / P.maxSpeed);
-        const steerAuthority = P.turnRate * (1 - speedRatio * P.speedSteerFalloff);
+        // GTA 1 "bicycle vs boat" curve: sharp at low speed, wide at high speed.
+        const steerAuthority = retro.steeringAuthority(speedRatio);
 
         // (3) Weight transfer — load split front/rear from accel (pitch) and steer (roll)
         const accelLong = (vForward - prevVForward) / Math.max(dt, 0.001);
@@ -5572,11 +5597,16 @@ window.mergeGeometries = window.THREE.mergeGeometries;
 
         // (6) Integrate lateral velocity — grip pulls vLateral toward 0 (self-correcting)
         vLateral += latForce * dt;
-        const gripRecovery = keys.handbrake ? 0.90 : 0.94;
+        // Handbrake holds the slide longer (lower recovery) for a satisfying drift.
+        const gripRecovery = keys.handbrake ? 0.85 : 0.94;
         vLateral *= gripRecovery;
         if (Math.abs(vLateral) < 0.01) vLateral = 0;
         latAccel = latForce; // smoothed lateral accel for body roll
         carRoll = THREE.MathUtils.clamp(latAccel * P.bodyRoll, -0.2, 0.2);
+
+        // T-RETRO-PHYSICS #40: skid marks when drifting (handbrake or hard slide).
+        const drifting = (keys.handbrake && Math.abs(vForward) > 5) || Math.abs(vLateral) > 8;
+        if (drifting && Math.random() < 0.5) retro.spawnSkid(carX, carZ);
 
         // (7) Terrain slope — sample height at car position and 1 unit ahead
         const rad = carHeading * Math.PI / 180;
@@ -6106,8 +6136,9 @@ window.mergeGeometries = window.THREE.mergeGeometries;
           showToast('💥 Wrecked!');
         }
 
-        // Performance changes per stage — cap top speed as damage mounts.
-        const speedCap = stage === 'wrecked' ? 0 : stage === 'heavy' ? 0.5 : stage === 'light' ? 0.8 : 1;
+        // Performance changes per stage — cap top speed as damage mounts
+        // (T-RETRO-PHYSICS #40: damageSpeedFactor drives the degradation).
+        const speedCap = retro.damageSpeedFactor(carHealth);
         if (Math.abs(vForward) > PHYS.maxSpeed * speedCap) {
           vForward = (vForward > 0 ? 1 : -1) * PHYS.maxSpeed * speedCap;
           carSpeed = vForward;
