@@ -1370,8 +1370,14 @@
       const isAppleSilicon = isIPad && maxTexSize >= 4096;
       let tier = 'desktop';
       if (isMobile) tier = isAppleSilicon ? 'mobile-high' : 'mobile';
+      // Quality tier + particle budget — cap effects on lower-power devices to
+      // keep the iPad A16 at 60fps (T-BUG-PERF #34).
+      const quality = (tier === 'desktop' || tier === 'mobile-high') ? 'high' : tier === 'mobile' ? 'medium' : 'low';
+      const particleScale = quality === 'high' ? 1 : quality === 'medium' ? 0.5 : 0.25;
       return {
         tier,
+        quality,
+        particleScale,
         isMobile, isIPad, maxTexSize, dpr,
         pixelRatio: tier === 'desktop' ? Math.min(dpr, 2) : Math.min(dpr, 1.5),
         shadowMapSize: tier === 'desktop' ? 2048 : 1024,
@@ -1380,6 +1386,7 @@
       };
     }
     const deviceTier = detectDeviceTier();
+    window.deviceTier = deviceTier;
 
     const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: 'high-performance', stencil: false });
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -1632,6 +1639,13 @@
 
     function isWetRoads(cat) { return cat === 'rain' || cat === 'showers' || cat === 'storm' || cat === 'snow'; }
 
+    // Scale a base particle count by the device tier's quality budget (T-BUG-PERF #34).
+    function particleBudget(base) {
+      const scale = (deviceTier && deviceTier.particleScale) || 1;
+      return Math.max(1, Math.round(base * scale));
+    }
+    window.particleBudget = particleBudget;
+
     function initRainSystem(count) {
       if (rainSystem) { scene.remove(rainSystem); rainSystem.geometry.dispose(); rainSystem.material.dispose(); rainSystem = null; }
       rainCount = count;
@@ -1733,13 +1747,15 @@
       }
       // Rain particles
       if (cat === 'rain' || cat === 'snow' || cat === 'showers') {
-        if (!rainSystem || rainCount !== 800) initRainSystem(800);
+        const base = particleBudget(800);
+        if (!rainSystem || rainCount !== base) initRainSystem(base);
         if (rainSystem) {
           rainSystem.visible = true;
           rainSystem.material.color.setHex(cat === 'snow' ? 0xffffff : 0xaabbcc);
         }
       } else if (cat === 'storm') {
-        if (!rainSystem || rainCount !== 2000) initRainSystem(2000);
+        const base = particleBudget(2000);
+        if (!rainSystem || rainCount !== base) initRainSystem(base);
         if (rainSystem) { rainSystem.visible = true; rainSystem.material.color.setHex(0xaabbcc); }
       } else {
         if (rainSystem) rainSystem.visible = false;
@@ -3531,7 +3547,7 @@
     }
 
     function spawnCollectibleParticle(x, y, z, golden) {
-      const numParticles = 5;
+      const numParticles = particleBudget(5);
       for (let i = 0; i < numParticles; i++) {
         const psize = golden ? 0.4 : 0.3;
         const pmat = new THREE.MeshBasicMaterial({
@@ -4053,6 +4069,22 @@
       });
     }
 
+    // Animate + reap boat wake ripples — removes/disposes expired ones (T-BUG-PERF #34).
+    function updateWakes(now) {
+      for (let i = wakeRipples.length - 1; i >= 0; i--) {
+        const w = wakeRipples[i];
+        const age = (now - w.spawnTime) / w.life;
+        if (age >= 1) {
+          scene.remove(w.mesh);
+          disposeMesh(w.mesh);
+          wakeRipples.splice(i, 1);
+        } else {
+          w.mesh.scale.set(1 + age * 3, 1 + age * 3, 1);
+          w.mesh.material.opacity = 0.6 * (1 - age);
+        }
+      }
+    }
+
     function despawnAllPolice() {
       policeCars.forEach(p => { scene.remove(p.mesh); disposeMesh(p.mesh); });
       policeCars = [];
@@ -4346,6 +4378,9 @@
     let wakeTrailLine = null;
     let wakeTrailPoints = [];
     const WAKE_TRAIL_MAX = 80;
+    // Water ripple particles — capped & disposed per device budget (T-BUG-PERF #34)
+    let wakeRipples = [];
+    const maxWakeRipples = particleBudget(10);
     carY = getTerrainHeight(carX, carZ) + 0.5;
     carGroup.position.set(carX, carY, carZ);
 
@@ -5248,31 +5283,19 @@
           wakeTrailLine.material.opacity = 0.8;
         }
         
-        // Water ripple/wake — spawn ripple particles behind boat
-        if (Math.abs(carSpeed) > 2 && now % 200 < 20) {
+        // Water ripple/wake — spawn ripple particles behind boat (capped per device)
+        if (Math.abs(carSpeed) > 2 && now % 200 < 20 && wakeRipples.length < maxWakeRipples) {
           const wakeGeo = new THREE.RingGeometry(0.5, 1.5, 12);
           const wakeMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.6, side: THREE.DoubleSide });
           const wake = new THREE.Mesh(wakeGeo, wakeMat);
           wake.rotation.x = -Math.PI / 2;
           const wakeRad = carHeading * Math.PI / 180;
           wake.position.set(carX - Math.sin(wakeRad) * 4, tideLevel + 0.1, carZ - Math.cos(wakeRad) * 4);
-          wake.userData = { spawnTime: now, life: 2000 };
           scene.add(wake);
-          // Animate wake ripples — expand and fade
-          setTimeout(() => {
-            if (wake.parent) scene.remove(wake);
-          }, 2000);
+          wakeRipples.push({ mesh: wake, spawnTime: now, life: 2000 });
         }
-        // Animate existing wakes
-        scene.children.forEach(child => {
-          if (child.userData && child.userData.spawnTime) {
-            const age = (now - child.userData.spawnTime) / child.userData.life;
-            if (age < 1) {
-              child.scale.set(1 + age * 3, 1 + age * 3, 1);
-              child.material.opacity = 0.6 * (1 - age);
-            }
-          }
-        });
+        // Animate existing wakes — capped count, disposed on expiry
+        updateWakes(now);
       } else {
         // Drive mode
         if (islandMask(carX, carZ) <= 0.05) {
