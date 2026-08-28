@@ -5949,6 +5949,45 @@
     }
 
     // --- Airport Board ---
+    // iOS Safari rejects space-separated dates ("2026-08-28 07:00") → Invalid Date
+    // → every flight was filtered out → blank board. Normalise to ISO 8601.
+    function normalizeAirportDate(str) {
+      if (typeof str !== 'string') return str;
+      const m = str.match(/^(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2})$/);
+      return m ? `${m[1]}T${m[2]}` : str;
+    }
+
+    function airportTime(f) {
+      const t = new Date(normalizeAirportDate(f && f.Date)).getTime();
+      return isNaN(t) ? Infinity : t;
+    }
+
+    // Pure parser: filters display:false (already airborne/landed), keeps the recent +
+    // upcoming window, sorts by scheduled time, caps the count. Returns display-ready rows.
+    function parseAirportBoard(data, now, limit) {
+      now = now || new Date();
+      const nowTime = now.getTime();
+      const windowStart = nowTime - 3600000;
+      limit = limit || 5;
+      const select = (list, dir) => (list || [])
+        .filter(f => f && f.Date && f.display !== false && airportTime(f) !== Infinity && airportTime(f) >= windowStart)
+        .sort((a, b) => airportTime(a) - airportTime(b))
+        .slice(0, limit)
+        .map(f => ({
+          fn: f.Flightnumber || '—',
+          route: dir === 'arrival' ? (f.From || '—') : ('→ ' + (f.To || '—')),
+          time: f.Scheduled || '',
+          status: f.Status || '',
+          delayed: /delay|cancel|divert/i.test(f.Status || '')
+        }));
+      return {
+        arrivals: select(data.FlightArrivalDetails, 'arrival'),
+        departures: select(data.FlightDepartureDetails, 'departure')
+      };
+    }
+    window.normalizeAirportDate = normalizeAirportDate;
+    window.parseAirportBoard = parseAirportBoard;
+
     const airportToggle = document.getElementById('airport-toggle');
     const airportPanel = document.getElementById('airport-panel');
     let airportPanelOpen = false;
@@ -5965,46 +6004,32 @@
       try {
         const res = await fetch('https://pojcdn.blob.core.windows.net/data/airportArrivals48h.json');
         const data = await res.json();
-        const now = new Date();
-        const nowTime = now.getTime();
-
-        // Filter and sort arrivals — upcoming first
-        const arrivals = (data.FlightArrivalDetails || [])
-          .filter(f => f.Date && new Date(f.Date).getTime() >= nowTime - 3600000) // include recent + upcoming
-          .sort((a, b) => new Date(a.Date) - new Date(b.Date))
-          .slice(0, 5);
-
-        const departures = (data.FlightDepartureDetails || [])
-          .filter(f => f.Date && new Date(f.Date).getTime() >= nowTime - 3600000)
-          .sort((a, b) => new Date(a.Date) - new Date(b.Date))
-          .slice(0, 5);
+        const { arrivals, departures } = parseAirportBoard(data, new Date(), 5);
 
         const arrContainer = document.getElementById('ap-arrivals');
         const depContainer = document.getElementById('ap-departures');
 
-        arrContainer.innerHTML = arrivals.length ? arrivals.map(f => {
-          const isDelayed = /delay|cancel|divert/i.test(f.Status || '');
-          const time = f.Scheduled || '';
-          return `<div class="ap-flight">
-            <span class="ap-fn">${f.Flightnumber || '—'}</span>
-            <span class="ap-route">${f.From || '—'}</span>
-            <span class="ap-time">${time}</span>
-            <span class="ap-status${isDelayed ? ' delayed' : ''}">${f.Status || ''}</span>
-          </div>`;
-        }).join('') : '<div class="ap-flight"><span class="ap-route">No upcoming arrivals</span></div>';
+        arrContainer.innerHTML = arrivals.length ? arrivals.map(f => `
+          <div class="ap-flight">
+            <span class="ap-fn">${f.fn}</span>
+            <span class="ap-route">${f.route}</span>
+            <span class="ap-time">${f.time}</span>
+            <span class="ap-status${f.delayed ? ' delayed' : ''}">${f.status}</span>
+          </div>`).join('') : '<div class="ap-flight"><span class="ap-route">No upcoming arrivals</span></div>';
 
-        depContainer.innerHTML = departures.length ? departures.map(f => {
-          const isDelayed = /delay|cancel|divert/i.test(f.Status || '');
-          const time = f.Scheduled || '';
-          return `<div class="ap-flight">
-            <span class="ap-fn">${f.Flightnumber || '—'}</span>
-            <span class="ap-route">→ ${f.To || '—'}</span>
-            <span class="ap-time">${time}</span>
-            <span class="ap-status${isDelayed ? ' delayed' : ''}">${f.Status || ''}</span>
-          </div>`;
-        }).join('') : '<div class="ap-flight"><span class="ap-route">No upcoming departures</span></div>';
+        depContainer.innerHTML = departures.length ? departures.map(f => `
+          <div class="ap-flight">
+            <span class="ap-fn">${f.fn}</span>
+            <span class="ap-route">${f.route}</span>
+            <span class="ap-time">${f.time}</span>
+            <span class="ap-status${f.delayed ? ' delayed' : ''}">${f.status}</span>
+          </div>`).join('') : '<div class="ap-flight"><span class="ap-route">No upcoming departures</span></div>';
 
-        const updated = data.Updated ? new Date(data.Updated).toLocaleTimeString('en-GB') : new Date().toLocaleTimeString('en-GB');
+        let updated = new Date().toLocaleTimeString('en-GB');
+        if (data.Updated) {
+          const u = new Date(normalizeAirportDate(data.Updated));
+          if (!isNaN(u.getTime())) updated = u.toLocaleTimeString('en-GB');
+        }
         document.getElementById('ap-updated').textContent = `Updated: ${updated}`;
       } catch (e) {
         console.error('Airport board fetch failed:', e);
