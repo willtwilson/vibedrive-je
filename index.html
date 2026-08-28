@@ -751,6 +751,30 @@
       font-size: 18px; color: var(--text-secondary); font-weight: 700;
     }
     #settings-panel .panel-close:hover { color: var(--rally-red); }
+    #settings-panel .settings-row {
+      margin-bottom: 12px; text-align: left;
+    }
+    #settings-panel .settings-row label {
+      display: block; font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 800;
+      text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-secondary);
+      margin-bottom: 6px;
+    }
+    #settings-panel select {
+      width: 100%; padding: 9px 10px; border-radius: 0;
+      border: 1px solid var(--hud-border); border-bottom: 2px solid var(--jersey-green);
+      background: rgba(240, 244, 255, 0.05); color: var(--text-primary);
+      font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 700; outline: none;
+    }
+    #settings-panel .settings-toggle {
+      width: 100%; padding: 9px; border-radius: 0;
+      border: 1px solid var(--hud-border); border-bottom: 2px solid var(--hud-border);
+      background: rgba(240, 244, 255, 0.05); color: var(--text-secondary);
+      font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 900;
+      text-transform: uppercase; cursor: pointer;
+    }
+    #settings-panel .settings-toggle.on {
+      border-bottom-color: var(--jersey-green); color: var(--jersey-green);
+    }
     #lightning-flash { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; opacity: 0; pointer-events: none; z-index: 9999; transition: opacity 0.05s ease; }
     #slippery-warning { display: none; color: #ff9900; font-size: 12px; font-weight: 700; margin-top: 4px; text-shadow: 0 1px 3px rgba(0,0,0,0.7); }
   
@@ -943,9 +967,25 @@
   <button id="settings-btn" title="Settings">⚙️</button>
   <div id="settings-panel">
     <span class="panel-close" id="settings-close">×</span>
-    <div class="panel-title">⚙️ Change Username</div>
-    <input type="text" id="settings-username-input" maxlength="15" autocomplete="off" spellcheck="false" />
-    <div class="panel-error" id="settings-error"></div>
+    <div class="panel-title">⚙️ Settings</div>
+    <div class="settings-row">
+      <label for="settings-quality">Graphics Quality</label>
+      <select id="settings-quality">
+        <option value="auto">Auto</option>
+        <option value="high">High</option>
+        <option value="medium">Medium</option>
+        <option value="low">Low</option>
+      </select>
+    </div>
+    <div class="settings-row">
+      <label for="settings-sound">Sound</label>
+      <button class="settings-toggle" id="settings-sound" title="Toggle radio sound">On</button>
+    </div>
+    <div class="settings-row">
+      <label for="settings-username-input">Username</label>
+      <input type="text" id="settings-username-input" maxlength="15" autocomplete="off" spellcheck="false" />
+      <div class="panel-error" id="settings-error"></div>
+    </div>
     <button class="panel-btn" id="settings-save">Save</button>
   </div>
 
@@ -1349,6 +1389,13 @@
       if (isVisible) {
         settingsInput.value = playerUsername;
         settingsError.textContent = '';
+        const qSel = document.getElementById('settings-quality');
+        if (qSel) qSel.value = getQualityTier();
+        const sBtn = document.getElementById('settings-sound');
+        if (sBtn) {
+          sBtn.textContent = isSoundEnabled() ? 'On' : 'Off';
+          sBtn.classList.toggle('on', isSoundEnabled());
+        }
       }
     });
     settingsClose.addEventListener('click', () => settingsPanel.classList.remove('show'));
@@ -1466,6 +1513,83 @@
     }
     const deviceTier = detectDeviceTier();
     window.deviceTier = deviceTier;
+
+    // ====== SETTINGS — GRAPHICS QUALITY OVERRIDE (T-SETTINGS #39) ======
+    // Exposes the auto-detected quality/particle knobs from #34 as a manual
+    // player choice (Auto/High/Medium/Low) in the Settings pane. Switching the
+    // tier mutates deviceTier.quality + particleScale, which particleBudget()
+    // reads, so every effect scales live without further wiring.
+    const qualitySpec = {
+      high:   { quality: 'high',   particleScale: 1 },
+      medium: { quality: 'medium', particleScale: 0.5 },
+      low:    { quality: 'low',    particleScale: 0.25 },
+    };
+    const qualityOptions = ['auto', 'high', 'medium', 'low'];
+    const autoQuality = { quality: deviceTier.quality, particleScale: deviceTier.particleScale };
+
+    function getQualityOptions() { return qualityOptions.slice(); }
+
+    function getQualityTier() {
+      const saved = localStorage.getItem('vibedrive_quality');
+      return qualityOptions.includes(saved) ? saved : 'auto';
+    }
+
+    function setQualityTier(tier) {
+      const spec = qualitySpec[tier];
+      if (tier === 'auto' || !spec) {
+        deviceTier.quality = autoQuality.quality;
+        deviceTier.particleScale = autoQuality.particleScale;
+        tier = 'auto';
+      } else {
+        deviceTier.quality = spec.quality;
+        deviceTier.particleScale = spec.particleScale;
+      }
+      localStorage.setItem('vibedrive_quality', tier);
+      const sel = document.getElementById('settings-quality');
+      if (sel) sel.value = tier;
+      if (typeof showToast === 'function') {
+        const label = tier === 'auto' ? 'Auto' : tier[0].toUpperCase() + tier.slice(1);
+        showToast('Graphics quality: ' + label);
+      }
+      return deviceTier.quality;
+    }
+    window.getQualityOptions = getQualityOptions;
+    window.getQualityTier = getQualityTier;
+    window.setQualityTier = setQualityTier;
+
+    // ====== SETTINGS — SOUND TOGGLE (T-SETTINGS #39) ======
+    // Master sound switch persisted per device. Muting lowers the radio master
+    // gain to zero via setRadioMuted(); unmuting restores the player's volume.
+    let soundEnabled = true;
+    function isSoundEnabled() { return soundEnabled; }
+    function setSoundEnabled(enabled) {
+      soundEnabled = !!enabled;
+      localStorage.setItem('vibedrive_sound', soundEnabled ? 'on' : 'off');
+      const btn = document.getElementById('settings-sound');
+      if (btn) {
+        btn.textContent = soundEnabled ? 'On' : 'Off';
+        btn.classList.toggle('on', soundEnabled);
+      }
+      if (typeof window.setRadioMuted === 'function') window.setRadioMuted(!soundEnabled);
+      return soundEnabled;
+    }
+    if (localStorage.getItem('vibedrive_sound') === 'off') soundEnabled = false;
+    window.isSoundEnabled = isSoundEnabled;
+    window.setSoundEnabled = setSoundEnabled;
+
+    // Wire the Settings pane controls to the functions above (#39). Runs here,
+    // after the definitions, so the synchronous init reads cannot throw.
+    const settingsQualityEl = document.getElementById('settings-quality');
+    if (settingsQualityEl) {
+      settingsQualityEl.value = getQualityTier();
+      settingsQualityEl.addEventListener('change', () => setQualityTier(settingsQualityEl.value));
+    }
+    const settingsSoundEl = document.getElementById('settings-sound');
+    if (settingsSoundEl) {
+      settingsSoundEl.textContent = isSoundEnabled() ? 'On' : 'Off';
+      settingsSoundEl.classList.toggle('on', isSoundEnabled());
+      settingsSoundEl.addEventListener('click', () => setSoundEnabled(!isSoundEnabled()));
+    }
 
     const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: 'high-performance', stencil: false });
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -7399,6 +7523,7 @@
       let radioNodes = []; // active nodes to stop on station change
       let radioIntervals = []; // active intervals/timeouts
       let volume = 0.4;
+      let radioMuted = (typeof window.isSoundEnabled === 'function') ? !window.isSoundEnabled() : false;
 
       function clearRadio() {
         radioIntervals.forEach(id => clearInterval(id));
@@ -7408,13 +7533,20 @@
         radioNodes = [];
       }
 
+      // Master sound switch from Settings (#39): mutes/unmutes the radio gain.
+      function setRadioMuted(muted) {
+        radioMuted = !!muted;
+        if (masterGain) masterGain.gain.linearRampToValueAtTime(radioMuted ? 0 : volume, audioCtx.currentTime + 0.05);
+      }
+      window.setRadioMuted = setRadioMuted;
+
       function createAudioContext() {
         if (audioCtx) return true;
         const AC = window.AudioContext || window.webkitAudioContext;
         if (!AC) return false;
         audioCtx = new AC();
         masterGain = audioCtx.createGain();
-        masterGain.gain.value = volume;
+        masterGain.gain.value = radioMuted ? 0 : volume;
         masterGain.connect(audioCtx.destination);
         return true;
       }
@@ -7651,7 +7783,7 @@
           if (audioCtx.state === 'suspended') {
             audioCtx.resume();
           }
-          masterGain.gain.value = volume;
+          masterGain.gain.value = radioMuted ? 0 : volume;
           if (name === 'Jersey Pulse') playJerseyPulse();
           else if (name === 'Atlantic Chill') playAtlanticChill();
           else if (name === 'Channel FM') playChannelFM();
@@ -7668,7 +7800,7 @@
       volumeSlider.addEventListener('input', (e) => {
         volume = e.target.value / 100;
         if (masterGain) {
-          masterGain.gain.linearRampToValueAtTime(volume, audioCtx.currentTime + 0.05);
+          masterGain.gain.linearRampToValueAtTime(radioMuted ? 0 : volume, audioCtx.currentTime + 0.05);
         }
       });
 
