@@ -1464,6 +1464,67 @@ window.addEventListener('load', () => {
     } catch(e) { log(`[mode-default] taxi item: ${e.message}`, 'fail'); }
   }, 3000);
 });
+
+// ====== BUS OVERLAY COLLISION (T-BUG-BUS-OVERLAY #37) ======
+// Bus-stop markers and their route-number labels must not overlap on load.
+// Opposing-direction stops in the OSM data can share the exact same world
+// coordinate, so identical markers/labels pile up on the same tile. Stops are
+// staggered so each marker + label sits at a unique position. Bus positions
+// and route lines must also be distinct (not all on one tile) — even though
+// the system loads entirely from local cached data (no live feed).
+window.addEventListener('load', () => {
+  const frame = document.getElementById('game-frame');
+  setTimeout(() => {
+    const fw = frame.contentWindow;
+    const fd = frame.contentDocument;
+
+    // T37.1 — Every bus-stop marker/label occupies a unique world position.
+    try {
+      const stops = fw.__busSystem && fw.__busSystem.stopMeshes;
+      if (!stops || !stops.length) throw new Error('busSystem.stopMeshes unavailable');
+      const seen = new Set();
+      let collisions = 0;
+      for (const s of stops) {
+        const key = Math.round(s.label.position.x * 10) + ',' + Math.round(s.label.position.z * 10);
+        if (seen.has(key)) collisions++;
+        seen.add(key);
+      }
+      const total = stops.length;
+      log(`[bus] ${total} stop labels at ${seen.size} unique positions, ${collisions} collisions`, collisions === 0 ? 'pass' : 'fail');
+    } catch(e) { log(`[bus] stop label stagger: ${e.message}`, 'fail'); }
+
+    // T37.2 — Route lines render with real, varied footprints (not all collapsed
+    // onto one tile). Bus routes legitimately share corridors (inbound/outbound),
+    // so we only guard against degenerate "everything on the same tile" loading:
+    // every route must have a meaningful extent and the extents must be varied.
+    try {
+      const lines = fw.__busSystem && fw.__busSystem.routeLineMeshes;
+      if (!lines || !lines.length) throw new Error('busSystem.routeLineMeshes unavailable');
+      const extents = new Set();
+      let degenerate = 0;
+      for (const m of lines) {
+        const g = m.geometry;
+        g.computeBoundingBox();
+        const b = g.boundingBox;
+        const w = b.max.x - b.min.x, d = b.max.z - b.min.z;
+        if (w < 2 && d < 2) degenerate++;
+        extents.add(w.toFixed(1) + 'x' + d.toFixed(1) + '@' + ((b.min.x + b.max.x) / 2).toFixed(1) + ',' + ((b.min.z + b.max.z) / 2).toFixed(1));
+      }
+      log(`[bus] ${lines.length} route lines with real footprints, ${degenerate} degenerate, ${extents.size} distinct`, degenerate === 0 && extents.size >= lines.length * 0.5 ? 'pass' : 'fail');
+    } catch(e) { log(`[bus] route line extent: ${e.message}`, 'fail'); }
+
+    // T37.3 — Live buses are spread out on their routes (not all on one tile).
+    try {
+      const buses = fw.__buses || (fw.__busSystem && fw.__busSystem.buses);
+      if (!buses || !buses.length) throw new Error('buses unavailable');
+      const pos = buses.map(b => Math.round(b.x) + ',' + Math.round(b.z));
+      const unique = new Set(pos).size;
+      log(`[bus] ${buses.length} buses at ${unique} distinct positions`, unique >= Math.min(buses.length, 2) ? 'pass' : 'fail');
+    } catch(e) { log(`[bus] bus spread: ${e.message}`, 'fail'); }
+
+    updateSummary();
+  }, 3000);
+});
 </script>
 </body>
 </html>
