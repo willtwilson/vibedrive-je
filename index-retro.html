@@ -276,6 +276,32 @@
     }
     #police-border.flash { box-shadow: inset 0 0 120px 20px rgba(255, 0, 0, 0.5); }
 
+    #chaos-meter {
+      position: fixed; top: 50px; right: 12px; z-index: 50;
+      display: none; gap: 6px; padding: 6px 10px; align-items: center;
+      background: var(--glass-deep); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      border-radius: 0; border: 1px solid rgba(255, 100, 0, 0.4); border-top: 2px solid #ff6600;
+      pointer-events: none;
+    }
+    #chaos-meter .label {
+      font-size: 11px; color: #ff6600; margin-right: 2px; font-weight: 700;
+      letter-spacing: 0.06em; text-transform: uppercase; font-family: 'Inter', sans-serif;
+    }
+    #chaos-meter .chaos-track {
+      width: 90px; height: 10px; background: rgba(255, 255, 255, 0.12);
+      border-radius: 5px; overflow: hidden;
+    }
+    #chaos-meter .chaos-fill {
+      height: 100%; width: 0%; background: linear-gradient(90deg, #ffcc00, #ff6600, #ff2200);
+      transition: width 0.2s ease-out;
+    }
+    #chaos-border {
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh; z-index: 44;
+      pointer-events: none; box-shadow: inset 0 0 0px 0px rgba(255, 60, 0, 0);
+      transition: box-shadow 0.15s ease-out;
+    }
+    #chaos-border.flash { box-shadow: inset 0 0 120px 20px rgba(255, 60, 0, 0.5); }
+
     #mission-display {
       position: fixed; top: 60px; left: 12px; z-index: 50;
       background: var(--glass-deep); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
@@ -728,6 +754,11 @@
     <span class="star" data-star="5">★</span>
   </div>
   <div id="police-border"></div>
+  <div id="chaos-meter">
+    <span class="label">CHAOS</span>
+    <div class="chaos-track"><div class="chaos-fill" id="chaos-fill"></div></div>
+  </div>
+  <div id="chaos-border"></div>
   <div id="toast"></div>
 
   <div id="mission-display">
@@ -1522,6 +1553,17 @@ window.addEventListener('unhandledrejection', (e) => { window.__testErrors.push(
           }
         }
       }
+      // Spatial hash of road segments so per-frame pavement checks stay O(1)
+      // (T-RETRO-DRIVE-RULES #42 — keeps 60fps on iPad Safari).
+      const ROAD_TILE = 20;
+      const roadGrid = new Map();
+      function roadGridKey(x, z) { return Math.floor(x / ROAD_TILE) + ',' + Math.floor(z / ROAD_TILE); }
+      for (let i = 0; i < roadSegments.length; i++) {
+        const s = roadSegments[i];
+        const k = roadGridKey((s.x1 + s.x2) / 2, (s.z1 + s.z2) / 2);
+        if (!roadGrid.has(k)) roadGrid.set(k, []);
+        roadGrid.get(k).push(s);
+      }
 
       // ---- Procedural car sprites: 16 pre-rendered rotations (ctx.rotate) ----
       const spriteCache = [];
@@ -1799,6 +1841,18 @@ window.addEventListener('unhandledrejection', (e) => { window.__testErrors.push(
         }
       }
       buildEnvironment();
+
+      // Spatial hash of roundabout give-way entries so per-AI-car give-way
+      // checks stay O(1) (T-RETRO-DRIVE-RULES #42 — keeps 60fps on iPad).
+      const GIVEWAY_TILE = 20;
+      const giveWayGrid = new Map();
+      function giveWayGridKey(x, z) { return Math.floor(x / GIVEWAY_TILE) + ',' + Math.floor(z / GIVEWAY_TILE); }
+      for (let i = 0; i < giveWays.length; i++) {
+        const g = giveWays[i];
+        const k = giveWayGridKey(g.x, g.z);
+        if (!giveWayGrid.has(k)) giveWayGrid.set(k, []);
+        giveWayGrid.get(k).push(g);
+      }
 
       // ---- Layer draw functions ----
       function drawWater(ctx, w, h) {
@@ -2097,6 +2151,109 @@ window.addEventListener('unhandledrejection', (e) => { window.__testErrors.push(
         return carHealth;
       }
 
+      // ---- T-RETRO-DRIVE-RULES #42: chaos meter ----
+      // A light transgression gauge (0-100) that rises on red-light runs,
+      // pavement mounts and near-misses, and slowly decays. It pulses the
+      // screen at high chaos but never spawns police (wanted is deferred).
+      const CHAOS_DECAY_RATE = 4; // points per second
+      function addChaos(amount) {
+        chaosLevel = Math.max(0, Math.min(100, chaosLevel + amount));
+        updateChaosHUD();
+        return chaosLevel;
+      }
+      function updateChaos(dt) {
+        if (chaosLevel > 0) {
+          chaosLevel = Math.max(0, chaosLevel - CHAOS_DECAY_RATE * dt);
+          updateChaosHUD();
+        }
+      }
+      function updateChaosHUD() {
+        if (chaosFillEl) chaosFillEl.style.width = chaosLevel + '%';
+        if (chaosEl) chaosEl.style.display = chaosLevel > 0 ? 'flex' : 'none';
+        if (chaosBorderEl) chaosBorderEl.classList.toggle('flash', chaosLevel >= 70);
+      }
+
+      // ---- T-RETRO-DRIVE-RULES #42: transgression detection helpers ----
+      // Distance from a point to the nearest road segment (world units).
+      function roadDistance(x, z) {
+        let best = Infinity;
+        const gx = Math.floor(x / ROAD_TILE), gz = Math.floor(z / ROAD_TILE);
+        for (let dx = -1; dx <= 1; dx++) {
+          for (let dz = -1; dz <= 1; dz++) {
+            const arr = roadGrid.get((gx + dx) + ',' + (gz + dz));
+            if (!arr) continue;
+            for (let i = 0; i < arr.length; i++) {
+              const s = arr[i];
+              const sdx = s.x2 - s.x1, sdz = s.z2 - s.z1;
+              const len2 = sdx * sdx + sdz * sdz;
+              if (len2 < 0.01) continue;
+              let t = ((x - s.x1) * sdx + (z - s.z1) * sdz) / len2;
+              t = Math.max(0, Math.min(1, t));
+              const px = s.x1 + t * sdx, pz = s.z1 + t * sdz;
+              const d = Math.hypot(x - px, z - pz);
+              if (d < best) best = d;
+            }
+          }
+        }
+        return best;
+      }
+      // A pavement is the strip between the road and the buildings: on the
+      // island, off the road surface, but within a few units of a road.
+      function isOnPavement(x, z) {
+        if (islandMask(x, z) < 0.1) return false; // in water
+        const rd = roadDistance(x, z);
+        return rd > 3 && rd < 8;
+      }
+      // True when the player is crossing a red light (moving through it).
+      function isRunningRedLight(x, z, forwardX, forwardZ) {
+        if (typeof trafficLights === 'undefined' || !trafficLights.lights) return false;
+        for (const tl of trafficLights.lights) {
+          if (tl.state !== 'red') continue;
+          const dx = tl.x - x, dz = tl.z - z;
+          const dist = Math.sqrt(dx * dx + dz * dz);
+          if (dist > 8) continue;
+          const dot = (dx * forwardX + dz * forwardZ) / Math.max(0.1, dist);
+          if (dot > 0.3) return true;
+        }
+        return false;
+      }
+      // Roundabout give-way to the right (Jersey left-hand rule): an AI car
+      // approaching a roundabout entry yields to any car already circulating.
+      // Returns the distance to the entry to stop at, or Infinity if clear.
+      function checkRoundaboutGiveWay(x, z, forwardX, forwardZ, cars) {
+        let nearestEntry = null, nearestDist = Infinity;
+        const gx = Math.floor(x / GIVEWAY_TILE), gz = Math.floor(z / GIVEWAY_TILE);
+        for (let dx = -1; dx <= 1; dx++) {
+          for (let dz = -1; dz <= 1; dz++) {
+            const arr = giveWayGrid.get((gx + dx) + ',' + (gz + dz));
+            if (!arr) continue;
+            for (let i = 0; i < arr.length; i++) {
+              const g = arr[i];
+              const ddx = g.x - x, ddz = g.z - z;
+              const dist = Math.sqrt(ddx * ddx + ddz * ddz);
+              if (dist > 12 || dist >= nearestDist) continue;
+              const dot = (ddx * forwardX + ddz * forwardZ) / Math.max(0.1, dist);
+              if (dot > 0.3) { nearestDist = dist; nearestEntry = g; }
+            }
+          }
+        }
+        if (!nearestEntry) return Infinity;
+        let roundel = null;
+        for (let i = 0; i < roundels.length; i++) {
+          const r = roundels[i];
+          if (Math.hypot(r.x - nearestEntry.x, r.z - nearestEntry.z) < r.r + 3) { roundel = r; break; }
+        }
+        if (!roundel) return Infinity;
+        const carsArr = cars || [];
+        for (let i = 0; i < carsArr.length; i++) {
+          const c = carsArr[i];
+          if (!c || c.mesh === undefined) continue;
+          const dist = Math.hypot(c.x - roundel.x, c.z - roundel.z);
+          if (dist < roundel.r + 4) return nearestDist; // occupied → give way
+        }
+        return Infinity;
+      }
+
       // ---- T-RETRO-POLISH #28: particle effects ----
       // Smoke, fire, explosions, skid marks and crash debris. Particles are
       // stored in a plain array and drawn in the effects layer each frame.
@@ -2328,6 +2485,7 @@ window.addEventListener('unhandledrejection', (e) => { window.__testErrors.push(
         leftLaneOffset,
         buildings, trees, signs, crossings, roundels, giveWays, giveWayLines,
         getDamageStage, applyDamage,
+        addChaos, updateChaos, isOnPavement, isRunningRedLight, checkRoundaboutGiveWay,
         particles, spawnParticles, spawnSmoke, spawnFire, spawnExplosion, spawnSkid, spawnDebris, updateParticles,
         audio, getDarkness, setDarkness, dayNight,
         drawWater, drawGround, drawBuildings, drawTrees, drawMarkings, drawSigns,
@@ -4918,10 +5076,20 @@ window.addEventListener('unhandledrejection', (e) => { window.__testErrors.push(
 
     // ====== WANTED LEVEL & POLICE SYSTEM ======
     let wantedLevel = 0;        // 0-5 stars
-    let recklessCount = 0;      // counts up to 5 → +1 star
-    let lastRecklessTime = 0;   // timestamp of last reckless event (ms)
     let policeCars = [];        // array of { mesh, x, z, heading, speed }
     const POLICE_COLOR = 0x1a3a6a;
+
+    // ====== T-RETRO-DRIVE-RULES #42: CHAOS METER ======
+    // Light transgression gauge (0-100). Rises on red-light runs, pavement
+    // mounts and near-misses; decays over time. Pulses the screen at high
+    // chaos but never spawns police (wanted/police is deferred).
+    let chaosLevel = 0;
+    let lastRedLightRun = 0;     // ms timestamp of last red-light run
+    let lastPavementBump = 0;     // ms timestamp of last pavement bump
+    let lastNearMiss = 0;        // ms timestamp of last near-miss
+    const chaosEl = document.getElementById('chaos-meter');
+    const chaosFillEl = document.getElementById('chaos-fill');
+    const chaosBorderEl = document.getElementById('chaos-border');
 
     // DOM refs
     const wantedEl = document.getElementById('wanted-level');
@@ -5177,6 +5345,7 @@ window.addEventListener('unhandledrejection', (e) => { window.__testErrors.push(
     Object.defineProperty(window, 'vLateral', { get: () => vLateral, configurable: true });
     Object.defineProperty(window, 'carSpeed', { get: () => carSpeed, configurable: true });
     Object.defineProperty(window, 'carHealth', { get: () => carHealth, configurable: true });
+    Object.defineProperty(window, 'chaosLevel', { get: () => chaosLevel, configurable: true });
     // Wake trail for boat mode
     let wakeTrailLine = null;
     let wakeTrailPoints = [];
@@ -6152,6 +6321,17 @@ window.addEventListener('unhandledrejection', (e) => { window.__testErrors.push(
             targetSpeed = Math.min(targetSpeed, (yellowLightDist - 2) * 4);
           }
 
+          // T-RETRO-DRIVE-RULES #42: roundabout give-way to the right
+          // (Jersey left-hand rule) — yield to cars already circulating.
+          const roundaboutDist = retro.checkRoundaboutGiveWay(ai.x, ai.z, forwardX, forwardZ, aiCars);
+          if (roundaboutDist < 12) {
+            if (roundaboutDist < 3) {
+              targetSpeed = 0;
+            } else {
+              targetSpeed = Math.min(targetSpeed, (roundaboutDist - 2) * 3);
+            }
+          }
+
           // Lerp speed toward target
           ai.speed += (targetSpeed - ai.speed) * Math.min(1, dt * 3);
 
@@ -6182,42 +6362,50 @@ window.addEventListener('unhandledrejection', (e) => { window.__testErrors.push(
         }
       });
 
-      // ====== WANTED LEVEL: RECKLESS DRIVING DETECTION ======
+      // ====== T-RETRO-DRIVE-RULES #42: CHAOS METER (transgression detection) ======
+      // The player CAN break the rules (run red lights, mount pavements) with
+      // no police enforcement — instead a light chaos meter rises and decays.
       if (vehicleMode === 'drive') {
         let isReckless = false;
+        const rad = carHeading * Math.PI / 180;
+        const fwdX = Math.sin(rad), fwdZ = Math.cos(rad);
 
-        // (2a) Speed > 60 near AI car within 20 units
-        if (Math.abs(carSpeed) > 60) {
-          for (const ai of aiCars) {
-            const dx = ai.x - carX, dz = ai.z - carZ;
-            if (Math.sqrt(dx * dx + dz * dz) < 20) { isReckless = true; break; }
+        // (1) Red-light run — player crosses a red light
+        if (retro.isRunningRedLight(carX, carZ, fwdX, fwdZ)) {
+          isReckless = true;
+          if (now - lastRedLightRun > 2000) {
+            lastRedLightRun = now;
+            retro.addChaos(25);
+            showToast('🚦 Red light run!');
           }
         }
 
-        // (2b) Off-road (islandMask < 0.1)
-        if (!isReckless && islandMask(carX, carZ) < 0.1) {
+        // (2) Pavement mount — driving on the sidewalk (damages the car)
+        if (retro.isOnPavement(carX, carZ) && Math.abs(carSpeed) > 10) {
           isReckless = true;
+          if (now - lastPavementBump > 500) {
+            lastPavementBump = now;
+            retro.addChaos(8);
+            applyDamage(2);
+            retro.spawnDebris(carX, carZ);
+          }
         }
 
-        if (isReckless) {
-          lastRecklessTime = now;
-          recklessCount++;
-          if (recklessCount >= 5) {
-            recklessCount = 0;
-            if (wantedLevel < 5) {
-              setWantedLevel(wantedLevel + 1);
-              if (wantedLevel === 1) showToast('🚨 WANTED! Police incoming!');
-              else showToast(`🚨 Wanted level: ${wantedLevel} stars!`);
+        // (3) Near-miss — pass close to an AI car at speed without colliding
+        for (const ai of aiCars) {
+          const dx = ai.x - carX, dz = ai.z - carZ;
+          const dist = Math.sqrt(dx * dx + dz * dz);
+          if (dist < 4 && dist > 2.5 && Math.abs(carSpeed) > 30) {
+            isReckless = true;
+            if (now - lastNearMiss > 1000) {
+              lastNearMiss = now;
+              retro.addChaos(10);
             }
           }
         }
 
-        // (7) Wanted decays: no reckless for 15s = -1 star
-        if (wantedLevel > 0 && now - lastRecklessTime > 15000) {
-          lastRecklessTime = now; // reset timer so it doesn't immediately drop again
-          setWantedLevel(wantedLevel - 1);
-          if (wantedLevel === 0) showToast('✅ Wanted level cleared.');
-        }
+        // (4) Chaos decays over time
+        retro.updateChaos(dt);
       }
 
       // ====== T-RETRO-POLISH #28: DAMAGE MODEL ======
