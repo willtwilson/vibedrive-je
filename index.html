@@ -6842,26 +6842,53 @@
         tex.needsUpdate = true;
       }
 
+      // Stagger stops that share the same cell so identical markers + labels
+      // don't pile up on one tile (T-BUG-BUS-OVERLAY #37). Opposing-direction
+      // stops in the OSM data can be mapped to (nearly) the same coordinate,
+      // which made their markers + route-number labels overlap completely on
+      // load. Each colliding stop gets a small unique offset, radiating outward
+      // around its base position so no two stop markers occupy the same spot.
+      const STOP_STAGGER_CELL = 0.1; // grid size (world units) used to cluster colliding stops
+      const STOP_STAGGER_RADIUS = 1.6; // world-units separation between colliding stops
+      const stopOffsets = new Float32Array(stopData.length * 2);
+      (function computeBusStopLabelOffsets() {
+        const cells = new Map();
+        for (let si = 0; si < stopData.length; si++) {
+          const key = Math.round(stopData[si][0] / STOP_STAGGER_CELL) + ',' + Math.round(stopData[si][1] / STOP_STAGGER_CELL);
+          if (!cells.has(key)) cells.set(key, []);
+          cells.get(key).push(si);
+        }
+        for (const group of cells.values()) {
+          if (group.length < 2) continue;
+          for (let gi = 0; gi < group.length; gi++) {
+            const angle = (gi / group.length) * Math.PI * 2;
+            stopOffsets[group[gi] * 2] = Math.cos(angle) * STOP_STAGGER_RADIUS;
+            stopOffsets[group[gi] * 2 + 1] = Math.sin(angle) * STOP_STAGGER_RADIUS;
+          }
+        }
+      })();
+
       const dummy = new THREE.Object3D();
       for (let si = 0; si < stopData.length; si++) {
         const s = stopData[si];
         const x = s[0], z = s[1], name = s[2];
         const onIsland = islandMask(x, z) > 0.1;
         const h = onIsland ? getTerrainHeight(x, z) : -5;
+        const dx = stopOffsets[si * 2], dz = stopOffsets[si * 2 + 1];
 
         // Instance matrix: park off-island stops below the sea so they render
         // as nothing, and let the single InstancedMesh carry the draw call.
-        dummy.position.set(x, onIsland ? h + 1 : -1000, z);
+        dummy.position.set(x + dx, onIsland ? h + 1 : -1000, z + dz);
         dummy.updateMatrix();
         stopInstMesh.setMatrixAt(si, dummy.matrix);
 
         const label = createStopLabel();
-        label.position.set(x, h + 3, z);
+        label.position.set(x + dx, h + 3, z + dz);
         label.visible = false;
         group.add(label);
 
         const serving = stopRoutes && stopRoutes[si] ? stopRoutes[si] : [];
-        stopMeshes.push({ label, x, z, name, serving, baseY: h + 1, labelKey: '' });
+        stopMeshes.push({ label, x: x + dx, z: z + dz, name, serving, baseY: h + 1, labelKey: '' });
       }
       stopInstMesh.instanceMatrix.needsUpdate = true;
 
