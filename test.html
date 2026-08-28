@@ -1214,6 +1214,45 @@ window.addEventListener('load', () => {
       const rerrors = (rframe && rframe.contentWindow && rframe.contentWindow.__testErrors) || [];
       log(`[integrate] no console errors in retro`, rerrors.length === 0 ? 'pass' : `fail (${rerrors.length})`);
     } catch(e) { log(`[integrate] retro console errors: ${e.message}`, 'fail'); }
+
+    // ====== CONTROLS (T-BUG-CONTROLS #33) — WASD/arrow keys respond immediately ======
+    try {
+      log(`[controls] getControlState exposed`, typeof fw.getControlState === 'function' ? 'pass' : 'fail');
+      const KE = fw.KeyboardEvent;
+      const state = () => (fw.getControlState && fw.getControlState()) || {};
+      const press = (key) => fw.document.dispatchEvent(new KE('keydown', { key, bubbles: true, cancelable: true }));
+      const release = (key) => fw.document.dispatchEvent(new KE('keyup', { key, bubbles: true }));
+      const check = (label, cond) => log(`[controls] ${label}`, cond ? 'pass' : 'fail');
+
+      press('w');      check(`W sets up`, state().up === true);
+      release('w');    check(`W keyup clears up`, state().up === false);
+      press('W');      check(`uppercase W sets up`, state().up === true);
+      release('W');
+      press('s');      check(`S sets down`, state().down === true);
+      release('s');    check(`S keyup clears down`, state().down === false);
+      press('a');      check(`A sets left`, state().left === true);
+      release('a');
+      press('d');      check(`D sets right`, state().right === true);
+      release('d');
+
+      press('ArrowUp');   check(`ArrowUp sets up`, state().up === true);
+      release('ArrowUp'); check(`ArrowUp keyup clears up`, state().up === false);
+      press('ArrowDown'); check(`ArrowDown sets down`, state().down === true);
+      release('ArrowDown');
+      press('ArrowLeft'); check(`ArrowLeft sets left`, state().left === true);
+      release('ArrowLeft');
+      press('ArrowRight');check(`ArrowRight sets right`, state().right === true);
+      release('ArrowRight');
+
+      press(' ');      check(`Space sets handbrake`, state().handbrake === true);
+      release(' ');    check(`Space keyup clears handbrake`, state().handbrake === false);
+    } catch(e) { log(`[controls] dispatch: ${e.message}`, 'fail'); }
+
+    // Test C2: Canvas is focusable so keyboard input is received immediately on load
+    try {
+      const canvas = fd.getElementById('game-canvas');
+      log(`[controls] canvas has tabindex`, canvas && canvas.tabIndex >= 0 ? 'pass' : 'fail');
+    } catch(e) { log(`[controls] tabindex: ${e.message}`, 'fail'); }
     updateSummary();
   }, 2500);
 });
