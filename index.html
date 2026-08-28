@@ -4010,6 +4010,42 @@
     Object.defineProperty(window, 'vForward', { get: () => vForward, configurable: true });
     Object.defineProperty(window, 'vLateral', { get: () => vLateral, configurable: true });
     Object.defineProperty(window, 'carSpeed', { get: () => carSpeed, configurable: true });
+
+    // ====== VEHICLE ROSTER (T-GARAGE-ROSTER #30) ======
+    // Base physics defaults per mode — match the original global constants so the
+    // default vehicle per mode preserves existing behaviour exactly.
+    const BASE_PHYSICS = {
+      drive: { maxSpeed: 80, accel: 30, brake: 60, friction: 10, turnRate: 3.0, grip: 1.0, weight: 1.0, drift: 1.0 },
+      boat:  { maxSpeed: 80, accel: 15, brake: 60, friction: 5, turnRate: 1.8, planingSpeed: 18, rudderRate: 1.5, waveResponse: 0.6 },
+      fly:   { maxSpeed: 120, accel: 30, brake: 60, friction: 10, turnRate: 3.0, stallSpeed: 30, climbRate: 15, bankRate: 1.0, turnRadius: 1.0 },
+    };
+    // Roster — 3 vehicles per mode, each a named config with stat overrides.
+    const VEHICLES = {
+      hatchback: { mode: 'drive', name: 'Hatchback', color: 0xcc2222, stats: { maxSpeed: 80, accel: 30, brake: 60, friction: 10, turnRate: 3.0, grip: 1.0, weight: 1.0, drift: 1.0 } },
+      sports:    { mode: 'drive', name: 'Sports', color: 0x2244cc, stats: { maxSpeed: 110, accel: 42, brake: 60, friction: 10, turnRate: 3.6, grip: 0.7, weight: 0.8, drift: 1.6 } },
+      truck:     { mode: 'drive', name: 'Truck', color: 0x886633, stats: { maxSpeed: 60, accel: 18, brake: 60, friction: 10, turnRate: 2.2, grip: 1.4, weight: 1.8, drift: 0.4 } },
+      cruiser:   { mode: 'boat', name: 'Cruiser', color: 0xffffff, stats: { maxSpeed: 80, accel: 15, brake: 60, friction: 5, turnRate: 1.8, planingSpeed: 18, rudderRate: 1.5, waveResponse: 0.6 } },
+      speedboat: { mode: 'boat', name: 'Speedboat', color: 0xff6600, stats: { maxSpeed: 100, accel: 22, brake: 60, friction: 5, turnRate: 2.0, planingSpeed: 12, rudderRate: 2.0, waveResponse: 0.9 } },
+      fishing:   { mode: 'boat', name: 'Fishing Boat', color: 0x2266aa, stats: { maxSpeed: 50, accel: 9, brake: 60, friction: 5, turnRate: 1.0, planingSpeed: 24, rudderRate: 1.0, waveResponse: 0.3 } },
+      cessna:    { mode: 'fly', name: 'Cessna', color: 0xcc2222, stats: { maxSpeed: 120, accel: 30, brake: 60, friction: 10, turnRate: 3.0, stallSpeed: 30, climbRate: 15, bankRate: 1.0, turnRadius: 1.0 } },
+      stunt:     { mode: 'fly', name: 'Stunt Plane', color: 0x22cc44, stats: { maxSpeed: 100, accel: 30, brake: 60, friction: 10, turnRate: 3.0, stallSpeed: 20, climbRate: 22, bankRate: 1.6, turnRadius: 0.7 } },
+      jet:       { mode: 'fly', name: 'Jet', color: 0x888888, stats: { maxSpeed: 200, accel: 30, brake: 60, friction: 10, turnRate: 3.0, stallSpeed: 45, climbRate: 10, bankRate: 0.6, turnRadius: 1.4 } },
+    };
+    // Default vehicle per mode — preserves current behaviour until a choice is made.
+    const DEFAULT_VEHICLE = { drive: 'hatchback', boat: 'cruiser', fly: 'cessna' };
+    // Single source of truth for the active vehicle (settable for tests / garage UI).
+    window.currentVehicle = VEHICLES.hatchback;
+    // Merge the mode's base physics with the current vehicle's stat overrides.
+    function resolveVehicleStats(mode) {
+      const base = BASE_PHYSICS[mode] || BASE_PHYSICS.drive;
+      const v = (window.currentVehicle && window.currentVehicle.mode === mode) ? window.currentVehicle : VEHICLES[DEFAULT_VEHICLE[mode]];
+      return Object.assign({}, base, v.stats);
+    }
+    // Expose for tests
+    window.VEHICLES = VEHICLES;
+    window.BASE_PHYSICS = BASE_PHYSICS;
+    window.resolveVehicleStats = resolveVehicleStats;
+
     // Wake trail for boat mode
     let wakeTrailLine = null;
     let wakeTrailPoints = [];
