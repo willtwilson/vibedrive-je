@@ -701,6 +701,7 @@
       <div id="cam-btns">
         <button class="cam-btn active" id="cam-cycle" data-cam="chase">🎥 Chase <span class="chev">↻</span></button>
       </div>
+      <button class="mode-btn" id="tilt-toggle" title="Tilt Steering">🎮 Tilt</button>
     </div>
     <div class="control-zone">
       <div class="control-btn steer" id="btn-left">◀</div>
@@ -5414,6 +5415,8 @@ window.addEventListener('unhandledrejection', (e) => { window.__testErrors.push(
       btn.addEventListener('mouseleave', release);
     }
     bindCtrl('btn-gas', 'up'); bindCtrl('btn-brake', 'down'); bindCtrl('btn-left', 'left'); bindCtrl('btn-right', 'right');
+    const tiltToggle = document.getElementById('tilt-toggle');
+    if (tiltToggle) tiltToggle.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); requestTilt(); });
 
     // Pointer steering — touch ANYWHERE to steer (attached to document, not canvas, to avoid z-index issues)
     let pointerSteering = false, pointerStartX = 0, pointerStartY = 0;
@@ -5452,6 +5455,46 @@ window.addEventListener('unhandledrejection', (e) => { window.__testErrors.push(
 
     document.addEventListener('pointerup', () => { pointerSteering = false; steerValue = 0; });
     document.addEventListener('pointercancel', () => { pointerSteering = false; steerValue = 0; });
+
+    // ====== TILT STEERING (iOS gyro) ======
+    // Uses the phone's DeviceOrientation (gamma = left/right tilt) to steer.
+    // iOS 13+ requires an explicit permission request on a user gesture.
+    let tiltEnabled = false;
+    let tiltBase = null;      // baseline gamma captured on enable (to centre the wheel)
+    let tiltRaw = 0;          // current raw gamma
+    function requestTilt() {
+      if (typeof DeviceOrientationEvent !== 'undefined' &&
+          typeof DeviceOrientationEvent.requestPermission === 'function') {
+        DeviceOrientationEvent.requestPermission().then(perm => {
+          if (perm === 'granted') {
+            tiltEnabled = true;
+            window.addEventListener('deviceorientation', onTilt);
+            showToast('Tilt steering ON — tilt phone left/right to steer');
+          } else {
+            showToast('Motion permission denied — using touch buttons');
+          }
+        }).catch(() => showToast('Motion permission unavailable'));
+      } else if (typeof DeviceOrientationEvent !== 'undefined') {
+        // Non-iOS: permission not required
+        tiltEnabled = true;
+        window.addEventListener('deviceorientation', onTilt);
+        showToast('Tilt steering ON');
+      } else {
+        showToast('Gyro not supported on this device');
+      }
+    }
+    function stopTilt() {
+      tiltEnabled = false;
+      if (window.onTiltBound) window.removeEventListener('deviceorientation', onTilt);
+      tiltBase = null;
+    }
+    function onTilt(e) {
+      if (typeof e.gamma !== 'number') return;
+      tiltRaw = e.gamma;             // range roughly [-90, 90]
+      if (tiltBase === null) tiltBase = e.gamma;
+      const delta = e.gamma - tiltBase;
+      steerValue = Math.max(-2.5, Math.min(2.5, delta / 18));  // ~18deg tilt = full lock
+    }
 
     setTimeout(() => document.getElementById('steer-hint').classList.add('show'), 2000);
     setTimeout(() => document.getElementById('steer-hint').classList.remove('show'), 8000);
