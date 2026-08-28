@@ -844,6 +844,7 @@
     <button class="menu-item on" id="menu-bus"><span class="mi-icon">🚌</span><span class="mi-label">Bus Routes</span><span class="mi-state" id="mi-bus-state">On</span></button>
     <button class="menu-item" id="menu-airport"><span class="mi-icon">✈️</span><span class="mi-label">Airport Board</span><span class="mi-state" id="mi-airport-state">Off</span></button>
     <button class="menu-item" id="menu-radio"><span class="mi-icon">📻</span><span class="mi-label">Radio</span><span class="mi-state" id="mi-radio-state">Off</span></button>
+    <button class="menu-item" id="menu-mission"><span class="mi-icon">🚕</span><span class="mi-label">Taxi Mode</span><span class="mi-state" id="mi-mission-state">Off</span></button>
     <div class="menu-sep"></div>
     <button class="menu-item" id="menu-leaderboard"><span class="mi-icon">🏆</span><span class="mi-label">Leaderboard</span><span class="mi-state">›</span></button>
     <button class="menu-item" id="menu-settings"><span class="mi-icon">⚙️</span><span class="mi-label">Settings</span><span class="mi-state">›</span></button>
@@ -2273,6 +2274,7 @@
 
     // ====== MISSION SYSTEM (GTA-style taxi pick-up/drop-off) ======
     let missionState = 'idle'; // idle, pickup, enroute, complete
+    let taxiMode = false; // taxi/mission is opt-in, not the default (T-MODE-DEFAULT #36)
     let missionPickupLandmark = null;   // landmark where passenger is
     let missionDropoffLandmark = null;  // destination landmark
     let missionTimer = 0;
@@ -2358,6 +2360,7 @@
     }
 
     function startMission() {
+      taxiMode = true;
       missionPickupLandmark = randomLandmarkExcept(missionDropoffLandmark);
       missionState = 'pickup';
       missionTimer = MISSION_TIME_LIMIT;
@@ -2365,6 +2368,25 @@
       updateWaypointBeam(missionPickupLandmark.x, missionPickupLandmark.z, 0x00ff44);
       showToast(`🚕 New mission! Pick up passenger at ${missionPickupLandmark.name}`);
       updateMissionHUD();
+    }
+
+    // Return to open explore (free roam) mode — taxi is opt-in (T-MODE-DEFAULT #36).
+    function cancelMission() {
+      taxiMode = false;
+      missionState = 'idle';
+      removePassenger();
+      removeWaypointBeam();
+      updateMissionHUD();
+    }
+
+    // Menu toggle: opt into taxi mode, or exit back to free roam.
+    function toggleTaxiMission() {
+      if (taxiMode || missionState !== 'idle') {
+        cancelMission();
+        showToast('🚕 Taxi off — free roam');
+      } else {
+        startMission();
+      }
     }
 
     function completeMissionPickup() {
@@ -2383,7 +2405,7 @@
       missionState = 'complete';
       addPoints(100, `✅ Delivered! +100 pts`);
       updateMissionHUD();
-      setTimeout(() => { startMission(); }, 1500); // repeat mission cycle
+      setTimeout(() => { if (taxiMode) startMission(); }, 1500); // repeat while taxi mode active
     }
 
     function failMission() {
@@ -2392,7 +2414,7 @@
       missionState = 'idle';
       addPoints(-50, '⏰ Mission failed! Time out. -50 pts');
       updateMissionHUD();
-      setTimeout(() => { startMission(); }, 2000);
+      setTimeout(() => { if (taxiMode) startMission(); }, 2000);
     }
 
     function updateMissionLogic(dt) {
@@ -2431,6 +2453,9 @@
       toastTimeout = setTimeout(() => { toastEl.classList.remove('show'); }, 3000);
     }
     window.showToast = showToast;
+    window.startMission = startMission;
+    window.toggleTaxiMission = toggleTaxiMission;
+    window.__getTaxiMode = () => taxiMode;
 
     function addPoints(pts, msg) {
       score += pts;
@@ -5905,9 +5930,6 @@
       // Fade out the hackathon badge once the game starts
       setTimeout(() => { const b = document.getElementById('badge'); if (b) b.classList.add('hide'); }, 1500);
 
-      // Auto-start first mission on load
-      setTimeout(() => { startMission(); }, 2000);
-
       requestAnimationFrame(animate);
       setInterval(fetchWeather, 600000);
     }
@@ -7569,6 +7591,7 @@
       const airportState = document.getElementById('mi-airport-state');
       const radioState = document.getElementById('mi-radio-state');
       const nightState = document.getElementById('mi-night-state');
+      const missionStateEl = document.getElementById('mi-mission-state');
       if (busState) {
         busState.textContent = (typeof busVisible !== 'undefined' && busVisible) ? 'On' : 'Off';
         document.getElementById('menu-bus').classList.toggle('on', (typeof busVisible !== 'undefined' && busVisible));
@@ -7584,6 +7607,11 @@
         document.getElementById('menu-radio').classList.toggle('on', on);
       }
       if (nightState) nightState.textContent = forceNight ? 'On' : 'Off';
+      if (missionStateEl) {
+        const on = (typeof taxiMode !== 'undefined' && taxiMode);
+        missionStateEl.textContent = on ? 'On' : 'Off';
+        document.getElementById('menu-mission').classList.toggle('on', on);
+      }
     }
 
     document.getElementById('menu-night').addEventListener('click', (e) => {
@@ -7614,6 +7642,15 @@
       const btn = document.getElementById('radio-toggle');
       if (btn) btn.click();
       document.getElementById('radio-panel').classList.toggle('show', true);
+      syncMenuStates();
+      setMenuOpen(false);
+    });
+
+    // Taxi mode is opt-in (T-MODE-DEFAULT #36): starts a taxi mission from the
+    // menu and can be toggled off to return to open explore/free-roam mode.
+    document.getElementById('menu-mission').addEventListener('click', (e) => {
+      e.preventDefault(); e.stopPropagation();
+      if (typeof toggleTaxiMission === 'function') toggleTaxiMission();
       syncMenuStates();
       setMenuOpen(false);
     });
