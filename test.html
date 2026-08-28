@@ -1398,6 +1398,72 @@ window.addEventListener('load', () => {
     updateSummary();
   }, 2500);
 });
+
+// ====== MODE DEFAULT TESTS (T-MODE-DEFAULT #36) ======
+// Taxi/mission mode must be OPT-IN, not the default. Game should start in open
+// explore (free roam) mode; a taxi mission only starts when the player opts in
+// via the menu, and can be toggled back off to return to free roam.
+window.addEventListener('load', () => {
+  const frame = document.getElementById('game-frame');
+  setTimeout(() => {
+    const fw = frame.contentWindow;
+    const fd = frame.contentDocument;
+
+    const missionVisible = () => {
+      const el = fd.getElementById('mission-display');
+      return el && fd.defaultView.getComputedStyle(el).display !== 'none';
+    };
+    const missionTitle = () => {
+      const el = fd.getElementById('mission-title');
+      return el ? el.textContent.trim() : '';
+    };
+
+    // T36.1 — Source: game must NOT auto-start a taxi mission on load.
+    fetch('/index.html').then(r => r.text()).then(text => {
+      const hasAutoStart = /Auto-start first mission on load/.test(text) &&
+                           /setTimeout\(\(\) => \{ startMission\(\); \}, 2000\)/.test(text);
+      log(`[mode-default] No taxi auto-start on load (source)`, hasAutoStart ? 'fail' : 'pass');
+
+      // T36.2 — Source: a menu entry exists to opt into taxi mode.
+      const hasMenuMission = /id="menu-mission"/.test(text);
+      log(`[mode-default] Taxi opt-in menu item present (source)`, hasMenuMission ? 'pass' : 'fail');
+      updateSummary();
+    }).catch(e => {
+      log(`[mode-default] source fetch: ${e.message}`, 'fail');
+      updateSummary();
+    });
+
+    // T36.3 — Runtime: game starts in open explore mode (no active mission).
+    try {
+      log(`[mode-default] Game starts in explore (no mission display)`, missionVisible() ? 'fail' : 'pass');
+    } catch(e) { log(`[mode-default] explore start: ${e.message}`, 'fail'); }
+
+    // T36.4 — Runtime: menu item is clickable and toggles taxi ON.
+    try {
+      const item = fd.getElementById('menu-mission');
+      log(`[mode-default] Taxi menu item exists (runtime)`, item ? 'pass' : 'fail');
+      if (item) {
+        item.click();
+        setTimeout(() => {
+          try {
+            const vis = missionVisible();
+            const title = missionTitle();
+            const taxiMode = typeof fw.__getTaxiMode === 'function' ? fw.__getTaxiMode() : 'n/a';
+            log(`[mode-default] Opt-in starts a taxi mission`, (!vis || !title.includes('TAXI MISSION') || taxiMode !== true) ? 'fail' : 'pass');
+            // T36.5 — Runtime: toggling again returns to free roam.
+            fd.getElementById('menu-mission').click();
+            setTimeout(() => {
+              try {
+                log(`[mode-default] Toggle off returns to explore`, missionVisible() ? 'fail' : 'pass');
+              } catch(e) { log(`[mode-default] toggle off: ${e.message}`, 'fail'); }
+              updateSummary();
+            }, 200);
+          } catch(e) { log(`[mode-default] opt-in: ${e.message}`, 'fail'); }
+        }, 200);
+      }
+    } catch(e) { log(`[mode-default] taxi item: ${e.message}`, 'fail'); }
+  }, 3000);
+});
 </script>
 </body>
 </html>
