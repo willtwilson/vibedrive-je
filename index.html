@@ -197,6 +197,72 @@
       color: var(--text-muted);
     }
     .menu-item.on .mi-state { color: var(--jersey-green); }
+
+    /* ====== GARAGE (T-GARAGE-UI #31) ====== */
+    .garage-btn {
+      min-width: 120px; min-height: 44px; padding: 10px 16px; border-radius: 0;
+      border: 1px solid var(--hud-border); background: var(--glass);
+      backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.04em; cursor: pointer;
+      user-select: none; -webkit-user-select: none; touch-action: none;
+      display: flex; align-items: center; gap: 6px; justify-content: center; transition: all 0.15s;
+    }
+    .garage-btn:hover, .garage-btn.active { background: var(--jersey-green); border-color: var(--jersey-green); color: var(--atlantic-blue); }
+
+    /* Full-screen overlay (bottom sheet) — touch-friendly */
+    .garage-overlay {
+      position: fixed; inset: 0; z-index: 90; display: none;
+      background: rgba(0, 0, 0, 0.5); justify-content: center; align-items: flex-end;
+    }
+    .garage-overlay.show { display: flex; }
+    .garage-sheet {
+      width: 100%; max-width: 640px; max-height: 78vh; display: flex; flex-direction: column;
+      background: var(--glass-deep); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border-top: 3px solid var(--jersey-green); border-left: 1px solid var(--hud-border); border-right: 1px solid var(--hud-border);
+      box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.55); padding: 10px 14px 18px;
+    }
+    .garage-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+    .garage-title { font-family: 'Inter', sans-serif; font-size: 16px; font-weight: 900; color: var(--jersey-green); text-transform: uppercase; letter-spacing: 0.06em; }
+    .garage-close {
+      min-width: 44px; min-height: 44px; border-radius: 0; border: 1px solid var(--hud-border);
+      background: var(--glass); color: var(--text-primary); font-size: 18px; font-weight: 800;
+      cursor: pointer; touch-action: none; user-select: none;
+    }
+    .garage-close:hover, .garage-close:active { background: var(--jersey-green); color: var(--atlantic-blue); }
+    .garage-tabs { display: flex; gap: 8px; margin-bottom: 12px; }
+    .garage-tab {
+      flex: 1; min-height: 44px; border-radius: 0; border: 1px solid var(--hud-border);
+      background: var(--glass); color: var(--text-primary); font-family: 'Inter', sans-serif;
+      font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+      cursor: pointer; touch-action: none; user-select: none; transition: all 0.15s;
+    }
+    .garage-tab.active { background: var(--jersey-green); border-color: var(--jersey-green); color: var(--atlantic-blue); }
+    .garage-carousel {
+      display: flex; gap: 10px; overflow-x: auto; padding: 4px 2px 10px;
+      -webkit-overflow-scrolling: touch; touch-action: pan-x; scroll-snap-type: x mandatory;
+    }
+    .garage-card {
+      flex: 0 0 auto; width: 152px; scroll-snap-align: start; border-radius: 0;
+      border: 1px solid var(--hud-border); background: var(--glass); padding: 10px;
+      display: flex; flex-direction: column; gap: 6px; cursor: pointer;
+      min-height: 88px; user-select: none; -webkit-user-select: none; touch-action: none;
+      font-family: 'Inter', sans-serif; text-align: left; transition: all 0.15s;
+    }
+    .garage-card:hover { border-color: var(--jersey-green); }
+    .garage-card.selected { border-color: var(--jersey-green); background: rgba(0, 168, 107, 0.18); box-shadow: 0 0 14px rgba(0, 168, 107, 0.35); }
+    .gc-top { display: flex; align-items: center; gap: 8px; }
+    .gc-swatch { width: 22px; height: 22px; flex: 0 0 auto; border: 1px solid rgba(255,255,255,0.25); }
+    .gc-name { flex: 1; font-size: 13px; font-weight: 800; color: var(--text-primary); letter-spacing: 0.02em; }
+    .gc-stat { display: flex; align-items: center; gap: 6px; font-size: 9px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+    .gc-stat .gc-bar { flex: 1; height: 5px; background: rgba(255,255,255,0.12); }
+    .gc-stat .gc-fill { height: 100%; background: var(--jersey-green); }
+    .garage-hint { text-align: center; font-size: 10px; color: var(--text-muted); padding-top: 6px; font-family: 'Inter', sans-serif; letter-spacing: 0.03em; }
+
+    @media (max-width: 500px) {
+      .garage-btn { min-width: 92px; min-height: 40px; font-size: 11px; padding: 7px 10px; }
+      .garage-card { width: 136px; }
+    }
     .menu-item.night-on .mi-state { color: var(--sprint-yellow); }
     .menu-sep { height: 1px; background: rgba(0, 168, 107, 0.15); margin: 6px 0; }
 
@@ -720,6 +786,7 @@
     <div class="control-zone" style="flex-direction:column;align-items:flex-start;gap:10px;">
       <div id="modes">
         <button class="mode-btn active" id="mode-cycle" data-mode="drive">🚗 Drive <span class="chev">↻</span></button>
+        <button class="garage-btn" id="garage-btn" title="Garage">🔧</button>
       </div>
       <div id="cam-btns">
         <button class="cam-btn active" id="cam-cycle" data-cam="chase">🎥 Chase <span class="chev">↻</span></button>
@@ -764,6 +831,22 @@
     <div class="menu-sep"></div>
     <button class="menu-item" id="menu-leaderboard"><span class="mi-icon">🏆</span><span class="mi-label">Leaderboard</span><span class="mi-state">›</span></button>
     <button class="menu-item" id="menu-settings"><span class="mi-icon">⚙️</span><span class="mi-label">Settings</span><span class="mi-state">›</span></button>
+  </div>
+
+  <div id="garage-overlay" class="garage-overlay" aria-hidden="true">
+    <div class="garage-sheet">
+      <div class="garage-header">
+        <div class="garage-title">🔧 Garage</div>
+        <button class="garage-close" id="garage-close" title="Close">✕</button>
+      </div>
+      <div class="garage-tabs" id="garage-tabs">
+        <button class="garage-tab active" data-tab="drive">🚗 Cars</button>
+        <button class="garage-tab" data-tab="boat">🚤 Boats</button>
+        <button class="garage-tab" data-tab="fly">✈️ Planes</button>
+      </div>
+      <div class="garage-carousel" id="garage-carousel"></div>
+      <div class="garage-hint">Tap a vehicle to select it</div>
+    </div>
   </div>
 
   <div id="badge">vibe.je hackathon · 3D terrain · real weather</div>
@@ -4172,10 +4255,15 @@
       const v = (window.currentVehicle && window.currentVehicle.mode === mode) ? window.currentVehicle : VEHICLES[DEFAULT_VEHICLE[mode]];
       return Object.assign({}, base, v.stats);
     }
+    // Resolve the active vehicle for a mode (used by applyMode to tint the mesh).
+    function activeVehicle(mode) {
+      return (window.currentVehicle && window.currentVehicle.mode === mode) ? window.currentVehicle : VEHICLES[DEFAULT_VEHICLE[mode]];
+    }
     // Expose for tests
     window.VEHICLES = VEHICLES;
     window.BASE_PHYSICS = BASE_PHYSICS;
     window.resolveVehicleStats = resolveVehicleStats;
+    window.activeVehicle = activeVehicle;
 
     // Wake trail for boat mode
     let wakeTrailLine = null;
@@ -4242,8 +4330,11 @@
              target.closest('#menu-btn') || target.closest('#menu-panel') || target.closest('#night-toggle') ||
              target.closest('#airport-toggle') || target.closest('#airport-panel') || target.closest('#bus-toggle') ||
              target.closest('#radio-toggle') || target.closest('#radio-panel') ||
-             target.closest('#leaderboard-modal') || target.closest('#settings-panel') || target.closest('#username-modal');
+             target.closest('#leaderboard-modal') || target.closest('#settings-panel') || target.closest('#username-modal') ||
+             target.closest('#garage-btn') || target.closest('#garage-overlay');
     }
+    // Expose for tests / garage tap guard.
+    window.isOnUI = isOnUI;
 
     document.addEventListener('pointerdown', (e) => {
       if (isOnUI(e.target)) return;
@@ -4284,7 +4375,7 @@
         // Replace car with plane — use plane mesh directly
         scene.remove(carGroup);
         if (wakeTrailLine) { scene.remove(wakeTrailLine); wakeTrailLine = null; }
-        carGroup = createPlane(0xcc2222);
+        carGroup = createPlane(activeVehicle('fly').color);
         const terrainH = getTerrainHeight(carX, carZ);
         carGroup.position.set(carX, terrainH + 0.5, carZ);
         scene.add(carGroup);
@@ -4308,12 +4399,12 @@
           scene.add(planeShadow);
         }
         planeShadow.visible = true;
-        document.getElementById('mode-name').textContent = '✈️ Fly Mode';
+        document.getElementById('mode-name').textContent = '✈️ ' + activeVehicle('fly').name;
       } else if (mode === 'boat') {
         vehicleMode = 'boat';
         // Replace car with boat — use boat mesh directly, not copy
         scene.remove(carGroup);
-        carGroup = createBoat(0xcc2222);
+        carGroup = createBoat(activeVehicle('boat').color);
         // Current tide level (mirrors the animation loop: oscillates between -5 and -1)
         const tideLevel = -3 + Math.sin(performance.now() * 0.0005) * 2;
         // Start boat at nearest water point
@@ -4332,7 +4423,7 @@
         const wakeTrailMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.8, linewidth: 2 });
         wakeTrailLine = new THREE.Line(wakeTrailGeo, wakeTrailMat);
         scene.add(wakeTrailLine);
-        document.getElementById('mode-name').textContent = '🚤 Boat Mode';
+        document.getElementById('mode-name').textContent = '🚤 ' + activeVehicle('boat').name;
         if (planeShadow) planeShadow.visible = false;
       } else { // drive
         vehicleMode = 'drive';
@@ -4340,12 +4431,12 @@
         // Restore original car — create fresh car mesh
         scene.remove(carGroup);
         if (wakeTrailLine) { scene.remove(wakeTrailLine); wakeTrailLine = null; }
-        carGroup = createCar(0xcc2222);
+        carGroup = createCar(activeVehicle('drive').color);
         const th = getTerrainHeight(carX, carZ);
         carGroup.position.set(carX, Math.max(th + 0.5, 0), carZ);
         scene.add(carGroup);
         updateUsernameSprite();
-        document.getElementById('mode-name').textContent = '🚗 Drive Mode';
+        document.getElementById('mode-name').textContent = '🚗 ' + activeVehicle('drive').name;
         if (planeShadow) planeShadow.visible = false;
       }
       // Update the cycling button label
@@ -4361,6 +4452,90 @@
       const idx = MODES.findIndex(m => m.value === (modeCycleBtn.dataset.mode || 'drive'));
       applyMode(MODES[(idx + 1) % MODES.length].value);
     });
+
+    // ====== GARAGE (T-GARAGE-UI #31) ======
+    // Touch-friendly bottom-sheet vehicle selection per mode.
+    const garageBtn = document.getElementById('garage-btn');
+    const garageOverlay = document.getElementById('garage-overlay');
+    const garageCarousel = document.getElementById('garage-carousel');
+    const GARAGE_TAB_META = {
+      drive: { label: '🚗 Cars', icon: '🚗' },
+      boat:  { label: '🚤 Boats', icon: '🚤' },
+      fly:   { label: '✈️ Planes', icon: '✈️' },
+    };
+    // Normalise a stat to a 0-100% bar for display.
+    const STAT_MAX = { speed: 200, accel: 50, grip: 1.5 };
+    function statPct(vehicle, key) {
+      const val = (vehicle.stats && vehicle.stats[key] !== undefined) ? vehicle.stats[key]
+        : (key === 'grip' ? 1.0 : 0);
+      const max = STAT_MAX[key];
+      return Math.max(0, Math.min(100, Math.round((val / max) * 100)));
+    }
+    function buildGarageCard(vehicle, id) {
+      const card = document.createElement('button');
+      card.className = 'garage-card';
+      card.setAttribute('data-vehicle', id);
+      const isSelected = window.currentVehicle && window.currentVehicle === vehicle;
+      if (isSelected) card.classList.add('selected');
+      const name = vehicle.name || id;
+      const swatch = `<span class="gc-swatch" style="background:#${vehicle.color.toString(16).padStart(6, '0')}"></span>`;
+      const statsRow = ['speed', 'accel', 'grip'].map(k => {
+        const pct = statPct(vehicle, k);
+        return `<div class="gc-stat" data-stat="${k}"><span>${k}</span><div class="gc-bar"><div class="gc-fill" style="width:${pct}%"></div></div></div>`;
+      }).join('');
+      card.innerHTML = `<div class="gc-top">${swatch}<span class="gc-name">${name}</span></div>${statsRow}`;
+      card.addEventListener('click', (e) => {
+        e.preventDefault(); e.stopPropagation();
+        selectGarageVehicle(id);
+      });
+      return card;
+    }
+    let garageTab = 'drive';
+    function renderGarage(tab) {
+      garageTab = tab || garageTab;
+      if (!garageCarousel) return;
+      garageCarousel.innerHTML = '';
+      const byMode = {};
+      Object.keys(window.VEHICLES || {}).forEach(id => {
+        const v = window.VEHICLES[id];
+        (byMode[v.mode] = byMode[v.mode] || []).push([id, v]);
+      });
+      (byMode[garageTab] || []).forEach(([id, v]) => {
+        garageCarousel.appendChild(buildGarageCard(v, id));
+      });
+      const tabs = document.querySelectorAll('#garage-tabs .garage-tab');
+      tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === garageTab));
+    }
+    function selectGarageVehicle(id) {
+      const v = window.VEHICLES && window.VEHICLES[id];
+      if (!v) return;
+      window.currentVehicle = v;
+      if (typeof applyMode === 'function') applyMode(v.mode);
+      // Re-render so the newly selected card is highlighted; overlay stays open
+      // until the player taps Close (per garage UI spec).
+      renderGarage(v.mode);
+    }
+    function setGarageOpen(open) {
+      if (!garageOverlay) return;
+      garageOverlay.classList.toggle('show', open);
+      garageOverlay.setAttribute('aria-hidden', open ? 'false' : 'true');
+      if (garageBtn) garageBtn.classList.toggle('active', open);
+      if (open) renderGarage(modeCycleBtn ? (modeCycleBtn.dataset.mode || 'drive') : 'drive');
+    }
+    function openGarage() { setGarageOpen(true); }
+    if (garageBtn) garageBtn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); openGarage(); });
+    const garageCloseBtn = document.getElementById('garage-close');
+    if (garageCloseBtn) garageCloseBtn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); setGarageOpen(false); });
+    document.querySelectorAll('#garage-tabs .garage-tab').forEach(tab => {
+      tab.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); renderGarage(tab.dataset.tab); });
+    });
+    // Close garage when tapping the backdrop outside the sheet.
+    if (garageOverlay) garageOverlay.addEventListener('pointerdown', (e) => {
+      if (e.target === garageOverlay) setGarageOpen(false);
+    });
+    window.openGarage = openGarage;
+    window.setGarageOpen = setGarageOpen;
+    window.renderGarage = renderGarage;
 
     // Camera modes (cycling button)
     let camMode = 'chase';

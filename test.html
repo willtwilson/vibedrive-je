@@ -443,6 +443,69 @@ window.addEventListener('load', () => {
         fw.currentVehicle = prev;
       }
     } catch(e) { log(`Vehicle roster: ${e.message}`, 'fail'); }
+
+    // Test 17: Garage selection UI (T-GARAGE-UI #31)
+    try {
+      const gBtn = fd.getElementById('garage-btn');
+      const overlay = fd.getElementById('garage-overlay');
+      log(`Garage button exists`, !!gBtn ? 'pass' : 'fail');
+      log(`Garage overlay exists`, !!overlay ? 'pass' : 'fail');
+
+      if (gBtn && overlay) {
+        // Opens from the HUD garage button
+        gBtn.click();
+        log(`Garage overlay opens (show class)`, overlay.classList.contains('show') ? 'pass' : 'fail');
+
+        // Three mode tabs (car, boat, plane)
+        const tabs = fd.querySelectorAll('#garage-tabs .garage-tab');
+        log(`Garage has 3 mode tabs`, tabs.length === 3 ? 'pass' : `fail (${tabs.length})`);
+        const tabModes = ['drive', 'boat', 'fly'];
+        log(`Garage tabs cover drive/boat/fly`, tabModes.every(m => fd.querySelector(`#garage-tabs .garage-tab[data-tab="${m}"]`)) ? 'pass' : 'fail');
+
+        // Carousel renders 3 cards for the current (drive) tab
+        const driveCards = fd.querySelectorAll('#garage-carousel .garage-card');
+        log(`Drive tab shows 3 vehicle cards`, driveCards.length === 3 ? 'pass' : `fail (${driveCards.length})`);
+
+        // Each card shows name + key stats (speed, accel, grip)
+        const card = driveCards[0];
+        const nameEl = card && card.querySelector('.gc-name');
+        const hasSpeed = card && card.querySelector('.gc-stat[data-stat="speed"]');
+        const hasAccel = card && card.querySelector('.gc-stat[data-stat="accel"]');
+        const hasGrip = card && card.querySelector('.gc-stat[data-stat="grip"]');
+        log(`Vehicle card shows name`, !!(nameEl && nameEl.textContent.trim()) ? 'pass' : 'fail');
+        log(`Vehicle card shows Speed stat`, !!hasSpeed ? 'pass' : 'fail');
+        log(`Vehicle card shows Accel stat`, !!hasAccel ? 'pass' : 'fail');
+        log(`Vehicle card shows Grip stat`, !!hasGrip ? 'pass' : 'fail');
+
+        // Switching tabs re-renders the carousel for that mode
+        const flyTab = fd.querySelector('#garage-tabs .garage-tab[data-tab="fly"]');
+        if (flyTab) flyTab.click();
+        const flyCards = fd.querySelectorAll('#garage-carousel .garage-card');
+        log(`Fly tab shows 3 vehicle cards`, flyCards.length === 3 ? 'pass' : `fail (${flyCards.length})`);
+
+        // Tapping a vehicle selects it and integrates with the mode-cycle button
+        const jetCard = fd.querySelector('#garage-carousel .garage-card[data-vehicle="jet"]');
+        if (jetCard) {
+          jetCard.click();
+          const mc = fd.getElementById('mode-cycle');
+          log(`Selecting jet sets currentVehicle`, fw.currentVehicle && fw.currentVehicle.name === 'Jet' ? 'pass' : 'fail');
+          log(`Selecting jet switches to fly mode`, mc && mc.dataset.mode === 'fly' ? 'pass' : 'fail');
+          // renderGarage rebuilds the cards, so re-query for the freshly rendered one.
+          const selectedJet = fd.querySelector('#garage-carousel .garage-card[data-vehicle="jet"]');
+          log(`Selecting jet highlights the card`, !!(selectedJet && selectedJet.classList.contains('selected')) ? 'pass' : 'fail');
+        }
+
+        // isOnUI blocks steering when tapping garage UI
+        if (typeof fw.isOnUI === 'function') {
+          log(`isOnUI blocks garage overlay steering`, !!fw.isOnUI(overlay) ? 'pass' : 'fail');
+        }
+
+        // Close button dismisses the overlay
+        const closeBtn = fd.getElementById('garage-close');
+        if (closeBtn) closeBtn.click();
+        log(`Garage overlay closes`, !overlay.classList.contains('show') ? 'pass' : 'fail');
+      }
+    } catch(e) { log(`Garage UI: ${e.message}`, 'fail'); }
     updateSummary();
 
   }, 2000);
