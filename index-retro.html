@@ -1469,6 +1469,23 @@ window.mergeGeometries = window.THREE.mergeGeometries;
         return THREE.MathUtils.clamp(1.5 - speed * 0.012, 0.55, 1.5);
       }
 
+      // ---- T-RETRO-PHYSICS #40: speed-sensitive steering curve ----
+      // GTA 1 "bicycle vs boat": sharp at low speed, wider arc at high speed.
+      // speedRatio in [0,1]; returns the yaw authority (units/s of heading).
+      function steeringAuthority(speedRatio) {
+        return PHYS.turnRate * Math.pow(1 - speedRatio * PHYS.speedSteerFalloff, PHYS.steeringCurve);
+      }
+
+      // ---- T-RETRO-PHYSICS #40: damage → speed degradation ----
+      // Returns a [0,1] multiplier on top speed AND acceleration from the
+      // #28 damage model. Pristine = 1, Wrecked = 0, scaled by damageSpeedLoss.
+      function damageSpeedFactor(health) {
+        const stage = getDamageStage(health);
+        if (stage === 'wrecked') return 0;
+        const stageLoss = stage === 'heavy' ? 0.5 : stage === 'light' ? 0.2 : 0;
+        return 1 - stageLoss * PHYS.damageSpeedLoss;
+      }
+
       function updateCamera(dt) {
         const target = targetZoom(player.speed);
         cam.zoom += (target - cam.zoom) * Math.min(1, dt * 3);
@@ -1935,13 +1952,216 @@ window.mergeGeometries = window.THREE.mergeGeometries;
         drawPlayer(ctx, w, h);
       }
 
+      // ---- T-RETRO-POLISH #28: 4-stage damage model ----
+      // Pristine (100-75) → Light (75-50) → Heavy (50-25) → Wrecked (25-0).
+      function getDamageStage(health) {
+        if (health > 75) return 'pristine';
+        if (health > 50) return 'light';
+        if (health > 25) return 'heavy';
+        return 'wrecked';
+      }
+
+      // Apply damage to the shared carHealth state, clamped to [0,100].
+      function applyDamage(amount) {
+        carHealth = Math.max(0, Math.min(100, carHealth - amount));
+        return carHealth;
+      }
+
+      // ---- T-RETRO-POLISH #28: particle effects ----
+      // Smoke, fire, explosions, skid marks and crash debris. Particles are
+      // stored in a plain array and drawn in the effects layer each frame.
+      const particles = [];
+
+      function spawnParticles(x, z, opts) {
+        const count = opts.count || 10;
+        for (let i = 0; i < count; i++) {
+          particles.push({
+            x, z,
+            vx: (Math.random() - 0.5) * (opts.spread || 2),
+            vz: (Math.random() - 0.5) * (opts.spread || 2),
+            life: opts.life || 1,
+            maxLife: opts.life || 1,
+            size: opts.size || 3,
+            color: opts.color || '#888888',
+            type: opts.type || 'smoke'
+          });
+        }
+      }
+
+      function spawnSmoke(x, z) {
+        spawnParticles(x, z, { count: 8, color: '#9a9a9a', life: 1.5, size: 4, spread: 1.5, type: 'smoke' });
+      }
+      function spawnFire(x, z) {
+        spawnParticles(x, z, { count: 10, color: '#ff6600', life: 0.8, size: 3, spread: 1, type: 'fire' });
+      }
+      function spawnExplosion(x, z) {
+        spawnParticles(x, z, { count: 30, color: '#ff4400', life: 1.2, size: 6, spread: 6, type: 'explosion' });
+      }
+      function spawnSkid(x, z) {
+        spawnParticles(x, z, { count: 4, color: '#222222', life: 2, size: 2, spread: 0.5, type: 'skid' });
+      }
+      function spawnDebris(x, z) {
+        spawnParticles(x, z, { count: 12, color: '#555555', life: 1, size: 2, spread: 4, type: 'debris' });
+      }
+
+      function updateParticles(dt) {
+        for (let i = particles.length - 1; i >= 0; i--) {
+          const p = particles[i];
+          p.life -= dt;
+          if (p.life <= 0) { particles.splice(i, 1); continue; }
+          p.x += p.vx * dt;
+          p.z += p.vz * dt;
+          p.vx *= 0.98;
+          p.vz *= 0.98;
+        }
+      }
+
       function drawEffects(ctx, w, h) {
-        // Reserved layer — particles/fx land here.
+        for (let i = 0; i < particles.length; i++) {
+          const p = particles[i];
+          const s = worldToScreen(p.x, p.z, w, h);
+          const alpha = Math.max(0, Math.min(1, p.life / p.maxLife));
+          const size = Math.max(1, p.size * cam.zoom * (1 + (1 - alpha) * 2));
+          ctx.globalAlpha = alpha;
+          ctx.fillStyle = p.color;
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, size, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.globalAlpha = 1;
       }
 
       function drawHUD(ctx, w, h) {
         // HUD is DOM overlay; reserved layer.
       }
+
+      // ---- T-RETRO-POLISH #28: procedural audio (Web Audio API) ----
+      // Engine hum, police siren, crash and explosion. All functions are
+      // defensive: they no-op (return) when Web Audio is unavailable or the
+      // context is suspended, so they never throw in a headless test iframe.
+      const audio = (function() {
+        let ctx = null;
+        let engineOsc = null;
+        let engineGain = null;
+
+        function ensure() {
+          if (ctx) return true;
+          const AC = window.AudioContext || window.webkitAudioContext;
+          if (!AC) return false;
+          try { ctx = new AC(); } catch (e) { return false; }
+          return true;
+        }
+
+        function playEngine(speedRatio) {
+          if (!ensure()) return;
+          try {
+            if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+            if (!engineOsc) {
+              engineOsc = ctx.createOscillator();
+              engineOsc.type = 'sawtooth';
+              engineGain = ctx.createGain();
+              engineGain.gain.value = 0;
+              engineOsc.connect(engineGain);
+              engineGain.connect(ctx.destination);
+              engineOsc.start();
+            }
+            const r = Math.max(0, Math.min(1, speedRatio || 0));
+            engineOsc.frequency.setTargetAtTime(40 + r * 120, ctx.currentTime, 0.1);
+            engineGain.gain.setTargetAtTime(0.03 + r * 0.08, ctx.currentTime, 0.1);
+          } catch (e) {}
+        }
+
+        function playSiren() {
+          if (!ensure()) return;
+          try {
+            if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+            const osc = ctx.createOscillator();
+            osc.type = 'sine';
+            const gain = ctx.createGain();
+            gain.gain.value = 0.12;
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            const t0 = ctx.currentTime;
+            for (let i = 0; i < 4; i++) {
+              osc.frequency.setValueAtTime(600, t0 + i * 0.5);
+              osc.frequency.linearRampToValueAtTime(900, t0 + i * 0.5 + 0.25);
+              osc.frequency.linearRampToValueAtTime(600, t0 + i * 0.5 + 0.5);
+            }
+            osc.start(t0);
+            osc.stop(t0 + 2);
+            gain.gain.setValueAtTime(0.12, t0);
+            gain.gain.linearRampToValueAtTime(0, t0 + 2);
+            setTimeout(() => { try { osc.disconnect(); gain.disconnect(); } catch (e) {} }, 2100);
+          } catch (e) {}
+        }
+
+        function playCrash() {
+          if (!ensure()) return;
+          try {
+            if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+            const len = Math.floor(ctx.sampleRate * 0.3);
+            const buffer = ctx.createBuffer(1, len, ctx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / len);
+            const src = ctx.createBufferSource();
+            src.buffer = buffer;
+            const gain = ctx.createGain();
+            gain.gain.value = 0.5;
+            const filter = ctx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.value = 800;
+            src.connect(filter);
+            filter.connect(gain);
+            gain.connect(ctx.destination);
+            src.start();
+            setTimeout(() => { try { src.disconnect(); gain.disconnect(); filter.disconnect(); } catch (e) {} }, 400);
+          } catch (e) {}
+        }
+
+        function playExplosion() {
+          if (!ensure()) return;
+          try {
+            if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+            const len = Math.floor(ctx.sampleRate * 1.0);
+            const buffer = ctx.createBuffer(1, len, ctx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2);
+            const src = ctx.createBufferSource();
+            src.buffer = buffer;
+            const gain = ctx.createGain();
+            gain.gain.value = 0.8;
+            const filter = ctx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.value = 400;
+            src.connect(filter);
+            filter.connect(gain);
+            gain.connect(ctx.destination);
+            src.start();
+            setTimeout(() => { try { src.disconnect(); gain.disconnect(); filter.disconnect(); } catch (e) {} }, 1100);
+          } catch (e) {}
+        }
+
+        return { playEngine, playSiren, playCrash, playExplosion };
+      })();
+
+      // ---- T-RETRO-POLISH #28: day/night cycle ----
+      // Continuous darkness factor 0..1 (0 = full day, 1 = full night). Mirrors
+      // the 3D renderer's getDarknessFactor so the Canvas 2D view matches.
+      // A darknessOverride (set via setDarkness) takes precedence so tests and
+      // the night toggle can pin the scene to a specific time of day.
+      let darknessOverride = null;
+      function setDarkness(v) { darknessOverride = v; }
+      function getDarkness() {
+        if (darknessOverride !== null) return darknessOverride;
+        if (typeof forceNight !== 'undefined' && forceNight) return 1;
+        const h = new Date().getHours() + new Date().getMinutes() / 60;
+        if (h < 6) return 1;
+        if (h < 8) return 0.55 * (1 - (h - 6) / 2);
+        if (h < 17) return 0;
+        if (h < 20) return (h - 17) / 3;
+        return 1;
+      }
+      const dayNight = { get darkness() { return getDarkness(); } };
 
       // ---- Layered render pass ----
       function render(w, h) {
@@ -1960,6 +2180,12 @@ window.mergeGeometries = window.THREE.mergeGeometries;
         drawVehicles(ctx, w, h);
         drawEffects(ctx, w, h);
         drawHUD(ctx, w, h);
+        // Day/night darkness overlay — dims the whole scene toward night.
+        const darkness = getDarkness();
+        if (darkness > 0) {
+          ctx.fillStyle = 'rgba(10, 12, 30, ' + (darkness * 0.6).toFixed(3) + ')';
+          ctx.fillRect(0, 0, w, h);
+        }
         ctx.restore();
       }
 
@@ -1967,8 +2193,12 @@ window.mergeGeometries = window.THREE.mergeGeometries;
         cam, player, layers, roadSegments,
         spriteCount: SPRITE_DIRS, spriteCache, spriteForHeading,
         targetZoom, updateCamera, worldToScreen,
+        steeringAuthority, damageSpeedFactor,
         PALETTE, LEFT_HAND, isWater, pointInPolygon,
         buildings, trees, signs, crossings, roundels,
+        getDamageStage, applyDamage,
+        particles, spawnParticles, spawnSmoke, spawnFire, spawnExplosion, spawnSkid, spawnDebris, updateParticles,
+        audio, getDarkness, setDarkness, dayNight,
         drawWater, drawGround, drawBuildings, drawTrees, drawMarkings, drawSigns,
         drawRoads, drawPlayer, drawVehicles, drawEffects, drawHUD,
         render
@@ -4652,6 +4882,9 @@ window.mergeGeometries = window.THREE.mergeGeometries;
     // ====== GAME STATE ======
     let vehicleMode = 'drive'; // 'drive' or 'fly'
     let carX = 46, carZ = -65, carHeading = 0, carSpeed = 0; // Start in St Helier
+    // T-RETRO-POLISH #28: 4-stage damage model — car health 0..100
+    let carHealth = 100;
+    let wreckedExploded = false; // one-shot explosion when health hits 0
     let gameStarted = false; // flips true on first user input (prevents pre-drive reward collection)
     function markGameStarted(){ if(!gameStarted){ gameStarted = true; } }
     let lateralVelocity = 0; // lateral slide momentum for sharp turns
@@ -4688,7 +4921,7 @@ window.mergeGeometries = window.THREE.mergeGeometries;
       maxSlipAngle: 0.5,       // rad — beyond this the tyre is fully sliding
 
       // Drift
-      handbrakeGrip: 0.35,     // rear grip multiplier when handbrake held
+      handbrakeGrip: 0.25,     // rear grip multiplier when handbrake held (low = more slide)
       driftFactor: 1.0,        // overall drift intensity
 
       // Weight transfer
@@ -4698,6 +4931,10 @@ window.mergeGeometries = window.THREE.mergeGeometries;
       // Steering
       turnRate: 3.0,           // base yaw rate
       speedSteerFalloff: 0.5,   // how much steering shrinks at high speed
+      steeringCurve: 1.6,       // GTA 1 "bicycle vs boat": >1 = sharper low-speed, wider high-speed
+
+      // Damage → performance (T-RETRO-PHYSICS #40)
+      damageSpeedLoss: 0.5,     // top speed/accel loss at full damage (0 = none, 1 = full)
 
       // Suspension (visual)
       springStiffness: 60,
@@ -4803,6 +5040,7 @@ window.mergeGeometries = window.THREE.mergeGeometries;
     Object.defineProperty(window, 'vForward', { get: () => vForward, configurable: true });
     Object.defineProperty(window, 'vLateral', { get: () => vLateral, configurable: true });
     Object.defineProperty(window, 'carSpeed', { get: () => carSpeed, configurable: true });
+    Object.defineProperty(window, 'carHealth', { get: () => carHealth, configurable: true });
     // Wake trail for boat mode
     let wakeTrailLine = null;
     let wakeTrailPoints = [];
@@ -5304,10 +5542,12 @@ window.mergeGeometries = window.THREE.mergeGeometries;
         // threshold, weight transfer (pitch/roll load split), and handbrake rear-grip cut.
         const P = PHYS;
         const gripScale = isWetRoads(weatherCategory) ? 0.7 : 1.0; // wet roads cut lateral + longitudinal grip
+        // T-RETRO-PHYSICS #40: damage degrades top speed AND acceleration.
+        const dmgFactor = retro.damageSpeedFactor(carHealth);
 
         // (1) Longitudinal force — throttle/brake/reverse/engine-brake
         if (keys.up) {
-          vForward += P.accel * dt * (1 - vForward / P.maxSpeed);
+          vForward += P.accel * dmgFactor * dt * (1 - vForward / P.maxSpeed);
         } else if (keys.down) {
           if (vForward > 0) {
             const brakeForce = P.brake * dt * (Math.abs(vForward) / P.maxSpeed + 0.3);
@@ -5326,7 +5566,8 @@ window.mergeGeometries = window.THREE.mergeGeometries;
         // (2) Steering input — keys + touch steerValue, speed-sensitive authority
         const steer = (keys.left ? 1 : 0) - (keys.right ? 1 : 0) - steerValue;
         const speedRatio = Math.min(1, Math.abs(vForward) / P.maxSpeed);
-        const steerAuthority = P.turnRate * (1 - speedRatio * P.speedSteerFalloff);
+        // GTA 1 "bicycle vs boat" curve: sharp at low speed, wide at high speed.
+        const steerAuthority = retro.steeringAuthority(speedRatio);
 
         // (3) Weight transfer — load split front/rear from accel (pitch) and steer (roll)
         const accelLong = (vForward - prevVForward) / Math.max(dt, 0.001);
@@ -5356,11 +5597,16 @@ window.mergeGeometries = window.THREE.mergeGeometries;
 
         // (6) Integrate lateral velocity — grip pulls vLateral toward 0 (self-correcting)
         vLateral += latForce * dt;
-        const gripRecovery = keys.handbrake ? 0.90 : 0.94;
+        // Handbrake holds the slide longer (lower recovery) for a satisfying drift.
+        const gripRecovery = keys.handbrake ? 0.85 : 0.94;
         vLateral *= gripRecovery;
         if (Math.abs(vLateral) < 0.01) vLateral = 0;
         latAccel = latForce; // smoothed lateral accel for body roll
         carRoll = THREE.MathUtils.clamp(latAccel * P.bodyRoll, -0.2, 0.2);
+
+        // T-RETRO-PHYSICS #40: skid marks when drifting (handbrake or hard slide).
+        const drifting = (keys.handbrake && Math.abs(vForward) > 5) || Math.abs(vLateral) > 8;
+        if (drifting && Math.random() < 0.5) retro.spawnSkid(carX, carZ);
 
         // (7) Terrain slope — sample height at car position and 1 unit ahead
         const rad = carHeading * Math.PI / 180;
@@ -5837,6 +6083,78 @@ window.mergeGeometries = window.THREE.mergeGeometries;
           if (wantedLevel === 0) showToast('✅ Wanted level cleared.');
         }
       }
+
+      // ====== T-RETRO-POLISH #28: DAMAGE MODEL ======
+      if (vehicleMode === 'drive') {
+        // Collision with AI cars — damage scales with impact speed.
+        for (const ai of aiCars) {
+          const dx = ai.x - carX, dz = ai.z - carZ;
+          const dist = Math.sqrt(dx * dx + dz * dz);
+          if (dist < 2.5 && Math.abs(carSpeed) > 5) {
+            const impact = Math.abs(carSpeed) * 0.5;
+            applyDamage(impact);
+            retro.spawnDebris(carX, carZ);
+            retro.audio.playCrash();
+            // Knockback so the car doesn't sit inside the AI car.
+            vForward *= -0.3;
+            carSpeed = vForward;
+          }
+        }
+
+        // Collision with pedestrians — small damage + debris.
+        for (const ped of pedestrians) {
+          const dx = ped.x - carX, dz = ped.z - carZ;
+          const dist = Math.sqrt(dx * dx + dz * dz);
+          if (dist < 1.5 && Math.abs(carSpeed) > 3) {
+            applyDamage(5);
+            retro.spawnDebris(carX, carZ);
+            retro.audio.playCrash();
+          }
+        }
+
+        // Off-road damage — sustained while driving fast off the island.
+        if (islandMask(carX, carZ) < 0.1 && Math.abs(carSpeed) > 20) {
+          applyDamage(2 * dt);
+        }
+
+        // Damage-stage visual effects: smoke (light/heavy), fire (heavy).
+        const stage = retro.getDamageStage(carHealth);
+        if (stage === 'light' || stage === 'heavy') {
+          if (Math.random() < 0.3) retro.spawnSmoke(carX, carZ);
+        }
+        if (stage === 'heavy') {
+          if (Math.random() < 0.2) retro.spawnFire(carX, carZ);
+        }
+
+        // Wrecked: one-shot explosion, car comes to a stop.
+        if (stage === 'wrecked' && !wreckedExploded) {
+          wreckedExploded = true;
+          retro.spawnExplosion(carX, carZ);
+          retro.audio.playExplosion();
+          vForward = 0;
+          carSpeed = 0;
+          showToast('💥 Wrecked!');
+        }
+
+        // Performance changes per stage — cap top speed as damage mounts
+        // (T-RETRO-PHYSICS #40: damageSpeedFactor drives the degradation).
+        const speedCap = retro.damageSpeedFactor(carHealth);
+        if (Math.abs(vForward) > PHYS.maxSpeed * speedCap) {
+          vForward = (vForward > 0 ? 1 : -1) * PHYS.maxSpeed * speedCap;
+          carSpeed = vForward;
+        }
+      }
+
+      // ====== T-RETRO-POLISH #28: AUDIO (engine + siren) ======
+      // Engine hum follows speed; siren wails while wanted. Only after the
+      // player has interacted (avoids autoplay-blocked AudioContext in tests).
+      if (gameStarted) {
+        retro.audio.playEngine(Math.abs(carSpeed) / MAX_SPEED);
+        if (wantedLevel > 0 && Math.random() < 0.01) retro.audio.playSiren();
+      }
+
+      // ====== T-RETRO-POLISH #28: PARTICLE UPDATE ======
+      retro.updateParticles(dt);
 
       // ====== POLICE AI ======
       policeCars.forEach(p => {
