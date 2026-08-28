@@ -266,6 +266,72 @@
     .menu-item.night-on .mi-state { color: var(--sprint-yellow); }
     .menu-sep { height: 1px; background: rgba(0, 168, 107, 0.15); margin: 6px 0; }
 
+    /* ====== GARAGE (T-GARAGE-UI #31) ====== */
+    .garage-btn {
+      min-width: 120px; min-height: 44px; padding: 10px 16px; border-radius: 0;
+      border: 1px solid var(--hud-border); background: var(--glass);
+      backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.04em; cursor: pointer;
+      user-select: none; -webkit-user-select: none; touch-action: none;
+      display: flex; align-items: center; gap: 6px; justify-content: center; transition: all 0.15s;
+    }
+    .garage-btn:hover, .garage-btn.active { background: var(--jersey-green); border-color: var(--jersey-green); color: var(--atlantic-blue); }
+
+    /* Full-screen overlay (bottom sheet) — touch-friendly */
+    .garage-overlay {
+      position: fixed; inset: 0; z-index: 90; display: none;
+      background: rgba(0, 0, 0, 0.5); justify-content: center; align-items: flex-end;
+    }
+    .garage-overlay.show { display: flex; }
+    .garage-sheet {
+      width: 100%; max-width: 640px; max-height: 78vh; display: flex; flex-direction: column;
+      background: var(--glass-deep); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border-top: 3px solid var(--jersey-green); border-left: 1px solid var(--hud-border); border-right: 1px solid var(--hud-border);
+      box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.55); padding: 10px 14px 18px;
+    }
+    .garage-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+    .garage-title { font-family: 'Inter', sans-serif; font-size: 16px; font-weight: 900; color: var(--jersey-green); text-transform: uppercase; letter-spacing: 0.06em; }
+    .garage-close {
+      min-width: 44px; min-height: 44px; border-radius: 0; border: 1px solid var(--hud-border);
+      background: var(--glass); color: var(--text-primary); font-size: 18px; font-weight: 800;
+      cursor: pointer; touch-action: none; user-select: none;
+    }
+    .garage-close:hover, .garage-close:active { background: var(--jersey-green); color: var(--atlantic-blue); }
+    .garage-tabs { display: flex; gap: 8px; margin-bottom: 12px; }
+    .garage-tab {
+      flex: 1; min-height: 44px; border-radius: 0; border: 1px solid var(--hud-border);
+      background: var(--glass); color: var(--text-primary); font-family: 'Inter', sans-serif;
+      font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+      cursor: pointer; touch-action: none; user-select: none; transition: all 0.15s;
+    }
+    .garage-tab.active { background: var(--jersey-green); border-color: var(--jersey-green); color: var(--atlantic-blue); }
+    .garage-carousel {
+      display: flex; gap: 10px; overflow-x: auto; padding: 4px 2px 10px;
+      -webkit-overflow-scrolling: touch; touch-action: pan-x; scroll-snap-type: x mandatory;
+    }
+    .garage-card {
+      flex: 0 0 auto; width: 152px; scroll-snap-align: start; border-radius: 0;
+      border: 1px solid var(--hud-border); background: var(--glass); padding: 10px;
+      display: flex; flex-direction: column; gap: 6px; cursor: pointer;
+      min-height: 88px; user-select: none; -webkit-user-select: none; touch-action: none;
+      font-family: 'Inter', sans-serif; text-align: left; transition: all 0.15s;
+    }
+    .garage-card:hover { border-color: var(--jersey-green); }
+    .garage-card.selected { border-color: var(--jersey-green); background: rgba(0, 168, 107, 0.18); box-shadow: 0 0 14px rgba(0, 168, 107, 0.35); }
+    .gc-top { display: flex; align-items: center; gap: 8px; }
+    .gc-swatch { width: 22px; height: 22px; flex: 0 0 auto; border: 1px solid rgba(255,255,255,0.25); }
+    .gc-name { flex: 1; font-size: 13px; font-weight: 800; color: var(--text-primary); letter-spacing: 0.02em; }
+    .gc-stat { display: flex; align-items: center; gap: 6px; font-size: 9px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+    .gc-stat .gc-bar { flex: 1; height: 5px; background: rgba(255,255,255,0.12); }
+    .gc-stat .gc-fill { height: 100%; background: var(--jersey-green); }
+    .garage-hint { text-align: center; font-size: 10px; color: var(--text-muted); padding-top: 6px; font-family: 'Inter', sans-serif; letter-spacing: 0.03em; }
+
+    @media (max-width: 500px) {
+      .garage-btn { min-width: 92px; min-height: 40px; font-size: 11px; padding: 7px 10px; }
+      .garage-card { width: 136px; }
+    }
+
     #loading {
       position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); z-index: 200;
       background: var(--glass-deep); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
