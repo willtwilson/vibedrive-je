@@ -1390,6 +1390,8 @@
     renderer.toneMappingExposure = 1.0;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.domElement.id = 'game-canvas';
+    // Make the canvas focusable so hardware keyboard input is received immediately on load (T-BUG-CONTROLS #33).
+    renderer.domElement.tabIndex = 0;
     document.body.appendChild(renderer.domElement);
 
     // ====== PMREM ENVIRONMENT MAP (procedural sky for IBL) ======
@@ -4350,10 +4352,17 @@
     // ====== CONTROLS ======
     const keys = { up: false, down: false, left: false, right: false, handbrake: false };
     let steerValue = 0;
+    // Expose live control state so the test harness can verify key→state mapping (T-BUG-CONTROLS #33).
+    window.getControlState = () => ({ ...keys });
+    window.__controlsReady = true;
 
-    // Keyboard — arrow keys AND WASD both work; space = handbrake
+    // Keyboard — arrow keys AND WASD both work; space = handbrake.
+    // preventDefault() stops arrow-key page scrolling so input always reaches the game on load.
     document.addEventListener('keydown', (e) => {
-      if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','w','W','a','A','s','S','d','D',' '].includes(e.key)) markGameStarted();
+      if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','w','W','a','A','s','S','d','D',' '].includes(e.key)) {
+        markGameStarted();
+        if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key)) e.preventDefault();
+      }
       if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') keys.up = true;
       if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') keys.down = true;
       if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') keys.left = true;
@@ -5790,6 +5799,8 @@
       startGame.started = true;
       fetchWeather();
       document.getElementById('loading').style.display = 'none';
+      // Grab focus on the canvas so WASD/arrow-key input works immediately on load (T-BUG-CONTROLS #33).
+      try { renderer.domElement.focus(); } catch (e) {}
       // Fade out the hackathon badge once the game starts
       setTimeout(() => { const b = document.getElementById('badge'); if (b) b.classList.add('hide'); }, 1500);
 
