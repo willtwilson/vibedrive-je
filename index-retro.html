@@ -1622,7 +1622,9 @@ window.addEventListener('unhandledrejection', (e) => { window.__testErrors.push(
       buildCarSprites();
 
       function spriteForHeading(headingDeg) {
-        const idx = Math.round(headingDeg * SPRITE_DIRS / 360);
+        // Sprite angle-0 nose points up (-y); physics heading-0 forward is +Z
+        // (down-screen). Offset 180 so the car faces its movement direction.
+        const idx = Math.round((headingDeg + 180) * SPRITE_DIRS / 360);
         const norm = ((idx % SPRITE_DIRS) + SPRITE_DIRS) % SPRITE_DIRS;
         return spriteCache[norm];
       }
