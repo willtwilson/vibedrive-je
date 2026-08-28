@@ -1270,6 +1270,11 @@ window.THREE = (function() {
 // Global aliases for previously-imported addon helpers (no WebGL).
 window.mergeGeometries = window.THREE.mergeGeometries;
 
+// ====== TEST ERROR CAPTURE (T-RETRO-INTEGRATE #29) ======
+window.__testErrors = [];
+window.addEventListener('error', (e) => { window.__testErrors.push(e.message || String(e)); });
+window.addEventListener('unhandledrejection', (e) => { window.__testErrors.push('unhandledrejection: ' + (e.reason && e.reason.message || e.reason)); });
+
 
     // ====== USERNAME SYSTEM ======
     let playerUsername = localStorage.getItem('vibedrive_username') || '';
