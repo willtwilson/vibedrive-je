@@ -4579,12 +4579,16 @@
       hatchback: { mode: 'drive', name: 'Hatchback', color: 0xcc2222, stats: { maxSpeed: 80, accel: 30, brake: 60, friction: 10, turnRate: 3.0, grip: 1.0, weight: 1.0, drift: 1.0 } },
       sports:    { mode: 'drive', name: 'Sports', color: 0x2244cc, stats: { maxSpeed: 110, accel: 42, brake: 60, friction: 10, turnRate: 3.6, grip: 0.7, weight: 0.8, drift: 1.6 } },
       truck:     { mode: 'drive', name: 'Truck', color: 0x886633, stats: { maxSpeed: 60, accel: 18, brake: 60, friction: 10, turnRate: 2.2, grip: 1.4, weight: 1.8, drift: 0.4 } },
-      cruiser:   { mode: 'boat', name: 'Cruiser', color: 0xffffff, stats: { maxSpeed: 80, accel: 15, brake: 60, friction: 5, turnRate: 1.8, planingSpeed: 18, rudderRate: 1.5, waveResponse: 0.6 } },
-      speedboat: { mode: 'boat', name: 'Speedboat', color: 0xff6600, stats: { maxSpeed: 100, accel: 22, brake: 60, friction: 5, turnRate: 2.0, planingSpeed: 12, rudderRate: 2.0, waveResponse: 0.9 } },
-      fishing:   { mode: 'boat', name: 'Fishing Boat', color: 0x2266aa, stats: { maxSpeed: 50, accel: 9, brake: 60, friction: 5, turnRate: 1.0, planingSpeed: 24, rudderRate: 1.0, waveResponse: 0.3 } },
-      cessna:    { mode: 'fly', name: 'Cessna', color: 0xcc2222, stats: { maxSpeed: 120, accel: 30, brake: 60, friction: 10, turnRate: 3.0, stallSpeed: 30, climbRate: 15, bankRate: 1.0, turnRadius: 1.0 } },
-      stunt:     { mode: 'fly', name: 'Stunt Plane', color: 0x22cc44, stats: { maxSpeed: 100, accel: 30, brake: 60, friction: 10, turnRate: 3.0, stallSpeed: 20, climbRate: 22, bankRate: 1.6, turnRadius: 0.7 } },
-      jet:       { mode: 'fly', name: 'Jet', color: 0x888888, stats: { maxSpeed: 200, accel: 30, brake: 60, friction: 10, turnRate: 3.0, stallSpeed: 45, climbRate: 10, bankRate: 0.6, turnRadius: 1.4 } },
+      // Boat defaults reproduce BOAT_PHYSICS exactly (maxSpeed 45, accel 14,
+      // idleFriction 1.2, rudderRate 1.5) so the default cruiser behaves identically.
+      cruiser:   { mode: 'boat', name: 'Cruiser', color: 0xffffff, stats: { maxSpeed: 45, accel: 14, friction: 1.2, turnRate: 1.5, planingSpeed: 18, rudderRate: 1.5, waveResponse: 0.6 } },
+      speedboat: { mode: 'boat', name: 'Speedboat', color: 0xff6600, stats: { maxSpeed: 100, accel: 22, friction: 1.2, turnRate: 2.0, planingSpeed: 12, rudderRate: 2.0, waveResponse: 0.9 } },
+      fishing:   { mode: 'boat', name: 'Fishing Boat', color: 0x2266aa, stats: { maxSpeed: 30, accel: 9, friction: 2.0, turnRate: 1.0, planingSpeed: 24, rudderRate: 1.0, waveResponse: 0.3 } },
+      // Plane defaults reproduce PLANE_PHYSICS exactly (bankRate 2.2, thrust 26, no
+      // accel/brake/friction knobs) so the default cessna behaves identically.
+      cessna:    { mode: 'fly', name: 'Cessna', color: 0xcc2222, stats: { maxSpeed: 120, stallSpeed: 30, climbRate: 15, bankRate: 2.2, turnRadius: 1.0 } },
+      stunt:     { mode: 'fly', name: 'Stunt Plane', color: 0x22cc44, stats: { maxSpeed: 100, stallSpeed: 20, climbRate: 22, bankRate: 3.5, turnRadius: 0.7 } },
+      jet:       { mode: 'fly', name: 'Jet', color: 0x888888, stats: { maxSpeed: 200, stallSpeed: 45, climbRate: 10, bankRate: 1.3, turnRadius: 1.4 } },
     };
     // Default vehicle per mode — preserves current behaviour until a choice is made.
     const DEFAULT_VEHICLE = { drive: 'hatchback', boat: 'cruiser', fly: 'cessna' };
@@ -4607,10 +4611,48 @@
       if (cv && cv.mode === mode) return cv;
       return selectedVehicleFor(mode);
     }
-    // Merge the mode's base physics with the active vehicle's stat overrides.
+    // Translate a vehicle's simplified stat knobs into the physics keys the live
+    // branch actually reads. Keys that already match (maxSpeed, accel, turnRate,
+    // grip, ...) pass through; the GARAGE-spec knobs (weight, drift, friction,
+    // turnRadius) are mapped onto the richer physics objects (PHYS/BOAT/PLANE).
+    function translateVehicleStats(mode, stats) {
+      const out = {};
+      Object.keys(stats || {}).forEach((k) => {
+        const v = stats[k];
+        if (mode === 'drive') {
+          if (k === 'friction') out.engineBrake = v;
+          else if (k === 'weight') out.weightTransfer = PHYS.weightTransfer * v;
+          else if (k === 'drift') out.driftFactor = v;
+          else out[k] = v;
+        } else if (mode === 'boat') {
+          if (k === 'friction') out.idleFriction = v;
+          else if (k === 'turnRate') out.rudderRate = v;
+          else if (k === 'brake') { /* boat has no brake knob */ }
+          else out[k] = v;
+        } else if (mode === 'fly') {
+          if (k === 'accel') out.thrust = v;
+          else if (k === 'friction') out.dragLinear = v * (PLANE_PHYSICS.dragLinear / 10);
+          else if (k === 'turnRate') out.bankRate = v;
+          else if (k === 'turnRadius') { out.turnRadiusMax = v; out.turnRadiusMin = PLANE_PHYSICS.turnRadiusMin * v; }
+          else if (k === 'brake') { /* plane has no brake knob */ }
+          else out[k] = v;
+        } else {
+          out[k] = v;
+        }
+      });
+      return out;
+    }
+    // Merge the mode's real base physics with the active vehicle's stat overrides.
+    // Cached per (mode, vehicle) so the per-frame physics read never allocates —
+    // no GC spikes on iPad. Rebuilds only when the selected vehicle changes.
+    const _resolvedStats = {};
     function resolveVehicleStats(mode) {
-      const base = BASE_PHYSICS[mode] || BASE_PHYSICS.drive;
-      return Object.assign({}, base, activeVehicle(mode).stats);
+      const v = activeVehicle(mode);
+      const key = mode + ':' + v.name;
+      if (_resolvedStats[mode] && _resolvedStats[mode].__key === key) return _resolvedStats[mode];
+      const base = mode === 'fly' ? PLANE_PHYSICS : mode === 'boat' ? BOAT_PHYSICS : PHYS;
+      _resolvedStats[mode] = Object.assign({ __key: key }, base, translateVehicleStats(mode, v.stats));
+      return _resolvedStats[mode];
     }
     // ====== VEHICLE CHOICE PERSISTENCE (T-GARAGE-SWAP #32) ======
     // Persist the per-mode selection per player. Primary store is localStorage
@@ -4667,6 +4709,7 @@
     window.VEHICLES = VEHICLES;
     window.BASE_PHYSICS = BASE_PHYSICS;
     window.resolveVehicleStats = resolveVehicleStats;
+    window.translateVehicleStats = translateVehicleStats;
     window.activeVehicle = activeVehicle;
     window.selectedVehicleFor = selectedVehicleFor;
     window.selectedVehicles = selectedVehicles;
@@ -5277,7 +5320,8 @@
         // ====== ENHANCED CAR PHYSICS (T-PHYS-IMPLEMENT-CAR #20) ======
         // Bicycle grip model: longitudinal force + lateral grip that saturates at a slip
         // threshold, weight transfer (pitch/roll load split), and handbrake rear-grip cut.
-        const P = PHYS;
+        // Per-vehicle garage stats override the tuned base (T-GARAGE-IMPLEMENT #24).
+        const P = resolveVehicleStats('drive');
         const gripScale = isWetRoads(weatherCategory) ? 0.7 : 1.0; // wet roads cut lateral + longitudinal grip
 
         // (1) Longitudinal force — throttle/brake/reverse/engine-brake
@@ -5366,7 +5410,8 @@
 
       if (vehicleMode === 'fly') {
         // ====== ENHANCED PLANE PHYSICS (T-PHYS-IMPLEMENT-PLANE #22) ======
-        const P = PLANE_PHYSICS;
+        // Per-vehicle garage stats override the tuned base (T-GARAGE-IMPLEMENT #24).
+        const P = resolveVehicleStats('fly');
         const groundH = getTerrainHeight(carX, carZ);
 
         // (1) Throttle input: up = full, down = brake/descend, neutral = cruise
@@ -5495,7 +5540,8 @@
         }
       } else if (vehicleMode === 'boat') {
         // ====== ENHANCED BOAT PHYSICS (T-PHYS-IMPLEMENT-BOAT #21) ======
-        const B = BOAT_PHYSICS;
+        // Per-vehicle garage stats override the tuned base (T-GARAGE-IMPLEMENT #24).
+        const B = resolveVehicleStats('boat');
         const terrainHeight = getTerrainHeight(carX, carZ);
         if (terrainHeight > tideLevel) {
           // Push boat back — can't go on land
