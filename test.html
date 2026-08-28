@@ -1129,6 +1129,50 @@ window.addEventListener('load', () => {
   }, 2500);
 });
 
+// ====== RETRO PERFORMANCE TESTS (T-BUG-PERF #34) ======
+// Device-based particle budget for the Canvas 2D retro renderer (default on iPad).
+window.addEventListener('load', () => {
+  const frame = document.getElementById('retro-frame');
+  setTimeout(() => {
+    const fw = frame.contentWindow;
+    const retro = fw.retro;
+
+    try {
+      const dt = fw.deviceTier;
+      log(`[perf-retro] deviceTier exposed`, !!dt ? 'pass' : 'fail');
+      log(`[perf-retro] deviceTier.quality is high/medium/low`, dt && ['high','medium','low'].includes(dt.quality) ? 'pass' : `fail (${dt && dt.quality})`);
+      log(`[perf-retro] deviceTier.particleScale in (0,1]`, dt && typeof dt.particleScale === 'number' && dt.particleScale > 0 && dt.particleScale <= 1 ? 'pass' : 'fail');
+      log(`[perf-retro] particleBudget exposed`, typeof fw.particleBudget === 'function' ? 'pass' : 'fail');
+      log(`[perf-retro] particleBudget(1000) <= 1000`, fw.particleBudget && fw.particleBudget(1000) <= 1000 ? 'pass' : 'fail');
+      log(`[perf-retro] particleBudget(1) >= 1`, fw.particleBudget && fw.particleBudget(1) >= 1 ? 'pass' : 'fail');
+    } catch(e) { log(`[perf-retro] tier: ${e.message}`, 'fail'); }
+    updateSummary();
+
+    // Particle spawn counts are wired through the budget (source check)
+    fetch('/index-retro.html').then(r => r.text()).then(text => {
+      log(`[perf-retro] spawnExplosion uses particleBudget(30)`, /function spawnExplosion[\s\S]{0,200}particleBudget\(30\)/.test(text) ? 'pass' : 'fail');
+      log(`[perf-retro] spawnDebris uses particleBudget(12)`, /function spawnDebris[\s\S]{0,200}particleBudget\(12\)/.test(text) ? 'pass' : 'fail');
+      log(`[perf-retro] spawnSmoke uses particleBudget(8)`, /function spawnSmoke[\s\S]{0,200}particleBudget\(8\)/.test(text) ? 'pass' : 'fail');
+      log(`[perf-retro] live particles capped (maxLiveParticles)`, text.includes('maxLiveParticles') ? 'pass' : 'fail');
+      updateSummary();
+    }).catch(e => { log(`[perf-retro] source: ${e.message}`, 'fail'); updateSummary(); });
+
+    // Live particle array is bounded by the cap
+    try {
+      const before = retro.particles.length;
+      // Force many explosions; the array must not exceed maxLiveParticles
+      for (let i = 0; i < 50; i++) retro.spawnExplosion(0, 0);
+      const after = retro.particles.length;
+      const cap = fw.particleBudget(400);
+      log(`[perf-retro] particles capped at maxLiveParticles`, after <= cap ? 'pass' : `fail (${after} > ${cap})`);
+      log(`[perf-retro] many explosions don't unboundedly grow array`, after <= Math.max(before, cap) ? 'pass' : 'fail');
+      // Clean up so later render tests are unaffected
+      retro.particles.length = 0;
+      updateSummary();
+    } catch(e) { log(`[perf-retro] cap: ${e.message}`, 'fail'); updateSummary(); }
+  }, 2500);
+});
+
 // ====== RETRO INTEGRATION TESTS (T-RETRO-INTEGRATE #29) ======
 // Landing-page toggle between "3D Mode" and "Retro Mode", retro default for
 // mobile, Supabase leaderboard wired into retro, and no console errors.
@@ -1253,6 +1297,36 @@ window.addEventListener('load', () => {
       const canvas = fd.getElementById('game-canvas');
       log(`[controls] canvas has tabindex`, canvas && canvas.tabIndex >= 0 ? 'pass' : 'fail');
     } catch(e) { log(`[controls] tabindex: ${e.message}`, 'fail'); }
+
+    // ====== PERFORMANCE (T-BUG-PERF #34) — device-based particle budget ======
+    // Cap/LOD particles based on device capability to keep iPad A16 at 60fps.
+    try {
+      const dt = fw.deviceTier;
+      log(`[perf] deviceTier exposed`, !!dt ? 'pass' : 'fail');
+      log(`[perf] deviceTier.quality is high/medium/low`, dt && ['high','medium','low'].includes(dt.quality) ? 'pass' : `fail (${dt && dt.quality})`);
+      log(`[perf] deviceTier.particleScale in (0,1]`, dt && typeof dt.particleScale === 'number' && dt.particleScale > 0 && dt.particleScale <= 1 ? 'pass' : 'fail');
+    } catch(e) { log(`[perf] deviceTier: ${e.message}`, 'fail'); }
+
+    // particleBudget scales a base particle count by the device tier
+    try {
+      log(`[perf] particleBudget exposed`, typeof fw.particleBudget === 'function' ? 'pass' : 'fail');
+      const scale = (fw.deviceTier && fw.deviceTier.particleScale) || 1;
+      const budget = fw.particleBudget && fw.particleBudget(1000);
+      log(`[perf] particleBudget(1000) <= 1000`, typeof budget === 'number' && budget <= 1000 ? 'pass' : 'fail');
+      log(`[perf] particleBudget respects particleScale (>= scale*1000)`, typeof budget === 'number' && budget >= Math.round(scale * 1000) ? 'pass' : 'fail');
+      log(`[perf] particleBudget never returns 0 for positive base`, fw.particleBudget && fw.particleBudget(1) >= 1 ? 'pass' : 'fail');
+    } catch(e) { log(`[perf] particleBudget: ${e.message}`, 'fail'); }
+
+    // Particle systems are wired through the budget (source checks)
+    fetch('/index.html').then(r => r.text()).then(text => {
+      const rainBlock = text.slice(text.indexOf("cat === 'storm'"));
+      log(`[perf] rain storm count uses particleBudget`, rainBlock.includes('particleBudget(2000)') ? 'pass' : 'fail');
+      log(`[perf] rain base count uses particleBudget`, /particleBudget\(800\)/.test(text) ? 'pass' : 'fail');
+      log(`[perf] collectible particles use particleBudget`, /function spawnCollectibleParticle[\s\S]{0,300}particleBudget\(5\)/.test(text) ? 'pass' : 'fail');
+      log(`[perf] wake ripples disposed on removal (no leak)`, /function updateWakes[\s\S]{0,600}disposeMesh/.test(text) ? 'pass' : 'fail');
+      log(`[perf] wake ripples capped per device (maxWakeRipples)`, /maxWakeRipples/.test(text) ? 'pass' : 'fail');
+      updateSummary();
+    }).catch(e => { log(`[perf] source: ${e.message}`, 'fail'); updateSummary(); });
     updateSummary();
   }, 2500);
 });
