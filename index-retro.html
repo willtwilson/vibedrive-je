@@ -163,6 +163,19 @@
     .cam-btn .chev { opacity: 0.6; font-size: 10px; }
 
     /* ====== SLIDE-OUT ☰ MENU ====== */
+    /* ====== TILT STEERING TOGGLE (fixed top-right, clear of radar/menu) ====== */
+    #tilt-toggle {
+      position: fixed; top: 12px; right: 64px; z-index: 71;
+      padding: 10px 14px; min-height: 42px;
+      border-radius: 0; border: 1px solid var(--hud-border); border-top: 3px solid #00A86B;
+      background: var(--glass); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      color: var(--jersey-green); font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 800;
+      text-transform: uppercase; letter-spacing: 0.04em;
+      cursor: pointer; user-select: none; -webkit-user-select: none; touch-action: none;
+      display: flex; align-items: center; gap: 6px; justify-content: center;
+      pointer-events: auto;
+    }
+    #tilt-toggle:active, #tilt-toggle.pressed { background: rgba(0,168,107,0.6); }
     #menu-btn {
       position: fixed; top: 12px; right: 12px; z-index: 70;
       width: 48px; height: 48px; border-radius: 0;
@@ -701,7 +714,6 @@
       <div id="cam-btns">
         <button class="cam-btn active" id="cam-cycle" data-cam="chase">🎥 Chase <span class="chev">↻</span></button>
       </div>
-      <button class="mode-btn" id="tilt-toggle" title="Tilt Steering">🎮 Tilt</button>
     </div>
     <div class="control-zone">
       <div class="control-btn steer" id="btn-left">◀</div>
@@ -735,6 +747,7 @@
   <div id="radar-label">📡 RADAR</div>
   <div id="radar"><canvas id="radar-canvas" width="180" height="180"></canvas></div>
 
+  <button class="mode-btn" id="tilt-toggle" title="Tilt Steering">🎮 Tilt</button>
   <button id="menu-btn" title="Menu">☰</button>
   <div id="menu-panel">
     <button class="menu-item night-on" id="menu-night"><span class="mi-icon">🌙</span><span class="mi-label">Night</span><span class="mi-state" id="mi-night-state">Off</span></button>
@@ -1417,6 +1430,7 @@ window.addEventListener('unhandledrejection', (e) => { window.__testErrors.push(
     const settingsSave = document.getElementById('settings-save');
 
     settingsBtn.addEventListener('click', () => {
+      closeAllOverlayPanels('settings-panel');
       const isVisible = settingsPanel.classList.toggle('show');
       if (isVisible) {
         settingsInput.value = playerUsername;
@@ -6888,9 +6902,30 @@ window.addEventListener('unhandledrejection', (e) => { window.__testErrors.push(
     const airportPanel = document.getElementById('airport-panel');
     let airportPanelOpen = false;
 
+
+    // ====== PANEL MUTUAL EXCLUSION ======
+    // All floating panels share the top-right corner; opening one closes the
+    // rest so they never overlap.
+    function closeAllOverlayPanels(exceptId) {
+      const ids = ['airport-panel', 'radio-panel', 'bus-panel', 'settings-panel', 'leaderboard-modal'];
+      for (const id of ids) {
+        if (id === exceptId) continue;
+        const el = document.getElementById(id);
+        if (el) el.classList.remove('show');
+      }
+      // reset open flags
+      if (exceptId !== 'airport-panel' && typeof airportPanelOpen !== 'undefined') airportPanelOpen = false;
+      if (exceptId !== 'radio-panel' && typeof radioPanelOpen !== 'undefined') radioPanelOpen = false;
+      if (exceptId !== 'bus-panel' && typeof busPanelOpen !== 'undefined') busPanelOpen = false;
+      const at = document.getElementById('airport-toggle');
+      if (at && exceptId !== 'airport-panel') at.classList.remove('active');
+      const rt = document.getElementById('radio-toggle');
+      if (rt && exceptId !== 'radio-panel') rt.classList.remove('active');
+    }
     airportToggle.addEventListener('click', (e) => {
       e.preventDefault();
       airportPanelOpen = !airportPanelOpen;
+      if (airportPanelOpen) closeAllOverlayPanels('airport-panel');
       airportToggle.classList.toggle('active', airportPanelOpen);
       airportPanel.classList.toggle('show', airportPanelOpen);
       if (airportPanelOpen) fetchAirportBoard();
@@ -8469,9 +8504,10 @@ window.addEventListener('unhandledrejection', (e) => { window.__testErrors.push(
             radioBtn.classList.add('unavailable');
             return;
           }
-          // Resume context if suspended (autoplay policy)
+          // Resume context if suspended (autoplay policy) — await so iOS
+          // actually starts the audio on the first user gesture.
           if (audioCtx.state === 'suspended') {
-            audioCtx.resume();
+            audioCtx.resume().catch(() => {});
           }
           masterGain.gain.value = volume;
           if (name === 'Jersey Pulse') playJerseyPulse();
@@ -8578,6 +8614,7 @@ window.addEventListener('unhandledrejection', (e) => { window.__testErrors.push(
       e.preventDefault(); e.stopPropagation();
       const btn = document.getElementById('radio-toggle');
       if (btn) btn.click();
+      closeAllOverlayPanels('radio-panel');
       document.getElementById('radio-panel').classList.toggle('show', true);
       syncMenuStates();
       setMenuOpen(false);
