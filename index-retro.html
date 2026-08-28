@@ -1580,6 +1580,14 @@ window.addEventListener('unhandledrejection', (e) => { window.__testErrors.push(
       // British roads drive on the left — road layout & markings match.
       const LEFT_HAND = true;
 
+      // ---- T-RETRO-MAP-STYLE-GAPS #41: lane enforcement ----
+      // Structural left-lane offset for a road of the given width. Traffic
+      // (AI cars) and the player keep to the left lane; overtaking requires
+      // crossing to the right lane. Offset = 25% of road width from centre.
+      function leftLaneOffset(width) {
+        return width * 0.25;
+      }
+
       // Muted Channel Islands colour palette (stone, granite, Atlantic grey-blue,
       // muted meadow green, terracotta Norman roofs, Jèrriais street accents).
       const PALETTE = {
@@ -1650,6 +1658,8 @@ window.addEventListener('unhandledrejection', (e) => { window.__testErrors.push(
       const signs = [];       // British road signs (red triangle / speed roundel)
       const crossings = [];   // zebra crossings across major roads
       const roundels = [];    // mini roundabouts at junctions
+      const giveWays = [];    // roundabout give-way-to-right arrows (Jersey left-hand rule)
+      const giveWayLines = []; // British give-way lines (broken white) at minor-road junctions
 
       // Jerriais (Jèrriais) street accents — e.g. granite wall signs / bilingual
       // road names used by the Norman architecture dressing on select buildings.
@@ -1717,6 +1727,58 @@ window.addEventListener('unhandledrejection', (e) => { window.__testErrors.push(
           if (n.count >= 4 && roundels.length < 200 && rng() < 0.35) {
             roundels.push({ x: n.x, z: n.z, r: 2.2 + rng() * 1.5 });
           }
+        }
+
+        // ---- T-RETRO-MAP-STYLE-GAPS #41: roundabout give-way signage ----
+        // Give-way-to-right arrows at each roundabout entry (Jersey left-hand
+        // rule). For every road segment that meets a roundel, place a white
+        // chevron arrow at the entry pointing along the road toward the
+        // roundabout — traffic must yield to vehicles already circulating.
+        for (let i = 0; i < roundels.length; i++) {
+          const rnd = roundels[i];
+          for (let j = 0; j < roadSegments.length; j++) {
+            const s = roadSegments[j];
+            // Segment endpoint near the roundel centre = an entry.
+            const d1 = Math.hypot(s.x1 - rnd.x, s.z1 - rnd.z);
+            const d2 = Math.hypot(s.x2 - rnd.x, s.z2 - rnd.z);
+            const near = Math.min(d1, d2);
+            if (near > rnd.r + 2) continue;
+            // Arrow sits just outside the roundabout, pointing toward its centre.
+            const ex = d1 < d2 ? s.x1 : s.x2;
+            const ez = d1 < d2 ? s.z1 : s.z2;
+            const ang = Math.atan2(rnd.x - ex, rnd.z - ez);
+            giveWays.push({ x: ex, z: ez, ang });
+            if (giveWays.length >= 400) break;
+          }
+          if (giveWays.length >= 400) break;
+        }
+
+        // ---- T-RETRO-MAP-STYLE-GAPS #41: British give-way lines ----
+        // Broken white lines across the lane entry at minor-road junctions
+        // (the narrowest road meeting a 3+ way junction, excluding roundabouts).
+        for (const n of nodeMap.values()) {
+          if (n.count < 3) continue;
+          if (giveWayLines.length >= 300) break;
+          // Skip if this node is a roundabout (give-way arrows already placed).
+          let isRoundel = false;
+          for (let i = 0; i < roundels.length; i++) {
+            if (Math.hypot(roundels[i].x - n.x, roundels[i].z - n.z) < 3) { isRoundel = true; break; }
+          }
+          if (isRoundel) continue;
+          // Find the narrowest road segment meeting this node (the minor road).
+          let best = null, bestW = Infinity;
+          for (let j = 0; j < roadSegments.length; j++) {
+            const s = roadSegments[j];
+            const d1 = Math.hypot(s.x1 - n.x, s.z1 - n.z);
+            const d2 = Math.hypot(s.x2 - n.x, s.z2 - n.z);
+            if (Math.min(d1, d2) > 2) continue;
+            if (s.width < bestW) { bestW = s.width; best = s; }
+          }
+          if (!best) continue;
+          const dx = best.x2 - best.x1, dz = best.z2 - best.z1;
+          const len = Math.hypot(dx, dz) || 1;
+          // Line runs across the lane entry (perpendicular to the road).
+          giveWayLines.push({ x: n.x, z: n.z, ang: Math.atan2(dx, dz), w: best.width });
         }
 
         // Zebra crossings on major roads (wide segments — draw stripes across).
@@ -1910,6 +1972,50 @@ window.addEventListener('unhandledrejection', (e) => { window.__testErrors.push(
           ctx.lineWidth = Math.max(1, r * 0.18);
           ctx.beginPath(); ctx.arc(p.x, p.y, r * 0.4, 0, Math.PI * 2); ctx.stroke();
         }
+
+        // ---- T-RETRO-MAP-STYLE-GAPS #41: roundabout give-way-to-right arrows.
+        // White chevron arrows at each roundabout entry, pointing along the
+        // entering road toward the roundabout (yield to circulating traffic).
+        for (let i = 0; i < giveWays.length; i++) {
+          const g = giveWays[i];
+          const p = worldToScreen(g.x, g.z, w, h);
+          const r = Math.max(3, 1.6 * px);
+          if (p.x < -r || p.x > w + r || p.y < -r || p.y > h + r) continue;
+          const ca = Math.cos(g.ang), sa = Math.sin(g.ang);
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate(g.ang);
+          ctx.strokeStyle = PALETTE.signWhite;
+          ctx.lineWidth = Math.max(1, r * 0.22);
+          ctx.lineCap = 'round';
+          // Chevron: two strokes meeting at the tip, pointing along +ang.
+          ctx.beginPath();
+          ctx.moveTo(r * 0.5, -r * 0.4);
+          ctx.lineTo(-r * 0.5, 0);
+          ctx.lineTo(r * 0.5, r * 0.4);
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        // ---- T-RETRO-MAP-STYLE-GAPS #41: British give-way lines.
+        // Broken white lines across the lane entry at minor-road junctions.
+        for (let i = 0; i < giveWayLines.length; i++) {
+          const gl = giveWayLines[i];
+          const p = worldToScreen(gl.x, gl.z, w, h);
+          const r = gl.w * px * 0.7;
+          if (p.x < -r || p.x > w + r || p.y < -r || p.y > h + r) continue;
+          const ca = Math.cos(gl.ang), sa = Math.sin(gl.ang);
+          // Perpendicular to the road direction (across the lane entry).
+          const px2 = -sa, py2 = ca;
+          ctx.strokeStyle = PALETTE.signWhite;
+          ctx.lineWidth = Math.max(1, gl.w * px * 0.1);
+          ctx.setLineDash([4, 4]);
+          ctx.beginPath();
+          ctx.moveTo(p.x + px2 * r, p.y + py2 * r);
+          ctx.lineTo(p.x - px2 * r, p.y - py2 * r);
+          ctx.stroke();
+          ctx.setLineDash([]);
+        }
       }
 
       // ---- British road signs: red triangle warnings + speed-limit roundels.
@@ -1953,7 +2059,26 @@ window.addEventListener('unhandledrejection', (e) => { window.__testErrors.push(
         ctx.drawImage(sprite, s.x - size / 2, s.y - size / 2, size, size);
       }
 
+      // ---- T-RETRO-MAP-STYLE-GAPS #41: render AI traffic in retro mode ----
+      // AI cars follow the shared road graph and keep to the left lane, so
+      // lane enforcement is visible. The aiCars array is attached after the
+      // game logic builds it (see setAICars below).
+      let aiCarsRef = [];
+      function setAICars(cars) { aiCarsRef = cars || []; }
+      function drawAICars(ctx, w, h) {
+        for (let i = 0; i < aiCarsRef.length; i++) {
+          const ai = aiCarsRef[i];
+          if (!ai || ai.mesh === undefined) continue;
+          const s = worldToScreen(ai.x, ai.z, w, h);
+          const size = 48 * cam.zoom;
+          if (s.x < -size || s.x > w + size || s.y < -size || s.y > h + size) continue;
+          const sprite = spriteForHeading(ai.heading);
+          ctx.drawImage(sprite, s.x - size / 2, s.y - size / 2, size, size);
+        }
+      }
+
       function drawVehicles(ctx, w, h) {
+        drawAICars(ctx, w, h);
         drawPlayer(ctx, w, h);
       }
 
@@ -2200,12 +2325,14 @@ window.addEventListener('unhandledrejection', (e) => { window.__testErrors.push(
         targetZoom, updateCamera, worldToScreen,
         steeringAuthority, damageSpeedFactor,
         PALETTE, LEFT_HAND, isWater, pointInPolygon,
-        buildings, trees, signs, crossings, roundels,
+        leftLaneOffset,
+        buildings, trees, signs, crossings, roundels, giveWays, giveWayLines,
         getDamageStage, applyDamage,
         particles, spawnParticles, spawnSmoke, spawnFire, spawnExplosion, spawnSkid, spawnDebris, updateParticles,
         audio, getDarkness, setDarkness, dayNight,
         drawWater, drawGround, drawBuildings, drawTrees, drawMarkings, drawSigns,
         drawRoads, drawPlayer, drawVehicles, drawEffects, drawHUD,
+        setAICars, drawAICars,
         render
       };
     })();
@@ -4634,13 +4761,13 @@ window.addEventListener('unhandledrejection', (e) => { window.__testErrors.push(
           if (n1 === n2) continue;
           const angle = Math.atan2(dx, dz);
           // Forward edge: n1 -> n2
-          const fwdEdge = { from: n1, to: n2, length: len, speed: maxSpeed, width: rd.w, dx: dx / len, dz: dz / len, angle, type: rd.t, name: rd.n, laneOffset: rd.w * 0.25 };
+          const fwdEdge = { from: n1, to: n2, length: len, speed: maxSpeed, width: rd.w, dx: dx / len, dz: dz / len, angle, type: rd.t, name: rd.n, laneOffset: retro.leftLaneOffset(rd.w) };
           edges.push(fwdEdge);
           nodes[n1].edges.push(fwdEdge);
           // Reverse edge: n2 -> n1 (bidirectional for all roads unless single-lane one-way)
           if (rd.l > 1) {
             const revAngle = Math.atan2(-dx, -dz);
-            const revEdge = { from: n2, to: n1, length: len, speed: maxSpeed, width: rd.w, dx: -dx / len, dz: -dz / len, angle: revAngle, type: rd.t, name: rd.n, laneOffset: rd.w * 0.25 };
+            const revEdge = { from: n2, to: n1, length: len, speed: maxSpeed, width: rd.w, dx: -dx / len, dz: -dz / len, angle: revAngle, type: rd.t, name: rd.n, laneOffset: retro.leftLaneOffset(rd.w) };
             edges.push(revEdge);
             nodes[n2].edges.push(revEdge);
           }
@@ -4784,6 +4911,10 @@ window.addEventListener('unhandledrejection', (e) => { window.__testErrors.push(
         color: color
       });
     }
+
+    // T-RETRO-MAP-STYLE-GAPS #41: expose AI traffic to the retro renderer so
+    // lane enforcement is visible (AI cars keep to the left lane).
+    retro.setAICars(aiCars);
 
     // ====== WANTED LEVEL & POLICE SYSTEM ======
     let wantedLevel = 0;        // 0-5 stars
