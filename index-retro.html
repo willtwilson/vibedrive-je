@@ -117,6 +117,8 @@
       box-shadow: 0 4px 20px rgba(230, 57, 70, 0.25);
     }
     .control-btn.brake:active, .control-btn.brake.pressed { background: rgba(230, 57, 70, 0.6); box-shadow: 0 0 24px rgba(230, 57, 70, 0.6); }
+    .control-btn.steer { width: 60px; height: 60px; font-size: 24px; background: rgba(0, 120, 200, 0.35); border: 2px solid rgba(0, 120, 200, 0.5); color: #bcdfff; }
+    .control-btn.steer:active, .control-btn.steer.pressed { background: rgba(0, 120, 200, 0.6); box-shadow: 0 0 20px rgba(0, 120, 200, 0.5); }
 
     #badge {
       position: fixed; top: 12px; left: 50%; transform: translateX(-50%); z-index: 40;
@@ -701,8 +703,10 @@
       </div>
     </div>
     <div class="control-zone">
+      <div class="control-btn steer" id="btn-left">◀</div>
       <div class="control-btn brake" id="btn-brake">🛑</div>
       <div class="control-btn accel" id="btn-gas">⬆</div>
+      <div class="control-btn steer" id="btn-right">▶</div>
     </div>
   </div>
 
