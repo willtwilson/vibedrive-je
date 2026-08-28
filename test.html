@@ -595,6 +595,10 @@ window.addEventListener('load', () => {
       const isWaterPix = (r, g, b) => b > r && b > 130;
       const isLandPix = (r, g, b) => g > r && g > 105;
 
+      // Pin the retro renderer to daytime so the water/land colour checks are
+      // deterministic regardless of the real time of day (T-RETRO-POLISH #28).
+      if (typeof retro.setDarkness === 'function') retro.setDarkness(0);
+
       // Camera over open sea → expect water pixels
       retro.cam.x = 0; retro.cam.y = 0; retro.cam.zoom = 1;
       retro.render(canvas.width, canvas.height);
@@ -609,6 +613,146 @@ window.addEventListener('load', () => {
       log(`[env] render executes without throwing`, true ? 'pass' : 'fail');
       updateSummary();
     } catch(e) { log(`[env] render: ${e.message}`, 'fail'); updateSummary(); }
+  }, 2500);
+});
+
+// ====== RETRO POLISH TESTS (T-RETRO-POLISH #28) ======
+// 4-stage damage model, particle effects, procedural audio, day/night cycle.
+window.addEventListener('load', () => {
+  const frame = document.getElementById('retro-frame');
+  setTimeout(() => {
+    const fw = frame.contentWindow;
+    const fd = frame.contentDocument;
+    const retro = fw.retro;
+
+    // Test R18: 4-stage damage model (Pristine → Light → Heavy → Wrecked)
+    try {
+      log(`[polish] getDamageStage function`, typeof retro.getDamageStage === 'function' ? 'pass' : 'fail');
+      log(`[polish] getDamageStage(100) pristine`, retro.getDamageStage(100) === 'pristine' ? 'pass' : 'fail');
+      log(`[polish] getDamageStage(80) pristine`, retro.getDamageStage(80) === 'pristine' ? 'pass' : 'fail');
+      log(`[polish] getDamageStage(60) light`, retro.getDamageStage(60) === 'light' ? 'pass' : 'fail');
+      log(`[polish] getDamageStage(30) heavy`, retro.getDamageStage(30) === 'heavy' ? 'pass' : 'fail');
+      log(`[polish] getDamageStage(10) wrecked`, retro.getDamageStage(10) === 'wrecked' ? 'pass' : 'fail');
+      log(`[polish] carHealth state var`, typeof fw.carHealth !== 'undefined' ? 'pass' : 'fail');
+      log(`[polish] carHealth starts at 100`, fw.carHealth === 100 ? 'pass' : 'fail');
+      log(`[polish] applyDamage function`, typeof retro.applyDamage === 'function' ? 'pass' : 'fail');
+      // applyDamage reduces health and clamps to [0,100]
+      const before = fw.carHealth;
+      retro.applyDamage(30);
+      log(`[polish] applyDamage reduces health`, fw.carHealth === before - 30 ? 'pass' : 'fail');
+      retro.applyDamage(1000);
+      log(`[polish] applyDamage clamps to 0`, fw.carHealth === 0 ? 'pass' : 'fail');
+      retro.applyDamage(-1000);
+      log(`[polish] applyDamage clamps to 100`, fw.carHealth === 100 ? 'pass' : 'fail');
+      updateSummary();
+    } catch(e) { log(`[polish] damage: ${e.message}`, 'fail'); updateSummary(); }
+
+    // Test R19: Particle effects (smoke, fire, explosion, skid, debris)
+    try {
+      log(`[polish] particles array`, Array.isArray(retro.particles) ? 'pass' : 'fail');
+      log(`[polish] spawnSmoke`, typeof retro.spawnSmoke === 'function' ? 'pass' : 'fail');
+      log(`[polish] spawnFire`, typeof retro.spawnFire === 'function' ? 'pass' : 'fail');
+      log(`[polish] spawnExplosion`, typeof retro.spawnExplosion === 'function' ? 'pass' : 'fail');
+      log(`[polish] spawnSkid`, typeof retro.spawnSkid === 'function' ? 'pass' : 'fail');
+      log(`[polish] spawnDebris`, typeof retro.spawnDebris === 'function' ? 'pass' : 'fail');
+      log(`[polish] updateParticles`, typeof retro.updateParticles === 'function' ? 'pass' : 'fail');
+      // spawnSmoke adds particles to the array
+      const before = retro.particles.length;
+      retro.spawnSmoke(0, 0);
+      log(`[polish] spawnSmoke adds particles`, retro.particles.length > before ? 'pass' : 'fail');
+      // updateParticles decays and removes expired particles
+      retro.updateParticles(10);
+      log(`[polish] updateParticles removes expired`, retro.particles.length === 0 ? 'pass' : 'fail');
+      updateSummary();
+    } catch(e) { log(`[polish] particles: ${e.message}`, 'fail'); updateSummary(); }
+
+    // Test R20: Procedural audio via Web Audio API
+    try {
+      log(`[polish] audio namespace`, retro.audio ? 'pass' : 'fail');
+      log(`[polish] audio.playEngine`, retro.audio && typeof retro.audio.playEngine === 'function' ? 'pass' : 'fail');
+      log(`[polish] audio.playSiren`, retro.audio && typeof retro.audio.playSiren === 'function' ? 'pass' : 'fail');
+      log(`[polish] audio.playCrash`, retro.audio && typeof retro.audio.playCrash === 'function' ? 'pass' : 'fail');
+      log(`[polish] audio.playExplosion`, retro.audio && typeof retro.audio.playExplosion === 'function' ? 'pass' : 'fail');
+      // Calling the audio functions must not throw (no AudioContext in test iframe)
+      let threw = false;
+      try { retro.audio.playEngine(0.5); retro.audio.playSiren(); retro.audio.playCrash(); retro.audio.playExplosion(); }
+      catch(e) { threw = true; }
+      log(`[polish] audio functions don't throw`, !threw ? 'pass' : 'fail');
+      updateSummary();
+    } catch(e) { log(`[polish] audio: ${e.message}`, 'fail'); updateSummary(); }
+
+    // Test R21: Day/night cycle in the Canvas 2D retro renderer
+    try {
+      log(`[polish] getDarkness function`, typeof retro.getDarkness === 'function' ? 'pass' : 'fail');
+      const d = retro.getDarkness();
+      log(`[polish] getDarkness in [0,1]`, d >= 0 && d <= 1 ? 'pass' : 'fail');
+      log(`[polish] dayNight state`, retro.dayNight ? 'pass' : 'fail');
+      log(`[polish] setDarkness function`, typeof retro.setDarkness === 'function' ? 'pass' : 'fail');
+      // setDarkness pins the renderer to a specific time of day
+      retro.setDarkness(1);
+      log(`[polish] setDarkness(1) → getDarkness()==1`, retro.getDarkness() === 1 ? 'pass' : 'fail');
+      retro.setDarkness(0);
+      log(`[polish] setDarkness(0) → getDarkness()==0`, retro.getDarkness() === 0 ? 'pass' : 'fail');
+      fetch('/index-retro.html').then(r => r.text()).then(text => {
+        log(`[polish] renderer applies darkness overlay`, text.includes('darkness') ? 'pass' : 'fail');
+        updateSummary();
+      }).catch(e => { log(`[polish] daynight source: ${e.message}`, 'fail'); updateSummary(); });
+    } catch(e) { log(`[polish] daynight: ${e.message}`, 'fail'); updateSummary(); }
+  }, 2500);
+});
+
+// ====== RETRO PHYSICS TESTS (T-RETRO-PHYSICS #40) ======
+// Arcade drift, speed-sensitive steering curve, damage→speed degradation.
+window.addEventListener('load', () => {
+  const frame = document.getElementById('retro-frame');
+  setTimeout(() => {
+    const fw = frame.contentWindow;
+    const retro = fw.retro;
+    const PHYS = fw.PHYS;
+
+    // Test R22: Named tuning params exposed (driftFactor, steeringCurve, damageSpeedLoss)
+    try {
+      log(`[phys] PHYS.driftFactor defined`, PHYS && typeof PHYS.driftFactor === 'number' ? 'pass' : 'fail');
+      log(`[phys] PHYS.steeringCurve defined`, PHYS && typeof PHYS.steeringCurve === 'number' ? 'pass' : 'fail');
+      log(`[phys] PHYS.damageSpeedLoss defined`, PHYS && typeof PHYS.damageSpeedLoss === 'number' ? 'pass' : 'fail');
+      log(`[phys] steeringCurve > 1 (non-linear curve)`, PHYS && PHYS.steeringCurve > 1 ? 'pass' : 'fail');
+      log(`[phys] damageSpeedLoss in [0,1]`, PHYS && PHYS.damageSpeedLoss >= 0 && PHYS.damageSpeedLoss <= 1 ? 'pass' : 'fail');
+      updateSummary();
+    } catch(e) { log(`[phys] params: ${e.message}`, 'fail'); updateSummary(); }
+
+    // Test R23: Speed-sensitive steering curve (sharp low, wide high)
+    try {
+      log(`[phys] steeringAuthority function`, retro && typeof retro.steeringAuthority === 'function' ? 'pass' : 'fail');
+      const low = retro.steeringAuthority(0);
+      const high = retro.steeringAuthority(1);
+      log(`[phys] sharp at low speed (authority(0) == turnRate)`, Math.abs(low - PHYS.turnRate) < 1e-6 ? 'pass' : 'fail');
+      log(`[phys] wide at high speed (authority(1) < authority(0))`, high < low ? 'pass' : 'fail');
+      log(`[phys] monotonic decrease`, retro.steeringAuthority(0.5) > high && retro.steeringAuthority(0.5) < low ? 'pass' : 'fail');
+      updateSummary();
+    } catch(e) { log(`[phys] steering: ${e.message}`, 'fail'); updateSummary(); }
+
+    // Test R24: Damage → speed degradation
+    try {
+      log(`[phys] damageSpeedFactor function`, retro && typeof retro.damageSpeedFactor === 'function' ? 'pass' : 'fail');
+      log(`[phys] pristine (100) → factor 1`, retro.damageSpeedFactor(100) === 1 ? 'pass' : 'fail');
+      log(`[phys] wrecked (0) → factor 0`, retro.damageSpeedFactor(0) === 0 ? 'pass' : 'fail');
+      const f100 = retro.damageSpeedFactor(100), f60 = retro.damageSpeedFactor(60), f30 = retro.damageSpeedFactor(30), f0 = retro.damageSpeedFactor(0);
+      log(`[phys] factor decreases with damage`, f100 > f60 && f60 > f30 && f30 > f0 ? 'pass' : 'fail');
+      log(`[phys] heavy damage reduces speed (factor(30) < 1)`, f30 < 1 ? 'pass' : 'fail');
+      updateSummary();
+    } catch(e) { log(`[phys] damage: ${e.message}`, 'fail'); updateSummary(); }
+
+    // Test R25: Drive branch wired to new physics (source check)
+    try {
+      fetch('/index-retro.html').then(r => r.text()).then(text => {
+        const driveBlock = text.slice(text.indexOf("if (vehicleMode === 'drive')"));
+        log(`[phys] drive branch uses steeringAuthority (curve)`, driveBlock.includes('steeringAuthority') ? 'pass' : 'fail');
+        log(`[phys] drive branch uses damageSpeedFactor`, driveBlock.includes('damageSpeedFactor') ? 'pass' : 'fail');
+        log(`[phys] drive branch spawns skid marks when drifting`, driveBlock.includes('spawnSkid') ? 'pass' : 'fail');
+        log(`[phys] drive branch has counter-steer (yawFromSlip)`, driveBlock.includes('yawFromSlip') ? 'pass' : 'fail');
+        updateSummary();
+      }).catch(e => { log(`[phys] source: ${e.message}`, 'fail'); updateSummary(); });
+    } catch(e) { log(`[phys] source: ${e.message}`, 'fail'); updateSummary(); }
   }, 2500);
 });
 </script>
