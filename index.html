@@ -28,10 +28,23 @@
     #hud {
       position: fixed; top: 12px; left: 12px; z-index: 50;
       background: var(--glass-deep); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-      border-radius: 0; padding: 14px 18px; min-width: 210px;
+      border-radius: 0; padding: 14px 18px; min-width: 210px; padding-right: 44px;
       border: 1px solid var(--hud-border); border-left: 3px solid var(--jersey-green);
       font-size: 13px; pointer-events: none; box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
     }
+    /* T-UI-OVERLAYS #35: collapse toggle for the least-important dashboard rows */
+    #hud-collapse {
+      position: absolute; top: 6px; right: 6px; width: 30px; height: 30px;
+      border-radius: 0; border: 1px solid var(--hud-border);
+      background: var(--glass); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      color: var(--text-secondary); font-size: 14px; font-weight: 800; line-height: 1;
+      cursor: pointer; user-select: none; -webkit-user-select: none; touch-action: none;
+      pointer-events: auto; display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s; font-family: 'Inter', sans-serif;
+    }
+    #hud-collapse:hover { color: var(--jersey-green); border-color: var(--jersey-green); }
+    #hud.collapsed { min-width: 150px; }
+    #hud.collapsed .hud-optional { display: none; }
     #hud h1 {
       font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 900;
       text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px;
@@ -287,7 +300,7 @@
     #steer-hint.show { opacity: 1; }
 
     #collectible-counter {
-      position: fixed; top: 12px; left: 240px; z-index: 50;
+      position: fixed; top: 12px; right: 68px; z-index: 50;
       background: var(--glass-deep); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
       border-radius: 0; padding: 4px 14px;
       border: 1px solid rgba(255, 200, 50, 0.3); border-top: 1px solid rgba(255, 200, 50, 0.2);
@@ -343,7 +356,7 @@
     #police-border.flash { box-shadow: inset 0 0 120px 20px rgba(255, 0, 0, 0.5); }
 
     #mission-display {
-      position: fixed; top: 60px; left: 12px; z-index: 50;
+      position: fixed; top: 300px; left: 12px; z-index: 50;
       background: var(--glass-deep); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
       border-radius: 0; padding: 10px 14px;
       border: 1px solid var(--hud-border); border-left: 3px solid var(--jersey-green);
@@ -482,7 +495,7 @@
 
     /* ====== LIVE AIRCRAFT INDICATOR ====== */
     #live-aircraft-indicator {
-      position: fixed; top: 12px; left: 240px; z-index: 50;
+      position: fixed; top: 42px; right: 68px; z-index: 50;
       background: var(--hud-bg); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
       border: 1px solid var(--hud-border); border-left: 2px solid var(--jersey-green);
       padding: 4px 10px; font-size: 10px; font-weight: 700;
@@ -751,8 +764,9 @@
       #cam-btns { left: 8px; bottom: 112px; }
       #menu-btn { width: 42px; height: 42px; top: 8px; right: 8px; font-size: 20px; }
       #menu-panel { top: 8px; right: 8px; min-width: 200px; }
-      #collectible-counter { left: 150px; top: 8px; font-size: 11px; padding: 3px 10px; }
-      #badge { top: 8px; font-size: 9px; padding: 3px 9px; }
+      #collectible-counter { right: 8px; top: 56px; font-size: 11px; padding: 3px 10px; }
+      #live-aircraft-indicator { right: 8px; top: 82px; font-size: 9px; padding: 3px 8px; }
+      #badge { display: none; top: 8px; font-size: 9px; padding: 3px 9px; }
       #wanted-level { top: 8px; }
     }
 
@@ -763,23 +777,24 @@
   <div id="lightning-flash"></div>
 
   <div id="hud">
+    <button id="hud-collapse" title="Collapse dashboard" aria-expanded="true">▾</button>
     <div class="speedo" id="speed"><span id="speed-val">0</span><span class="unit">km/h</span></div>
     <div class="speed-bar-container"><div class="speed-bar" id="speed-bar"></div></div>
-    <div class="hud-score-row" style="display:flex;align-items:baseline;gap:10px;margin-top:8px;">
+    <div class="hud-score-row hud-optional" style="display:flex;align-items:baseline;gap:10px;margin-top:8px;">
       <span id="hud-score" style="font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:700;color:var(--sprint-yellow);letter-spacing:0.02em;">🏆 Score: 0</span>
       <span id="hud-km" style="font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:500;color:var(--text-secondary);">🛣️ 0.0 km</span>
     </div>
-    <div class="high-score" id="high-score" style="font-size:10px;color:var(--text-muted);font-weight:400;margin-top:2px;text-transform:uppercase;letter-spacing:0.06em;">Best: 0</div>
-    <div class="loc" id="loc" style="margin-top:6px;">Jersey, Channel Islands</div>
-    <div class="weather-row" style="margin-top:6px;">
+    <div class="high-score hud-optional" id="high-score" style="font-size:10px;color:var(--text-muted);font-weight:400;margin-top:2px;text-transform:uppercase;letter-spacing:0.06em;">Best: 0</div>
+    <div class="loc hud-optional" id="loc" style="margin-top:6px;">Jersey, Channel Islands</div>
+    <div class="weather-row hud-optional" style="margin-top:6px;">
       <span id="weather-icon">🌤️</span>
       <span class="temp" id="temp">—°</span>
       <span id="weather-desc">Loading…</span>
     </div>
-    <div id="slippery-warning">⚠ Slippery Roads</div>
-    <div class="players" id="players">👥 1 online</div>
-    <div class="mode-name" id="mode-name">🚗 Drive Mode</div>
-    <div id="hud-username" style="font-family:'Inter',sans-serif;font-size:12px;font-weight:700;color:var(--jersey-green);margin-top:6px;padding-top:6px;border-top:1px solid rgba(0,168,107,0.15);">👤 —</div>
+    <div id="slippery-warning" class="hud-optional">⚠ Slippery Roads</div>
+    <div class="players hud-optional" id="players">👥 1 online</div>
+    <div class="mode-name hud-optional" id="mode-name">🚗 Drive Mode</div>
+    <div id="hud-username" class="hud-optional" style="font-family:'Inter',sans-serif;font-size:12px;font-weight:700;color:var(--jersey-green);margin-top:6px;padding-top:6px;border-top:1px solid rgba(0,168,107,0.15);">👤 —</div>
   </div>
 
   <div id="controls">
@@ -1205,6 +1220,68 @@
       const el = document.getElementById('hud-username');
       if (el) el.textContent = '👤 ' + (playerUsername || '—');
     }
+
+    // ====== T-UI-OVERLAYS #35: collapsible dashboard + collision-free panels ======
+    let dashboardCollapsed = (function() {
+      try { return localStorage.getItem('vibedrive_hud_collapsed') === '1'; } catch(e) { return false; }
+    })();
+
+    function applyDashboardCollapsed() {
+      const hud = document.getElementById('hud');
+      const btn = document.getElementById('hud-collapse');
+      if (hud) hud.classList.toggle('collapsed', dashboardCollapsed);
+      if (btn) {
+        btn.textContent = dashboardCollapsed ? '▸' : '▾';
+        btn.title = dashboardCollapsed ? 'Expand dashboard' : 'Collapse dashboard';
+        btn.setAttribute('aria-expanded', dashboardCollapsed ? 'false' : 'true');
+      }
+      try { localStorage.setItem('vibedrive_hud_collapsed', dashboardCollapsed ? '1' : '0'); } catch(e) {}
+    }
+
+    function toggleDashboardCollapsed() {
+      dashboardCollapsed = !dashboardCollapsed;
+      applyDashboardCollapsed();
+      return dashboardCollapsed;
+    }
+
+    // Audit the key HUD/dashboard panels for overlap and return a list of problems.
+    // Panels hidden or with no rendered area are skipped.
+    function layoutOverlapCheck() {
+      const problems = [];
+      const ids = ['hud', 'mission-display', 'collectible-counter', 'live-aircraft-indicator', 'radar', 'menu-btn', 'badge'];
+      const rects = [];
+      ids.forEach(function(id) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const cs = el.ownerDocument.defaultView.getComputedStyle(el);
+        if (cs.display === 'none' || cs.visibility === 'hidden') return;
+        if (parseFloat(cs.opacity) === 0) return;
+        const r = el.getBoundingClientRect();
+        if (!r || r.width === 0 || r.height === 0) return;
+        rects.push({ id: id, left: r.left, top: r.top, right: r.right, bottom: r.bottom });
+      });
+      for (let i = 0; i < rects.length; i++) {
+        for (let j = i + 1; j < rects.length; j++) {
+          const a = rects[i], b = rects[j];
+          const overlap = a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+          if (overlap) problems.push(a.id + ' overlaps ' + b.id);
+        }
+      }
+      return problems;
+    }
+
+    (function wireDashboardCollapse() {
+      const btn = document.getElementById('hud-collapse');
+      if (btn) btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        toggleDashboardCollapsed();
+      });
+    })();
+    applyDashboardCollapsed();
+    window.dashboardCollapsed = dashboardCollapsed;
+    window.toggleDashboardCollapsed = toggleDashboardCollapsed;
+    window.layoutOverlapCheck = layoutOverlapCheck;
+
 
     function setUsername(name) {
       playerUsername = name;
