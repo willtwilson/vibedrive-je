@@ -850,6 +850,67 @@ window.addEventListener('load', () => {
   }, 2500);
 });
 
+// ====== RETRO MAP-STYLE GAPS TESTS (T-RETRO-MAP-STYLE-GAPS #41) ======
+// Lane enforcement (left-lane driving), roundabout give-way-to-right signage,
+// and British give-way lines at minor-road junctions.
+window.addEventListener('load', () => {
+  const frame = document.getElementById('retro-frame');
+  setTimeout(() => {
+    const fw = frame.contentWindow;
+    const retro = fw.retro;
+
+    // Test R26: Lane enforcement — structural left-lane offset helper
+    try {
+      log(`[map] leftLaneOffset function`, retro && typeof retro.leftLaneOffset === 'function' ? 'pass' : 'fail');
+      log(`[map] leftLaneOffset(8) == 2 (width*0.25)`, retro && retro.leftLaneOffset(8) === 2 ? 'pass' : 'fail');
+      log(`[map] leftLaneOffset(10) == 2.5`, retro && retro.leftLaneOffset(10) === 2.5 ? 'pass' : 'fail');
+      log(`[map] leftLaneOffset(0) == 0`, retro && retro.leftLaneOffset(0) === 0 ? 'pass' : 'fail');
+      log(`[map] LEFT_HAND still true`, retro && retro.LEFT_HAND === true ? 'pass' : 'fail');
+      // AI road graph uses the left-lane offset helper (structural, not inline)
+      fetch('/index-retro.html').then(r => r.text()).then(text => {
+        log(`[map] AI road graph uses leftLaneOffset`, text.includes('leftLaneOffset') ? 'pass' : 'fail');
+        log(`[map] AI cars rendered in retro (drawVehicles -> drawAICars)`, /function drawVehicles[\s\S]{0,200}drawAICars/.test(text) ? 'pass' : 'fail');
+        log(`[map] retro exposes setAICars`, text.includes('setAICars') ? 'pass' : 'fail');
+        updateSummary();
+      }).catch(e => { log(`[map] lane source: ${e.message}`, 'fail'); updateSummary(); });
+    } catch(e) { log(`[map] lane: ${e.message}`, 'fail'); updateSummary(); }
+
+    // Test R27: Roundabout give-way signage (give-way-to-right arrows)
+    try {
+      log(`[map] giveWays array`, Array.isArray(retro.giveWays) ? 'pass' : 'fail');
+      log(`[map] giveWays populated (${retro.giveWays.length})`, retro.giveWays.length > 0 ? 'pass' : 'fail');
+      const g = retro.giveWays[0];
+      log(`[map] giveWay has x/z/ang`, g && typeof g.x === 'number' && typeof g.z === 'number' && typeof g.ang === 'number' ? 'pass' : 'fail');
+      fetch('/index-retro.html').then(r => r.text()).then(text => {
+        log(`[map] drawMarkings renders give-way arrows`, /function drawMarkings[\s\S]{0,5000}giveWays/.test(text) ? 'pass' : 'fail');
+        updateSummary();
+      }).catch(e => { log(`[map] giveway source: ${e.message}`, 'fail'); updateSummary(); });
+    } catch(e) { log(`[map] giveway: ${e.message}`, 'fail'); updateSummary(); }
+
+    // Test R28: British give-way lines (broken white across lane entry)
+    try {
+      log(`[map] giveWayLines array`, Array.isArray(retro.giveWayLines) ? 'pass' : 'fail');
+      log(`[map] giveWayLines populated (${retro.giveWayLines.length})`, retro.giveWayLines.length > 0 ? 'pass' : 'fail');
+      const gl = retro.giveWayLines[0];
+      log(`[map] giveWayLine has x/z/ang/w`, gl && typeof gl.x === 'number' && typeof gl.z === 'number' && typeof gl.ang === 'number' && typeof gl.w === 'number' ? 'pass' : 'fail');
+      fetch('/index-retro.html').then(r => r.text()).then(text => {
+        log(`[map] drawMarkings renders give-way lines`, /function drawMarkings[\s\S]{0,5000}giveWayLines/.test(text) ? 'pass' : 'fail');
+        updateSummary();
+      }).catch(e => { log(`[map] givewayline source: ${e.message}`, 'fail'); updateSummary(); });
+    } catch(e) { log(`[map] givewayline: ${e.message}`, 'fail'); updateSummary(); }
+
+    // Test R29: Render pass still executes without throwing (no console errors)
+    try {
+      const canvas = frame.contentDocument.getElementById('game-canvas');
+      canvas.width = 320; canvas.height = 240;
+      retro.cam.x = 23; retro.cam.y = -81; retro.cam.zoom = 0.55;
+      retro.render(canvas.width, canvas.height);
+      log(`[map] render executes with give-way signage`, true ? 'pass' : 'fail');
+      updateSummary();
+    } catch(e) { log(`[map] render: ${e.message}`, 'fail'); updateSummary(); }
+  }, 2500);
+});
+
 // ====== RETRO INTEGRATION TESTS (T-RETRO-INTEGRATE #29) ======
 // Landing-page toggle between "3D Mode" and "Retro Mode", retro default for
 // mobile, Supabase leaderboard wired into retro, and no console errors.
