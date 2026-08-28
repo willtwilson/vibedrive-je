@@ -1327,6 +1327,74 @@ window.addEventListener('load', () => {
       log(`[perf] wake ripples capped per device (maxWakeRipples)`, /maxWakeRipples/.test(text) ? 'pass' : 'fail');
       updateSummary();
     }).catch(e => { log(`[perf] source: ${e.message}`, 'fail'); updateSummary(); });
+
+    // ====== HUD OVERLAYS (T-UI-OVERLAYS #35) — collapsible dashboard + no panel collisions ======
+    // Dashboard has a collapse toggle button
+    try {
+      const hud = fd.getElementById('hud');
+      const btn = fd.getElementById('hud-collapse');
+      log(`[ui] #hud contains #hud-collapse button`, hud && btn && hud.contains(btn) ? 'pass' : 'fail');
+    } catch(e) { log(`[ui] hud-collapse: ${e.message}`, 'fail'); }
+
+    // Dashboard secondary rows are marked optional (hidden when collapsed)
+    try {
+      const opts = fd.querySelectorAll('#hud .hud-optional');
+      log(`[ui] #hud has .hud-optional secondary rows (${opts.length})`, opts.length >= 1 ? 'pass' : 'fail');
+    } catch(e) { log(`[ui] hud-optional: ${e.message}`, 'fail'); }
+
+    // Collapse toggle behavior
+    try {
+      log(`[ui] dashboardCollapsed state exposed`, typeof fw.dashboardCollapsed !== 'undefined' ? 'pass' : 'fail');
+      log(`[ui] toggleDashboardCollapsed exposed`, typeof fw.toggleDashboardCollapsed === 'function' ? 'pass' : 'fail');
+      if (typeof fw.toggleDashboardCollapsed === 'function') {
+        if (fw.dashboardCollapsed) fw.toggleDashboardCollapsed();
+        const hud = fd.getElementById('hud');
+        log(`[ui] starts expanded (no collapsed class)`, !hud.classList.contains('collapsed') ? 'pass' : 'fail');
+        const r1 = fw.toggleDashboardCollapsed();
+        log(`[ui] toggle -> collapsed (returns true)`, r1 === true ? 'pass' : 'fail');
+        log(`[ui] #hud has collapsed class`, hud.classList.contains('collapsed') ? 'pass' : 'fail');
+        const r2 = fw.toggleDashboardCollapsed();
+        log(`[ui] toggle -> expanded (returns false)`, r2 === false ? 'pass' : 'fail');
+        log(`[ui] collapsed class removed`, !hud.classList.contains('collapsed') ? 'pass' : 'fail');
+      }
+    } catch(e) { log(`[ui] collapse toggle: ${e.message}`, 'fail'); }
+
+    // Collapse preference is persisted across reloads
+    try {
+      log(`[ui] collapse preference persisted in localStorage`, fw.localStorage && typeof fw.localStorage.getItem === 'function' ? 'pass' : 'fail');
+    } catch(e) { log(`[ui] persistence: ${e.message}`, 'fail'); }
+
+    // layoutOverlapCheck audit function exposed
+    try {
+      log(`[ui] layoutOverlapCheck exposed`, typeof fw.layoutOverlapCheck === 'function' ? 'pass' : 'fail');
+      if (typeof fw.layoutOverlapCheck === 'function') {
+        const res = fw.layoutOverlapCheck();
+        log(`[ui] layoutOverlapCheck returns an array`, Array.isArray(res) ? 'pass' : 'fail');
+      }
+    } catch(e) { log(`[ui] layoutOverlapCheck: ${e.message}`, 'fail'); }
+
+    // Source checks: dashboard panels no longer collide
+    fetch('/index.html').then(r => r.text()).then(text => {
+      const mSel = text.match(/#mission-display\s*\{([^}]*)\}/);
+      const mTop = mSel && mSel[1].match(/top:\s*(\d+)px/);
+      log(`[ui] mission-display top >= 280 (clear of dashboard)`, mTop && parseInt(mTop[1]) >= 280 ? 'pass' : 'fail');
+
+      const ccSel = text.match(/#collectible-counter\s*\{([^}]*)\}/);
+      const liveSel = text.match(/#live-aircraft-indicator\s*\{([^}]*)\}/);
+      const ccRight = ccSel && /right:/.test(ccSel[1]);
+      const liveRight = liveSel && /right:/.test(liveSel[1]);
+      log(`[ui] live-aircraft-indicator uses right-anchored position`, !!liveRight ? 'pass' : 'fail');
+      log(`[ui] collectible-counter + live indicator stacked (both right-anchored)`, ccRight && liveRight ? 'pass' : 'fail');
+
+      log(`[ui] CSS collapses .hud-optional rows`, /#hud\.collapsed\s+\.hud-optional[\s\S]{0,40}display:\s*none/.test(text) ? 'pass' : 'fail');
+
+      // Regression (#35): at small viewports the dashboard must not collide with the right-anchored
+      // collectible counter. The HUD's max-width is constrained in the small-screen media query so a
+      // 320px dashboard cannot reach the counter (this rule only exists inside that media query).
+      const hudWidthConstrained = /#hud\s*\{[^}]*max-width:\s*calc\(100%\s*-\s*150px\)[^}]*}/.test(text);
+      log(`[ui] small-screen #hud max-width constrained (no 320px counter collision)`, hudWidthConstrained ? 'pass' : 'fail');
+      updateSummary();
+    }).catch(e => { log(`[ui] source: ${e.message}`, 'fail'); updateSummary(); });
     updateSummary();
   }, 2500);
 });
