@@ -479,6 +479,57 @@
     #username-modal .modal-btn:active { transform: scale(0.97); }
 
 
+    /* ====== LANDING MODE TOGGLE (T-RETRO-INTEGRATE #29) ====== */
+    #landing {
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh; z-index: 400;
+      background: radial-gradient(ellipse at 50% 30%, rgba(10, 26, 63, 0.96), rgba(4, 10, 28, 0.99));
+      display: flex; align-items: center; justify-content: center;
+      transition: opacity 0.35s;
+    }
+    #landing.hidden { opacity: 0; pointer-events: none; }
+    #landing .landing-card {
+      text-align: center; max-width: 520px; width: 90%; padding: 40px 24px;
+    }
+    #landing .landing-logo {
+      font-family: 'Inter', sans-serif; font-size: 40px; font-weight: 900;
+      text-transform: uppercase; letter-spacing: 0.04em; color: var(--sprint-yellow);
+      text-shadow: 0 0 30px rgba(255, 214, 10, 0.4); margin-bottom: 4px;
+    }
+    #landing .landing-sub {
+      font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 500;
+      color: var(--text-secondary); margin-bottom: 30px; letter-spacing: 0.02em;
+    }
+    #landing .landing-modes { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+    #landing .landing-mode {
+      flex: 1; min-width: 180px; max-width: 220px; padding: 26px 18px; border-radius: 0;
+      border: 2px solid var(--hud-border); background: rgba(240, 244, 255, 0.04);
+      color: var(--text-primary); cursor: pointer; text-align: center;
+      transition: transform 0.12s, border-color 0.2s, box-shadow 0.2s, background 0.2s;
+    }
+    #landing .landing-mode:hover { border-color: var(--jersey-green); transform: translateY(-2px); }
+    #landing .landing-mode:active { transform: scale(0.97); }
+    #landing .landing-mode.selected {
+      border-color: var(--jersey-green); background: rgba(0, 168, 107, 0.18);
+      box-shadow: 0 0 24px rgba(0, 168, 107, 0.35);
+    }
+    #landing .landing-mode .lm-icon { font-size: 40px; display: block; margin-bottom: 10px; }
+    #landing .landing-mode .lm-title {
+      font-family: 'Inter', sans-serif; font-size: 18px; font-weight: 900;
+      text-transform: uppercase; letter-spacing: 0.04em; display: block; margin-bottom: 6px;
+    }
+    #landing .landing-mode .lm-desc {
+      font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 500;
+      color: var(--text-secondary); line-height: 1.4; display: block;
+    }
+    #landing .landing-hint {
+      margin-top: 24px; font-family: 'Inter', sans-serif; font-size: 12px;
+      color: var(--text-muted); letter-spacing: 0.02em;
+    }
+    #landing .landing-hint .default-tag {
+      color: var(--jersey-green); font-weight: 700; text-transform: uppercase;
+    }
+
+
     /* ====== LEADERBOARD ====== */
     #leaderboard-btn {
       position: fixed; top: 12px; right: 300px; z-index: 50;
@@ -742,6 +793,27 @@
     <div class="ad-pts">+5 pts</div>
   </div>
 
+  <!-- Landing Mode Toggle (T-RETRO-INTEGRATE #29) -->
+  <div id="landing">
+    <div class="landing-card">
+      <div class="landing-logo">⚡ Vibe Drive</div>
+      <div class="landing-sub">Jersey, Channel Islands · choose your mode</div>
+      <div class="landing-modes">
+        <button class="landing-mode" id="landing-3d">
+          <span class="lm-icon">🏎️</span>
+          <span class="lm-title">3D Mode</span>
+          <span class="lm-desc">Full 3D terrain, weather &amp; chase cam</span>
+        </button>
+        <button class="landing-mode" id="landing-retro">
+          <span class="lm-icon">🕹️</span>
+          <span class="lm-title">Retro Mode</span>
+          <span class="lm-desc">GTA 1-style top-down · 60fps on iPad</span>
+        </button>
+      </div>
+      <div class="landing-hint">Recommended: <span class="default-tag" id="landing-default-tag">3D Mode</span></div>
+    </div>
+  </div>
+
   <!-- Username Modal -->
   <div id="username-modal">
     <div class="modal-card">
@@ -995,6 +1067,12 @@
     import { FXAAShader } from 'three/addons/shaders/FXAAShader.js';
     import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
+    // ====== TEST ERROR CAPTURE (T-RETRO-INTEGRATE #29) ======
+    // Records uncaught errors so the test harness can assert "no console errors".
+    window.__testErrors = [];
+    window.addEventListener('error', (e) => { window.__testErrors.push(e.message || String(e)); });
+    window.addEventListener('unhandledrejection', (e) => { window.__testErrors.push('unhandledrejection: ' + (e.reason && e.reason.message || e.reason)); });
+
     // ====== USERNAME SYSTEM ======
     let playerUsername = localStorage.getItem('vibedrive_username') || '';
     window.playerUsername = playerUsername;
@@ -1122,12 +1200,65 @@
       if (e.key === 'Enter') settingsSave.click();
     });
 
-    // Initialize on load
-    if (playerUsername) {
-      hideUsernameModal();
-      updateHUDUsername();
-    } else {
-      showUsernameModal();
+    // ====== LANDING MODE TOGGLE (T-RETRO-INTEGRATE #29) ======
+    // Retro is the default for mobile/iPad (60fps Canvas 2D), 3D for desktop.
+    function landingDefaultMode(ua) {
+      ua = ua || navigator.userAgent;
+      const isMobile = /iPhone|iPad|Android|Mobile/.test(ua) || (navigator.maxTouchPoints > 0 && window.innerWidth < 1024);
+      return isMobile ? 'retro' : '3d';
+    }
+
+    const landingEl = document.getElementById('landing');
+    const landing3dBtn = document.getElementById('landing-3d');
+    const landingRetroBtn = document.getElementById('landing-retro');
+    const landingDefaultTag = document.getElementById('landing-default-tag');
+    let landingChosenMode = null;
+
+    function selectLandingMode(mode) {
+      landingChosenMode = mode;
+      if (landing3dBtn) landing3dBtn.classList.toggle('selected', mode === '3d');
+      if (landingRetroBtn) landingRetroBtn.classList.toggle('selected', mode === 'retro');
+    }
+
+    function chooseMode(mode) {
+      if (mode === 'retro') {
+        landingChosenMode = 'retro';
+        window.location.href = 'index-retro.html';
+        return;
+      }
+      // 3D mode — dismiss the landing overlay and start the 3D game.
+      landingChosenMode = '3d';
+      if (landingEl) landingEl.classList.add('hidden');
+      if (typeof startGame === 'function') startGame();
+      if (playerUsername) {
+        hideUsernameModal();
+        updateHUDUsername();
+      } else {
+        showUsernameModal();
+      }
+    }
+
+    if (landing3dBtn) landing3dBtn.addEventListener('click', () => chooseMode('3d'));
+    if (landingRetroBtn) landingRetroBtn.addEventListener('click', () => chooseMode('retro'));
+
+    // Pre-select the recommended default (retro on mobile, 3D on desktop).
+    const defaultMode = landingDefaultMode();
+    selectLandingMode(defaultMode);
+    if (landingDefaultTag) landingDefaultTag.textContent = defaultMode === 'retro' ? 'Retro Mode' : '3D Mode';
+
+    // Expose for the test harness (module scope is not on window).
+    window.landingDefaultMode = landingDefaultMode;
+    window.chooseMode = chooseMode;
+    window.landingChosenMode = landingChosenMode;
+
+    // Initialize on load — the username prompt waits until the player picks 3D.
+    if (landingChosenMode === '3d') {
+      if (playerUsername) {
+        hideUsernameModal();
+        updateHUDUsername();
+      } else {
+        showUsernameModal();
+      }
     }
 
     // ====== SCENE ======
@@ -5395,16 +5526,25 @@
       updateFXAAResolution();
     });
 
-    fetchWeather();
-    document.getElementById('loading').style.display = 'none';
-    // Fade out the hackathon badge once the game starts
-    setTimeout(() => { const b = document.getElementById('badge'); if (b) b.classList.add('hide'); }, 1500);
+    // ====== GAME START (T-RETRO-INTEGRATE #29) ======
+    // The 3D render loop is gated behind the landing toggle so the landing
+    // overlay stays responsive (and mobile users can pick Retro without the
+    // 3D engine saturating the main thread).
+    function startGame() {
+      if (startGame.started) return;
+      startGame.started = true;
+      fetchWeather();
+      document.getElementById('loading').style.display = 'none';
+      // Fade out the hackathon badge once the game starts
+      setTimeout(() => { const b = document.getElementById('badge'); if (b) b.classList.add('hide'); }, 1500);
 
-    // Auto-start first mission on load
-    setTimeout(() => { startMission(); }, 2000);
+      // Auto-start first mission on load
+      setTimeout(() => { startMission(); }, 2000);
 
-    requestAnimationFrame(animate);
-    setInterval(fetchWeather, 600000);
+      requestAnimationFrame(animate);
+      setInterval(fetchWeather, 600000);
+    }
+    window.startGame = startGame;
 
     // ====== FLIGHT DATA (T-FLIGHT-DATA #8) ======
     // Geo-to-game coordinate mapping (derived from airport position and game config)
