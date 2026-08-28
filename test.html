@@ -67,16 +67,16 @@ window.addEventListener('load', () => {
       } catch(e) { log(`HUD #${id}: ${e.message}`, 'fail'); }
     });
 
-    // Test 5: Mode buttons
+    // Test 5: Mode buttons (single cycle button since T-RETRO-INTEGRATE #29)
     try {
       const btns = fd.querySelectorAll('.mode-btn');
-      log(`Mode buttons (${btns.length} found)`, btns.length === 3 ? 'pass' : 'fail');
+      log(`Mode buttons (${btns.length} found)`, btns.length === 1 ? 'pass' : 'fail');
     } catch(e) { log(`Mode buttons: ${e.message}`, 'fail'); }
 
-    // Test 6: Camera mode buttons
+    // Test 6: Camera mode buttons (single cycle button since T-RETRO-INTEGRATE #29)
     try {
       const btns = fd.querySelectorAll('.cam-btn');
-      log(`Camera buttons (${btns.length} found)`, btns.length === 4 ? 'pass' : 'fail');
+      log(`Camera buttons (${btns.length} found)`, btns.length === 1 ? 'pass' : 'fail');
     } catch(e) { log(`Camera buttons: ${e.message}`, 'fail'); }
 
     // Test 7: Radar canvas
