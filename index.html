@@ -2275,6 +2275,8 @@
     // ====== MISSION SYSTEM (GTA-style taxi pick-up/drop-off) ======
     let missionState = 'idle'; // idle, pickup, enroute, complete
     let taxiMode = false; // taxi/mission is opt-in, not the default (T-MODE-DEFAULT #36)
+    let missionGeneration = 0; // epoch counter invalidating stale repeat callbacks (T-BUG-TAXI-RACE #45)
+    let missionStarts = 0; // count of missions started (test hook, T-BUG-TAXI-RACE #45)
     let missionPickupLandmark = null;   // landmark where passenger is
     let missionDropoffLandmark = null;  // destination landmark
     let missionTimer = 0;
@@ -2361,6 +2363,8 @@
 
     function startMission() {
       taxiMode = true;
+      missionGeneration++; // invalidate any pending repeat callback scheduled earlier
+      missionStarts++;
       missionPickupLandmark = randomLandmarkExcept(missionDropoffLandmark);
       missionState = 'pickup';
       missionTimer = MISSION_TIME_LIMIT;
@@ -2373,6 +2377,7 @@
     // Return to open explore (free roam) mode — taxi is opt-in (T-MODE-DEFAULT #36).
     function cancelMission() {
       taxiMode = false;
+      missionGeneration++; // invalidate any pending repeat callback
       missionState = 'idle';
       removePassenger();
       removeWaypointBeam();
@@ -2405,7 +2410,10 @@
       missionState = 'complete';
       addPoints(100, `✅ Delivered! +100 pts`);
       updateMissionHUD();
-      setTimeout(() => { if (taxiMode) startMission(); }, 1500); // repeat while taxi mode active
+      // Repeat while taxi mode stays active — guarded by the epoch captured at
+      // schedule time so an off→on toggle can't let a stale callback restart it.
+      const gen = missionGeneration;
+      setTimeout(() => { if (taxiMode && gen === missionGeneration) startMission(); }, 1500);
     }
 
     function failMission() {
@@ -2414,7 +2422,8 @@
       missionState = 'idle';
       addPoints(-50, '⏰ Mission failed! Time out. -50 pts');
       updateMissionHUD();
-      setTimeout(() => { if (taxiMode) startMission(); }, 2000);
+      const gen = missionGeneration;
+      setTimeout(() => { if (taxiMode && gen === missionGeneration) startMission(); }, 2000);
     }
 
     function updateMissionLogic(dt) {
@@ -2455,7 +2464,12 @@
     window.showToast = showToast;
     window.startMission = startMission;
     window.toggleTaxiMission = toggleTaxiMission;
+    window.completeMissionDropoff = completeMissionDropoff;
+    window.failMission = failMission;
     window.__getTaxiMode = () => taxiMode;
+    window.__getMissionStarts = () => missionStarts;
+    window.__getMissionEpoch = () => missionGeneration;
+    window.__setCarPos = (x, z) => { carX = x; carZ = z; };
 
     function addPoints(pts, msg) {
       score += pts;
