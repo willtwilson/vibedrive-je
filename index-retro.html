@@ -5203,7 +5203,7 @@ window.addEventListener('unhandledrejection', (e) => { window.__testErrors.push(
 
     // ====== GAME STATE ======
     let vehicleMode = 'drive'; // 'drive' or 'fly'
-    let carX = 46, carZ = -65, carHeading = 0, carSpeed = 0; // Start in St Helier
+    let carX = 46, carZ = -65, carHeading = 180, carSpeed = 0; // Start in St Helier, facing up-screen (forwards)
     // T-RETRO-POLISH #28: 4-stage damage model — car health 0..100
     let carHealth = 100;
     let wreckedExploded = false; // one-shot explosion when health hits 0
@@ -6404,7 +6404,7 @@ window.addEventListener('unhandledrejection', (e) => { window.__testErrors.push(
           if (now - lastPavementBump > 500) {
             lastPavementBump = now;
             retro.addChaos(8);
-            applyDamage(2);
+            retro.applyDamage(2);
             retro.spawnDebris(carX, carZ);
           }
         }
@@ -6434,7 +6434,7 @@ window.addEventListener('unhandledrejection', (e) => { window.__testErrors.push(
           const dist = Math.sqrt(dx * dx + dz * dz);
           if (dist < 2.5 && Math.abs(carSpeed) > 5) {
             const impact = Math.abs(carSpeed) * 0.5;
-            applyDamage(impact);
+            retro.applyDamage(impact);
             retro.spawnDebris(carX, carZ);
             retro.audio.playCrash();
             // Knockback so the car doesn't sit inside the AI car.
@@ -6448,7 +6448,7 @@ window.addEventListener('unhandledrejection', (e) => { window.__testErrors.push(
           const dx = ped.x - carX, dz = ped.z - carZ;
           const dist = Math.sqrt(dx * dx + dz * dz);
           if (dist < 1.5 && Math.abs(carSpeed) > 3) {
-            applyDamage(5);
+            retro.applyDamage(5);
             retro.spawnDebris(carX, carZ);
             retro.audio.playCrash();
           }
@@ -6456,7 +6456,7 @@ window.addEventListener('unhandledrejection', (e) => { window.__testErrors.push(
 
         // Off-road damage — sustained while driving fast off the island.
         if (islandMask(carX, carZ) < 0.1 && Math.abs(carSpeed) > 20) {
-          applyDamage(2 * dt);
+          retro.applyDamage(2 * dt);
         }
 
         // Damage-stage visual effects: smoke (light/heavy), fire (heavy).
