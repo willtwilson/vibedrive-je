@@ -1216,6 +1216,11 @@
       if (typeof mpInit === 'function' && !mpConnected) {
         setTimeout(mpInit, 500);
       }
+      // Reload this player's saved garage choices on (username) change. Reset the
+      // in-memory selection first so one player's choices never leak into another.
+      if (typeof window.resetSelectedVehicles === 'function') window.resetSelectedVehicles();
+      if (typeof window.loadPersistedVehicles === 'function') window.loadPersistedVehicles();
+      if (typeof applyMode === 'function') applyMode((typeof vehicleMode !== 'undefined') ? vehicleMode : 'drive');
     }
 
     // Username modal elements
@@ -4249,21 +4254,91 @@
     const DEFAULT_VEHICLE = { drive: 'hatchback', boat: 'cruiser', fly: 'cessna' };
     // Single source of truth for the active vehicle (settable for tests / garage UI).
     window.currentVehicle = VEHICLES.hatchback;
-    // Merge the mode's base physics with the current vehicle's stat overrides.
-    function resolveVehicleStats(mode) {
-      const base = BASE_PHYSICS[mode] || BASE_PHYSICS.drive;
-      const v = (window.currentVehicle && window.currentVehicle.mode === mode) ? window.currentVehicle : VEHICLES[DEFAULT_VEHICLE[mode]];
-      return Object.assign({}, base, v.stats);
+    // Per-mode selected vehicle id (T-GARAGE-SWAP #32). Each mode remembers its own
+    // chosen vehicle, defaulting to the mode default until the player picks one.
+    const selectedVehicles = Object.assign({}, DEFAULT_VEHICLE);
+    // Resolve the mode's selected vehicle config WITHOUT consulting currentVehicle
+    // (used so applyMode can keep currentVehicle in sync without recursion).
+    function selectedVehicleFor(mode) {
+      const id = selectedVehicles[mode] || DEFAULT_VEHICLE[mode];
+      return VEHICLES[id] || VEHICLES[DEFAULT_VEHICLE[mode]];
     }
     // Resolve the active vehicle for a mode (used by applyMode to tint the mesh).
+    // Honors a directly-set currentVehicle (back-compat with tests) but otherwise
+    // returns the per-mode persisted choice.
     function activeVehicle(mode) {
-      return (window.currentVehicle && window.currentVehicle.mode === mode) ? window.currentVehicle : VEHICLES[DEFAULT_VEHICLE[mode]];
+      const cv = window.currentVehicle;
+      if (cv && cv.mode === mode) return cv;
+      return selectedVehicleFor(mode);
     }
-    // Expose for tests
+    // Merge the mode's base physics with the active vehicle's stat overrides.
+    function resolveVehicleStats(mode) {
+      const base = BASE_PHYSICS[mode] || BASE_PHYSICS.drive;
+      return Object.assign({}, base, activeVehicle(mode).stats);
+    }
+    // ====== VEHICLE CHOICE PERSISTENCE (T-GARAGE-SWAP #32) ======
+    // Persist the per-mode selection per player. Primary store is localStorage
+    // (reliable + offline); best-effort sync to Supabase when reachable.
+    const VEHICLE_STORAGE_PREFIX = 'vibedrive_vehicles_';
+    function vehicleStorageKey() {
+      const u = (window.playerUsername || '').trim();
+      return VEHICLE_STORAGE_PREFIX + (u || 'guest');
+    }
+    function persistVehicles() {
+      try {
+        localStorage.setItem(vehicleStorageKey(), JSON.stringify(selectedVehicles));
+      } catch (e) { console.warn('Vehicle persist failed:', e); }
+      syncVehiclesToServer();
+    }
+    function loadPersistedVehicles() {
+      let changed = false;
+      try {
+        const raw = localStorage.getItem(vehicleStorageKey());
+        if (!raw) return changed;
+        const data = JSON.parse(raw);
+        ['drive', 'boat', 'fly'].forEach((m) => {
+          const id = data[m];
+          if (id && VEHICLES[id] && VEHICLES[id].mode === m) {
+            if (selectedVehicles[m] !== id) { selectedVehicles[m] = id; changed = true; }
+          }
+        });
+      } catch (e) { console.warn('Vehicle load failed:', e); }
+      return changed;
+    }
+    // Reset the per-mode choices to their defaults (used when the player identity
+    // changes, so one player's in-memory selection never leaks into another's).
+    function resetSelectedVehicles() {
+      Object.keys(DEFAULT_VEHICLE).forEach((m) => { selectedVehicles[m] = DEFAULT_VEHICLE[m]; });
+    }
+    // Best-effort Supabase sync of the per-player choice. Non-blocking; if the
+    // player_vehicles table is unreachable we silently keep the localStorage copy.
+    function syncVehiclesToServer() {
+      const name = (window.playerUsername || '').trim();
+      if (!name || typeof window.supabase === 'undefined') return;
+      try {
+        Object.keys(selectedVehicles).forEach((mode) => {
+          fetch(SUPABASE_URL + '/rest/v1/player_vehicles', {
+            method: 'POST',
+            headers: lbHeaders({ 'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates' }),
+            body: JSON.stringify({ player: name, mode: mode, vehicle_id: selectedVehicles[mode] })
+          }).catch(() => {});
+        });
+      } catch (e) { console.warn('Vehicle server sync failed:', e); }
+    }
+    // Load persisted choices once the roster exists (playerUsername is set above).
+    loadPersistedVehicles();
+    // Expose for tests / garage UI / username changes.
     window.VEHICLES = VEHICLES;
     window.BASE_PHYSICS = BASE_PHYSICS;
     window.resolveVehicleStats = resolveVehicleStats;
     window.activeVehicle = activeVehicle;
+    window.selectedVehicleFor = selectedVehicleFor;
+    window.selectedVehicles = selectedVehicles;
+    window.vehicleStorageKey = vehicleStorageKey;
+    window.persistVehicles = persistVehicles;
+    window.loadPersistedVehicles = loadPersistedVehicles;
+    window.resetSelectedVehicles = resetSelectedVehicles;
+    window.syncVehiclesToServer = syncVehiclesToServer;
 
     // Wake trail for boat mode
     let wakeTrailLine = null;
@@ -4369,6 +4444,8 @@
     const modeCycleBtn = document.getElementById('mode-cycle');
 
     function applyMode(mode) {
+      // Keep the active-vehicle reference in sync with the mode's selection.
+      window.currentVehicle = selectedVehicleFor(mode);
       // Switch vehicle
       if (mode === 'fly') {
         vehicleMode = 'fly';
@@ -4510,6 +4587,8 @@
       const v = window.VEHICLES && window.VEHICLES[id];
       if (!v) return;
       window.currentVehicle = v;
+      selectedVehicles[v.mode] = id;
+      persistVehicles();
       if (typeof applyMode === 'function') applyMode(v.mode);
       // Re-render so the newly selected card is highlighted; overlay stays open
       // until the player taps Close (per garage UI spec).
@@ -4536,6 +4615,7 @@
     window.openGarage = openGarage;
     window.setGarageOpen = setGarageOpen;
     window.renderGarage = renderGarage;
+    window.selectGarageVehicle = selectGarageVehicle;
 
     // Camera modes (cycling button)
     let camMode = 'chase';
