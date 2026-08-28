@@ -1308,7 +1308,7 @@ window.addEventListener('unhandledrejection', (e) => { window.__testErrors.push(
 
 
     // ====== USERNAME SYSTEM ======
-    let playerUsername = localStorage.getItem('vibedrive_username') || '';
+    let playerUsername = localStorage.getItem('vibedrive_retro_username') || '';
     window.playerUsername = playerUsername;
     let usernameSprite = null;
 
@@ -1360,7 +1360,7 @@ window.addEventListener('unhandledrejection', (e) => { window.__testErrors.push(
     function setUsername(name) {
       playerUsername = name;
       window.playerUsername = name;
-      localStorage.setItem('vibedrive_username', name);
+      localStorage.setItem('vibedrive_retro_username', name);
       updateUsernameSprite();
       updateHUDUsername();
       // Trigger multiplayer init if not already connected
@@ -5396,7 +5396,7 @@ window.addEventListener('unhandledrejection', (e) => { window.__testErrors.push(
       if (!btn) return;
       const press = (e) => { e.preventDefault(); e.stopPropagation(); keys[key] = true; btn.classList.add('pressed'); markGameStarted(); };
       const release = (e) => { e.preventDefault(); e.stopPropagation(); keys[key] = false; btn.classList.remove('pressed'); };
-      addEventListener('pointerdown', press, { passive: false });
+      btn.addEventListener('pointerdown', press, { passive: false });
       btn.addEventListener('pointerup', release, { passive: false });
       btn.addEventListener('pointercancel', release, { passive: false });
       btn.addEventListener('pointerleave', release, { passive: false });
