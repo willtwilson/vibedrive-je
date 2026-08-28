@@ -508,6 +508,62 @@ window.addEventListener('load', () => {
     } catch(e) { log(`Garage UI: ${e.message}`, 'fail'); }
     updateSummary();
 
+    // Test 18: In-game vehicle swap + persistence (T-GARAGE-SWAP #32)
+    try {
+      const V = fw.VEHICLES;
+      // activeVehicle resolves to the mode's selected vehicle by default
+      log(`activeVehicle('drive') returns hatchback by default`, fw.activeVehicle('drive').name === 'Hatchback' ? 'pass' : 'fail');
+
+      // Selecting a vehicle swaps the active vehicle (per-mode) and persists
+      if (typeof fw.selectGarageVehicle === 'function') {
+        fw.selectGarageVehicle('sports');     // drive -> sports
+        fw.selectGarageVehicle('speedboat');  // boat -> speedboat
+        log(`drive choice retained after boat selection (sports)`, fw.activeVehicle('drive').name === 'Sports' ? 'pass' : 'fail');
+        log(`boat choice = speedboat`, fw.activeVehicle('boat').name === 'Speedboat' ? 'pass' : 'fail');
+
+        // Stat overrides reflect the per-mode selection
+        const P = fw.resolveVehicleStats('drive');
+        log(`resolveVehicleStats('drive') uses sports (maxSpeed 110)`, P.maxSpeed === 110 ? 'pass' : 'fail');
+
+        // Selection is persisted to localStorage (per-player key)
+        const key = typeof fw.vehicleStorageKey === 'function' ? fw.vehicleStorageKey() : null;
+        const saved = key ? JSON.parse(fw.localStorage.getItem(key)) : null;
+        log(`selection persisted to localStorage`, !!(saved && saved.drive === 'sports' && saved.boat === 'speedboat') ? 'pass' : 'fail');
+
+        // Restoring from storage re-applies the per-mode choice
+        fw.selectedVehicles.drive = 'hatchback';
+        fw.selectedVehicles.boat = 'cruiser';
+        if (typeof fw.loadPersistedVehicles === 'function') fw.loadPersistedVehicles();
+        log(`loadPersistedVehicles restores sports for drive`, fw.activeVehicle('drive').name === 'Sports' ? 'pass' : 'fail');
+        log(`loadPersistedVehicles restores speedboat for boat`, fw.activeVehicle('boat').name === 'Speedboat' ? 'pass' : 'fail');
+
+        // Persistence is keyed per player — a different identity uses a separate key
+        fw.selectedVehicles.drive = 'truck';
+        if (typeof fw.persistVehicles === 'function') fw.persistVehicles();
+        const saved2 = key ? JSON.parse(fw.localStorage.getItem(key)) : null;
+        log(`persist stores choice under player key`, !!(saved2 && saved2.drive === 'truck') ? 'pass' : 'fail');
+
+        const oldUsername = fw.playerUsername;
+        fw.playerUsername = 'alice';
+        const aliceKey = typeof fw.vehicleStorageKey === 'function' ? fw.vehicleStorageKey() : null;
+        const aliceSaved = (aliceKey && fw.localStorage.getItem(aliceKey)) ? JSON.parse(fw.localStorage.getItem(aliceKey)) : {};
+        log(`vehicleStorageKey differs per player`, aliceKey !== key ? 'pass' : 'fail');
+        log(`another player's choice is not contaminated`, aliceSaved.drive !== 'truck' ? 'pass' : 'fail');
+        fw.playerUsername = oldUsername;
+        // A new player resets the in-memory selection to defaults before loading
+        if (typeof fw.resetSelectedVehicles === 'function') {
+          fw.selectedVehicles.drive = 'sports';
+          fw.resetSelectedVehicles();
+          log(`resetSelectedVehicles restores drive default`, fw.selectedVehicles.drive === 'hatchback' ? 'pass' : 'fail');
+        } else {
+          log(`resetSelectedVehicles exposed`, 'fail');
+        }
+      } else {
+        log(`selectGarageVehicle exposed`, 'fail');
+      }
+    } catch(e) { log(`Garage swap/persist: ${e.message}`, 'fail'); }
+    updateSummary();
+
   }, 2000);
 });
 
