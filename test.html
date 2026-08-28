@@ -35,6 +35,13 @@ window.addEventListener('load', () => {
     const fw = frame.contentWindow;
     const fd = frame.contentDocument;
 
+    // Start the 3D game by dismissing the landing toggle (T-RETRO-INTEGRATE #29).
+    try {
+      if (fd.getElementById('landing') && typeof fw.chooseMode === 'function') {
+        fw.chooseMode('3d');
+      }
+    } catch(e) { log(`Start game: ${e.message}`, 'fail'); }
+
     // Test 1: Page loaded
     try { log(`Page loads`, fd ? 'pass' : 'fail'); }
     catch(e) { log(`Page loads: ${e.message}`, 'fail'); }
@@ -840,6 +847,95 @@ window.addEventListener('load', () => {
         updateSummary();
       }).catch(e => { log(`[phys] source: ${e.message}`, 'fail'); updateSummary(); });
     } catch(e) { log(`[phys] source: ${e.message}`, 'fail'); updateSummary(); }
+  }, 2500);
+});
+
+// ====== RETRO INTEGRATION TESTS (T-RETRO-INTEGRATE #29) ======
+// Landing-page toggle between "3D Mode" and "Retro Mode", retro default for
+// mobile, Supabase leaderboard wired into retro, and no console errors.
+console.log('[integrate] section REGISTERED');
+window.addEventListener('load', () => {
+  const frame = document.getElementById('game-frame');
+  setTimeout(() => {
+    console.log('[integrate] section running');
+    const fw = frame.contentWindow;
+    const fd = frame.contentDocument;
+
+    // Test I1: Landing overlay exists in index.html
+    try {
+      const landing = fd.getElementById('landing');
+      log(`[integrate] landing overlay exists`, landing ? 'pass' : 'fail');
+      // The landing overlay is shown by default (no 'hidden' class in the raw HTML).
+      fetch('/index.html').then(r => r.text()).then(text => {
+        const m = text.match(/<div id="landing"([^>]*)>/);
+        log(`[integrate] landing overlay visible by default (source)`, m && !m[1].includes('hidden') ? 'pass' : 'fail');
+        updateSummary();
+      }).catch(e => { log(`[integrate] landing source: ${e.message}`, 'fail'); updateSummary(); });
+    } catch(e) { log(`[integrate] landing overlay: ${e.message}`, 'fail'); }
+
+    // Test I2: Landing has "3D Mode" and "Retro Mode" buttons
+    try {
+      const b3d = fd.getElementById('landing-3d');
+      const bretro = fd.getElementById('landing-retro');
+      log(`[integrate] "3D Mode" button exists`, b3d ? 'pass' : 'fail');
+      log(`[integrate] "Retro Mode" button exists`, bretro ? 'pass' : 'fail');
+      log(`[integrate] 3D button labelled "3D Mode"`, b3d && /3D Mode/i.test(b3d.textContent) ? 'pass' : 'fail');
+      log(`[integrate] Retro button labelled "Retro Mode"`, bretro && /Retro Mode/i.test(bretro.textContent) ? 'pass' : 'fail');
+    } catch(e) { log(`[integrate] landing buttons: ${e.message}`, 'fail'); }
+
+    // Test I3: landingDefaultMode() — retro on mobile, 3d on desktop
+    try {
+      log(`[integrate] landingDefaultMode function`, typeof fw.landingDefaultMode === 'function' ? 'pass' : 'fail');
+      const def = fw.landingDefaultMode();
+      log(`[integrate] landingDefaultMode returns a valid mode`, def === '3d' || def === 'retro' ? 'pass' : 'fail');
+      log(`[integrate] retro is default on mobile UA`, fw.landingDefaultMode('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)') === 'retro' ? 'pass' : 'fail');
+      log(`[integrate] retro is default on iPad UA`, fw.landingDefaultMode('Mozilla/5.0 (iPad; CPU OS 17_0 like Mac OS X)') === 'retro' ? 'pass' : 'fail');
+      log(`[integrate] 3d is default on desktop UA`, fw.landingDefaultMode('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)') === '3d' ? 'pass' : 'fail');
+    } catch(e) { log(`[integrate] landingDefaultMode: ${e.message}`, 'fail'); }
+
+    // Test I4: chooseMode('3d') dismisses the landing overlay
+    try {
+      log(`[integrate] chooseMode function`, typeof fw.chooseMode === 'function' ? 'pass' : 'fail');
+      const landing = fd.getElementById('landing');
+      fw.chooseMode('3d');
+      log(`[integrate] chooseMode('3d') hides landing overlay`, landing && landing.classList.contains('hidden') ? 'pass' : 'fail');
+      // Re-show for the redirect source check below
+      if (landing) landing.classList.remove('hidden');
+    } catch(e) { log(`[integrate] chooseMode: ${e.message}`, 'fail'); }
+
+    // Test I5: chooseMode('retro') redirects to index-retro.html (source check)
+    try {
+      fetch('/index.html').then(r => r.text()).then(text => {
+        const block = text.slice(text.indexOf('function chooseMode'));
+        log(`[integrate] chooseMode('retro') redirects to index-retro.html`, block.includes('index-retro.html') ? 'pass' : 'fail');
+        log(`[integrate] landing overlay CSS present`, text.includes('#landing') ? 'pass' : 'fail');
+        updateSummary();
+      }).catch(e => { log(`[integrate] source: ${e.message}`, 'fail'); updateSummary(); });
+    } catch(e) { log(`[integrate] source: ${e.message}`, 'fail'); updateSummary(); }
+
+    // Test I6: Retro leaderboard integration (source check on index-retro.html)
+    try {
+      fetch('/index-retro.html').then(r => r.text()).then(text => {
+        log(`[integrate] retro has Supabase leaderboard`, text.includes('SUPABASE_URL') && text.includes('fetchLeaderboard') ? 'pass' : 'fail');
+        log(`[integrate] retro submits scores`, text.includes('submitScore') || text.includes('lb-submit') ? 'pass' : 'fail');
+        log(`[integrate] retro renders leaderboard table`, text.includes('renderLeaderboard') ? 'pass' : 'fail');
+        updateSummary();
+      }).catch(e => { log(`[integrate] retro leaderboard: ${e.message}`, 'fail'); updateSummary(); });
+    } catch(e) { log(`[integrate] retro leaderboard: ${e.message}`, 'fail'); updateSummary(); }
+
+    // Test I7: No JS console errors in index.html (landing overlay doesn't throw)
+    try {
+      const errors = fw.__testErrors || [];
+      log(`[integrate] no console errors on load`, errors.length === 0 ? 'pass' : `fail (${errors.length})`);
+    } catch(e) { log(`[integrate] console errors: ${e.message}`, 'fail'); }
+
+    // Test I8: No JS console errors in retro mode
+    try {
+      const rframe = document.getElementById('retro-frame');
+      const rerrors = (rframe && rframe.contentWindow && rframe.contentWindow.__testErrors) || [];
+      log(`[integrate] no console errors in retro`, rerrors.length === 0 ? 'pass' : `fail (${rerrors.length})`);
+    } catch(e) { log(`[integrate] retro console errors: ${e.message}`, 'fail'); }
+    updateSummary();
   }, 2500);
 });
 </script>
