@@ -6898,8 +6898,16 @@ window.addEventListener('unhandledrejection', (e) => { window.__testErrors.push(
 
     async function fetchAirportBoard() {
       try {
-        const res = await fetch('https://pojcdn.blob.core.windows.net/data/airportArrivals48h.json');
-        const data = await res.json();
+        const FLIGHT_URLS = [
+          '/flights/airportArrivals48h.json',                 // same-origin proxy (CORS-safe)
+          'https://pojcdn.blob.core.windows.net/data/airportArrivals48h.json' // direct CDN fallback
+        ];
+        let res = null, data = null;
+        for (const url of FLIGHT_URLS) {
+          try { res = await fetch(url); data = await res.json(); break; }
+          catch (e) { res = null; data = null; }
+        }
+        if (!data) throw new Error('No flight feed reachable');
         const now = new Date();
         const nowTime = now.getTime();
 
