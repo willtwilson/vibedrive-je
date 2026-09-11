@@ -537,10 +537,16 @@ window.addEventListener('load', () => {
     // Test 18: In-game vehicle swap + persistence (T-GARAGE-SWAP #32)
     try {
       const V = fw.VEHICLES;
-      // activeVehicle resolves to the mode's selected vehicle by default. Establish a
-      // clean in-memory default first, so a returning player's previously-saved drive
-      // vehicle (loaded from localStorage on boot) can't false-fail the assertion.
+      // Establish a clean default so a returning player's previously-saved drive vehicle
+      // can't false-fail the assertion. A saved vehicle is loaded from localStorage on
+      // boot AND baked into the live currentVehicle by applyMode, so resetting only the
+      // in-memory per-mode selection (resetSelectedVehicles) is not enough — the live
+      // currentVehicle must also be cleared, and the storage keys isolated.
+      try {
+        Object.keys(fw.localStorage || {}).forEach((k) => { if (k.indexOf('vibedrive_vehicles_') === 0) fw.localStorage.removeItem(k); });
+      } catch (e) {}
       if (typeof fw.resetSelectedVehicles === 'function') fw.resetSelectedVehicles();
+      fw.currentVehicle = null;
       log(`activeVehicle('drive') returns hatchback by default`, fw.activeVehicle('drive').name === 'Hatchback' ? 'pass' : 'fail');
 
       // Selecting a vehicle swaps the active vehicle (per-mode) and persists
