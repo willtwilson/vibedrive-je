@@ -638,6 +638,35 @@ window.addEventListener('load', () => {
       log(`speedboat rudderRate 2.0 (tighter)`, Pb2.rudderRate === 2.0 ? 'pass' : `fail (${Pb2.rudderRate})`);
       fw.currentVehicle = prev;
     } catch(e) { log(`Garage stats wiring: ${e.message}`, 'fail'); }
+
+    // Test 19: Garage card highlight follows per-mode selection, not just
+    // the active mode's currentVehicle (T-GARAGE-UI-STATE #46).
+    // Bug: buildGarageCard compared against currentVehicle only, so when the
+    // active mode is drive and the player browses the Boat tab, no boat card
+    // was highlighted even though a persisted per-mode choice exists.
+    try {
+      const prevCV = fw.currentVehicle;
+      fw.selectedVehicles.drive = 'sports';
+      fw.selectedVehicles.boat = 'speedboat';
+      fw.currentVehicle = fw.VEHICLES['sports']; // active mode = drive
+
+      // Boat tab must highlight the persisted boat choice (speedboat).
+      fw.renderGarage('boat');
+      const boatSpeedboat = fd.querySelector('#garage-carousel .garage-card[data-vehicle="speedboat"]');
+      log(`Highlight: boat tab honours selectedVehicles.boat (speedboat)`,
+          !!(boatSpeedboat && boatSpeedboat.classList.contains('selected')) ? 'pass' : 'fail');
+      const boatCruiser = fd.querySelector('#garage-carousel .garage-card[data-vehicle="cruiser"]');
+      log(`Highlight: non-selected boat card not highlighted`,
+          !!(boatCruiser && !boatCruiser.classList.contains('selected')) ? 'pass' : 'fail');
+
+      // Drive tab still highlights the active drive selection (sports).
+      fw.renderGarage('drive');
+      const driveSports = fd.querySelector('#garage-carousel .garage-card[data-vehicle="sports"]');
+      log(`Highlight: drive tab highlights selectedVehicles.drive (sports)`,
+          !!(driveSports && driveSports.classList.contains('selected')) ? 'pass' : 'fail');
+
+      fw.currentVehicle = prevCV;
+    } catch(e) { log(`Garage highlight state: ${e.message}`, 'fail'); }
     updateSummary();
 
   }, 2000);
