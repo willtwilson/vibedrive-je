@@ -537,6 +537,13 @@ window.addEventListener('load', () => {
     // Test 18: In-game vehicle swap + persistence (T-GARAGE-SWAP #32)
     try {
       const V = fw.VEHICLES;
+      // Isolate leftover localStorage so a previously-saved drive vehicle (a returning
+      // player's real choice) can't false-fail the default-state assertion below.
+      try {
+        Object.keys(fw.localStorage).forEach((K) => { if (K.indexOf('vibedrive_vehicles_') === 0) fw.localStorage.removeItem(K); });
+      } catch (e) {}
+      if (typeof fw.resetSelectedVehicles === 'function') fw.resetSelectedVehicles();
+      fw.currentVehicle = null;
       // activeVehicle resolves to the mode's selected vehicle by default
       log(`activeVehicle('drive') returns hatchback by default`, fw.activeVehicle('drive').name === 'Hatchback' ? 'pass' : 'fail');
 
@@ -569,13 +576,29 @@ window.addEventListener('load', () => {
         const saved2 = key ? JSON.parse(fw.localStorage.getItem(key)) : null;
         log(`persist stores choice under player key`, !!(saved2 && saved2.drive === 'truck') ? 'pass' : 'fail');
 
-        const oldUsername = fw.playerUsername;
-        fw.playerUsername = 'alice';
-        const aliceKey = typeof fw.vehicleStorageKey === 'function' ? fw.vehicleStorageKey() : null;
-        const aliceSaved = (aliceKey && fw.localStorage.getItem(aliceKey)) ? JSON.parse(fw.localStorage.getItem(aliceKey)) : {};
-        log(`vehicleStorageKey differs per player`, aliceKey !== key ? 'pass' : 'fail');
-        log(`another player's choice is not contaminated`, aliceSaved.drive !== 'truck' ? 'pass' : 'fail');
-        fw.playerUsername = oldUsername;
+        // Change identity THROUGH the settings UI — the real username-change path —
+        // and assert the resulting selection reset, rather than poking playerUsername
+        // directly (which could pass even if the reset/reload path were broken).
+        const oldUsername = fw.playerUsername || '';
+        const otherName = (oldUsername !== 'sandcastle') ? 'sandcastle' : (oldUsername !== 'testdriver' ? 'testdriver' : 'alice47');
+        const sInput = fd.getElementById('settings-username-input');
+        const sSave = fd.getElementById('settings-save');
+        if (sInput && sSave) {
+          sInput.value = otherName;
+          sSave.click();
+          const otherKey = typeof fw.vehicleStorageKey === 'function' ? fw.vehicleStorageKey() : null;
+          const otherSaved = (otherKey && fw.localStorage.getItem(otherKey)) ? JSON.parse(fw.localStorage.getItem(otherKey)) : {};
+          log(`settings UI changes username`, (fw.playerUsername || '') === otherName ? 'pass' : 'fail');
+          log(`username change resets in-memory selection to defaults`, fw.selectedVehicles.drive === 'hatchback' ? 'pass' : 'fail');
+          log(`resulting drive selection is default (not previous player's truck)`, fw.activeVehicle('drive').name === 'Hatchback' ? 'pass' : 'fail');
+          log(`vehicleStorageKey differs per player`, otherKey !== key ? 'pass' : 'fail');
+          log(`another player's choice is not contaminated`, otherSaved.drive !== 'truck' ? 'pass' : 'fail');
+          // Restore the original identity so later tests keep a stable player.
+          sInput.value = oldUsername;
+          sSave.click();
+        } else {
+          log(`settings username input/save present`, 'fail');
+        }
         // A new player resets the in-memory selection to defaults before loading
         if (typeof fw.resetSelectedVehicles === 'function') {
           fw.selectedVehicles.drive = 'sports';
