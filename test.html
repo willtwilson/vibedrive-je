@@ -644,8 +644,11 @@ window.addEventListener('load', () => {
     // Bug: buildGarageCard compared against currentVehicle only, so when the
     // active mode is drive and the player browses the Boat tab, no boat card
     // was highlighted even though a persisted per-mode choice exists.
+    let prevCV, prevDrive, prevBoat;
     try {
-      const prevCV = fw.currentVehicle;
+      prevCV = fw.currentVehicle;
+      prevDrive = fw.selectedVehicles.drive;
+      prevBoat = fw.selectedVehicles.boat;
       fw.selectedVehicles.drive = 'sports';
       fw.selectedVehicles.boat = 'speedboat';
       fw.currentVehicle = fw.VEHICLES['sports']; // active mode = drive
@@ -665,8 +668,12 @@ window.addEventListener('load', () => {
       log(`Highlight: drive tab highlights selectedVehicles.drive (sports)`,
           !!(driveSports && driveSports.classList.contains('selected')) ? 'pass' : 'fail');
 
-      fw.currentVehicle = prevCV;
     } catch(e) { log(`Garage highlight state: ${e.message}`, 'fail'); }
+    finally {
+      fw.currentVehicle = prevCV;
+      fw.selectedVehicles.drive = prevDrive;
+      fw.selectedVehicles.boat = prevBoat;
+    }
     updateSummary();
 
   }, 2000);
