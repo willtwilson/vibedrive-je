@@ -4941,7 +4941,7 @@
       const card = document.createElement('button');
       card.className = 'garage-card';
       card.setAttribute('data-vehicle', id);
-      const isSelected = window.currentVehicle && window.currentVehicle === vehicle;
+      const isSelected = !!(window.selectedVehicles && window.selectedVehicles[vehicle.mode] === id);
       if (isSelected) card.classList.add('selected');
       const name = vehicle.name || id;
       const swatch = `<span class="gc-swatch" style="background:#${vehicle.color.toString(16).padStart(6, '0')}"></span>`;
